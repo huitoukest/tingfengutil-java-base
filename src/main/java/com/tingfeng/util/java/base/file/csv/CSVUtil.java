@@ -21,6 +21,7 @@ public class CSVUtil {
 	
 	/**
      * 默认英文逗号分隔,
+     * 当写入内容为空时，可以写入一个空字符串""，防止csv读取软件读取了csv编码内容
      * 错误会抛出异常
      * @param dataList 数据
      * @return
