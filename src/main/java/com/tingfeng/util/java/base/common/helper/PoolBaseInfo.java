@@ -5,7 +5,7 @@ public class PoolBaseInfo {
     private int maxSize = 100;
     private int maxQueueSize = Integer.MAX_VALUE;
     private long maxRunTime = Integer.MAX_VALUE;
-    private long maxWaitTime = Integer.MAX_VALUE;//默认等待获取实例的最长等待时间,100毫秒的整数
+    private long maxWaitTime = Integer.MAX_VALUE;//默认等待获取实例的最长等待时间,10毫秒的整数
     private long maxIdleTime = 120000;//运行的实例最长闲置时间，默认2分钟
     
     
