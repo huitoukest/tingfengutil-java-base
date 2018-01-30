@@ -1,6 +1,11 @@
 package com.tingfeng.util.java.base.common;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
@@ -15,19 +20,20 @@ public class PoolHelperTest {
     public void testPoolHelper() {
         final AtomicInteger atom = new AtomicInteger(0);
         PoolBaseInfo baseInfo = new PoolBaseInfo();
-        baseInfo.setMaxSize(2);
+        baseInfo.setMaxSize(5);
         baseInfo.setMaxRunTime(50000);
         baseInfo.setMaxQueueSize(100);
-        baseInfo.setMaxIdleTime(2000);
+        baseInfo.setMaxIdleTime(6000);
         baseInfo.setMaxWaitTime(Integer.MAX_VALUE);
+        final Set<Object> set = new HashSet<Object>();
         final PoolHelper<Runnable> poolHelper = new  PoolHelper<Runnable>(new PoolMemberActionI<Runnable>() {
 
             @Override
             public Runnable create() {
-                return new  Runnable() {                  
+                return new  Runnable() {
                     @Override
                     public void run() {
-                        long time = (long) (Math.random() * 1000 * 10);
+                        long time = (long) (Math.random() * 1000 * 7);
                         try {
                             Thread.sleep(time);
                         } catch (InterruptedException e) {
@@ -61,11 +67,13 @@ public class PoolHelperTest {
                 @Override
                 public void run() {               
                     Runnable run = poolHelper.open();
+                    set.add(run);
                     atom.incrementAndGet();
-                    System.out.println("atom count : " + atom.get());
+                    System.out.println("atom count : " + atom.get() + ",setSize:" + set.size());
                     run.run();
-                    poolHelper.close(run);
                     atom.decrementAndGet();
+                    poolHelper.close(run);
+                    
                 }
             }).start();
         }

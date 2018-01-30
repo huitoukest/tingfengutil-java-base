@@ -19,14 +19,14 @@ import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
 public class PoolHelper<T>{
     private PoolMemberActionI<T>  poolMemberAction;
     private PoolBaseInfo poolBaseInfo;
-    private final static int tryTime = 10;//阻塞时每0.01秒尝试一次获取
+    private final static int tryTime = 5;//阻塞时每0.005秒尝试一次获取
     private final AtomicInteger waitCount = new AtomicInteger(0);
     private boolean isShutDown = false;
     private boolean isRunning = false;
-    private final Object openLockKey = new Object();
     
     private final List<PoolMember<T>>  runingList = new ArrayList<>(10);
-    private final List<PoolMember<T>>  idleList = new ArrayList<>(10);    
+    private final List<PoolMember<T>>  idleList = new ArrayList<>(10);//总的闲置池
+    private final List<PoolMember<T>>  idleListPer = new ArrayList<>(10);//每次查找后新增的闲置池
     private final List<PoolMember<T>>  delList = new ArrayList<>(10);
     private final Map<T,PoolMember<T>> runMap = new HashMap<>(10);
     private Thread thread = null;
@@ -43,6 +43,7 @@ public class PoolHelper<T>{
                         synchronized(PoolHelper.this) {
                             //try {
                             delList.clear();
+                            idleListPer.clear();
                             PoolMember<T> member = null;
                                 try {
                                     //找出闲置,运行超时
@@ -50,15 +51,16 @@ public class PoolHelper<T>{
                                         member =  PoolHelper.this.runingList.get(j);
                                         try {
                                             if(isOverMaxRunTime(member)) {
+                                                PoolHelper.this.delList.add(member);
                                                 PoolHelper.this.poolMemberAction.onOverMaxRunTime(member.getMember());
+                                                continue;
                                             }
                                         }catch (Exception e) {
                                             e.printStackTrace();
-                                        }finally {
-                                            PoolHelper.this.delList.add(member);
                                         }
                                         if(!member.isUse()) {
                                             PoolHelper.this.idleList.add(member);
+                                            PoolHelper.this.idleListPer.add(member);
                                         }
                                     }
                                     //消除运行超时
@@ -67,6 +69,8 @@ public class PoolHelper<T>{
                                         PoolHelper.this.runingList.remove(member);
                                         PoolHelper.this.poolMemberAction.destroy(member.getMember());
                                     }
+                                    //消除新增的闲置超时
+                                    PoolHelper.this.runingList.removeAll(idleListPer);
                                     PoolHelper.this.delList.clear();
                                     //找出闲置超时
                                     for(int j = 0; j < PoolHelper.this.idleList.size() ; j ++) {
@@ -124,11 +128,7 @@ public class PoolHelper<T>{
         return runingList.size() + idleList.size();
     }
     
-    private synchronized int getRunListSize() {
-        return runingList.size();
-    }
-    
-    public T open() { 
+    public T open() {
         if(waitCount.get() > poolBaseInfo.getMaxQueueSize()) {
             throw new OverPoolWaitSizeException("wait size:" + poolBaseInfo.getMaxQueueSize());
         }
@@ -144,22 +144,21 @@ public class PoolHelper<T>{
                     throw new OverPoolWaitTimeException("wait time:" + poolBaseInfo.getMaxWaitTime());
                 }
                 synchronized(this) {
-                    int runSize = getRunListSize();
+                    int poolSize = getPoolSize();
                     if(isShutDown) {
                         throw new RuntimeException("pool has shutDown,if you want to work agin,to startPoll");
                     }
-                    
-                    if(runSize < poolBaseInfo.getMaxSize()) {//如果没有达到最大队列
+                    if(poolSize < poolBaseInfo.getMaxSize()) {//如果没有达到最大队列
                         t = poolMemberAction.create();
                         member = new PoolMember<>();
                         member.setMember(t);
                         runingList.add(member);    
                     }else if(idleList.size() > 0) {
-                            member =  idleList.get(0);
-                            runingList.add(member);
-                            member.setUpdateTime(System.currentTimeMillis());
-                            idleList.remove(0);
-                            t = member.getMember();
+                        member =  idleList.get(0);
+                        member.setUpdateTime(System.currentTimeMillis());
+                        idleList.remove(0);
+                        runingList.add(member);
+                        t = member.getMember();
                     }
                     if(null != member) {
                         member.setUse(true);
@@ -179,21 +178,21 @@ public class PoolHelper<T>{
         return t;
     }
     
-    protected boolean isOverMaxIdleTime(PoolMember<T> member) {
+    protected synchronized boolean isOverMaxIdleTime(PoolMember<T> member) {
         if(!member.isUse() && System.currentTimeMillis() - member.getUpdateTime() > poolBaseInfo.getMaxIdleTime()) {
             return true;
         }
         return false;
     }
     
-    protected boolean isOverMaxRunTime(PoolMember<T> member) {
+    protected synchronized boolean isOverMaxRunTime(PoolMember<T> member) {
         if(member.isUse() && System.currentTimeMillis() - member.getUpdateTime() > poolBaseInfo.getMaxRunTime()) {
             return true;
         }
         return false;
     }
     
-    public void close(T t) {
+    public synchronized void close(T t) {
        PoolMember<T> poolMember = runMap.get(t);       
        if(null != poolMember) {
                poolMember.setUse(false);
