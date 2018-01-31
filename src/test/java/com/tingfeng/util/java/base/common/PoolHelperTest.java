@@ -17,7 +17,7 @@ public class PoolHelperTest {
     public void testPoolHelper() {
         final AtomicInteger atom = new AtomicInteger(0);
         PoolBaseInfo baseInfo = new PoolBaseInfo();
-        baseInfo.setMaxSize(5);
+        baseInfo.setMaxSize(10);
         baseInfo.setMaxRunTime(50000);
         baseInfo.setMaxQueueSize(100);
         baseInfo.setMaxIdleTime(6000);
@@ -30,7 +30,7 @@ public class PoolHelperTest {
                 return new  Runnable() {
                     @Override
                     public void run() {
-                        long time = (long) (Math.random() * 1000 * 7);
+                        long time = (long) (Math.random() * 1000);
                         try {
                             Thread.sleep(time);
                         } catch (InterruptedException e) {
@@ -63,10 +63,12 @@ public class PoolHelperTest {
             new Thread(new Runnable() {
                 @Override
                 public void run() {               
-                    Runnable run = poolHelper.open();
-                    set.add(run);
+                    Runnable run = poolHelper.open();                    
                     atom.incrementAndGet();
-                    System.out.println("atom count : " + atom.get() + ",setSize:" + set.size());
+                    synchronized(PoolHelperTest.class) {
+                        set.add(run);
+                        System.out.println("atom count : " + atom.get() + ",setSize:" + set.size());
+                    }
                     run.run();
                     atom.decrementAndGet();
                     poolHelper.close(run);

@@ -19,7 +19,6 @@ import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
 public class PoolHelper<T>{
     private PoolMemberActionI<T>  poolMemberAction;
     private PoolBaseInfo poolBaseInfo;
-    private final static int tryTime = 5;//阻塞时每0.005秒尝试一次获取
     private final AtomicInteger waitCount = new AtomicInteger(0);
     private boolean isShutDown = false;
     private boolean isRunning = false;
@@ -96,7 +95,7 @@ public class PoolHelper<T>{
                                 }
                         }//end synchronized
                         try {
-                            Thread.sleep(tryTime);
+                            Thread.sleep(poolBaseInfo.getPerCheckTime());
                         } catch (InterruptedException e) {
                             e.printStackTrace();
                         }    
@@ -135,7 +134,7 @@ public class PoolHelper<T>{
         PoolMember<T> member = null;
         T t = null;
         int tryCount = 0 ;
-        int maxTryCount = (int) (poolBaseInfo.getMaxWaitTime() / tryTime);
+        int maxTryCount = (int) (poolBaseInfo.getMaxWaitTime() / poolBaseInfo.getPerWaitTime());
         
         waitCount.incrementAndGet();
         try {
@@ -167,7 +166,7 @@ public class PoolHelper<T>{
                 }
                 tryCount ++ ;
                 try {
-                    Thread.sleep(tryTime);
+                    Thread.sleep(poolBaseInfo.getPerWaitTime());
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

@@ -5,9 +5,22 @@ public class PoolBaseInfo {
     private int maxSize = 100;
     private int maxQueueSize = Integer.MAX_VALUE;
     private long maxRunTime = Integer.MAX_VALUE;
-    private long maxWaitTime = Integer.MAX_VALUE;//默认等待获取实例的最长等待时间,5毫秒的整数
-    private long maxIdleTime = 120000;//运行的实例最长闲置时间，默认2分钟
-    
+    /**
+     * 默认等待获取实例的最长等待时间,perWaitTime的整数
+     */
+    private long maxWaitTime = Integer.MAX_VALUE;
+    /**
+     * 运行的实例最长闲置时间，默认2分钟
+     */
+    private long maxIdleTime = 120000;
+    /**
+     * 每隔perCheckTime便会检查一次当前池中实例的运行空闲和超时情况，默认10毫秒;
+     */
+    private long perCheckTime = 10;
+    /**
+     * 每隔perWaitTime,当前等待的open的任务便会尝再次open获取资源，默认10毫秒;
+     */
+    private long perWaitTime = 10;
     
     public PoolBaseInfo() {}
     
@@ -132,6 +145,23 @@ public class PoolBaseInfo {
     public void setMaxIdleTime(long maxIdleTime) {
         this.maxIdleTime = maxIdleTime;
     }
+
+    public long getPerCheckTime() {
+        return perCheckTime;
+    }
+
+    public void setPerCheckTime(long perCheckTime) {
+        this.perCheckTime = perCheckTime;
+    }
+
+    public long getPerWaitTime() {
+        return perWaitTime;
+    }
+
+    public void setPerWaitTime(long perWaitTime) {
+        this.perWaitTime = perWaitTime;
+    }
+    
     
     
 }
