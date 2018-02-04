@@ -214,15 +214,34 @@ public class FileUtils {
 	 * @return
 	 */
 	public static boolean deleteFile(String path) {
-		try {
-			File file = new File(path);
-			if (file.exists())
-				file.delete();
-			return true;
-		} catch (Exception e) {
-			writeLog(FileUtils.class.toString(), "deleteFile:" + e.toString());
+		File file = new File(path);
+		if (file.exists()) {
+			return file.delete();
 		}
-		return false;
+		return true;
+	}
+
+	/**
+	 * 删除文件,带有重试次数和时间参数
+	 * 文件删除至少执行一次
+	 * @param path
+	 * @param tryCount 大于0
+	 * @param intervalMillsSecond 单位毫秒
+	 */
+	public static void deleteFile(String path,int tryCount,int intervalMillsSecond) throws InterruptedException {
+		do{
+			File file =  new File(path);
+			if(!file.exists()){
+				break;
+			}
+			if(!file.canWrite()){
+				Thread.sleep(intervalMillsSecond);
+			}else{
+				if(file.delete()) {
+					break;
+				}
+			}
+		}while(tryCount-- >= 0);
 	}
 
 	/**
@@ -515,6 +534,30 @@ public class FileUtils {
 
 	/**
 	 * 带进度的文件拷贝
+	 *
+	 * @param srcPath
+	 * @param destPath
+	 * @throws IOException
+	 */
+	public static void copyFile(String srcPath,String destPath ) throws IOException {
+		copyFileByFileChannel(new File(srcPath),new File(destPath),null);
+	}
+
+	/**
+	 * 带进度的文件拷贝
+	 *
+	 * @param srcPath
+	 * @param destPath
+	 * @param fileCopyActionCallBack
+	 *            当fileCopyActionCallBack为null的时候,将不会更新进度;
+	 * @throws IOException
+	 */
+	public static void copyFile(String srcPath,String destPath, RateCallBackI fileCopyActionCallBack) throws IOException {
+		copyFileByFileChannel(new File(srcPath),new File(destPath),fileCopyActionCallBack);
+	}
+
+	/**
+	 * 带进度的文件拷贝
 	 * 
 	 * @param source
 	 * @param target
@@ -738,4 +781,6 @@ public class FileUtils {
 			return true;
 		}
 	}
+
+
 }

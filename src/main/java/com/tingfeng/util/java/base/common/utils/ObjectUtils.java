@@ -106,8 +106,18 @@ public class ObjectUtils {
 	 */
 	public static boolean isNull(Object obj) {
 
+		return isNull(obj,false);
+	}
+
+	/**
+	 * 传入的对象是否为null（String是否等于空串）
+	 * @param obj java对象
+	 * @return 对象为null或者空：true，以外：false
+	 */
+	public static boolean isNull(Object obj,boolean isTrim) {
+
 		if (obj instanceof String) {
-			return null == obj || "".equals(obj);
+			return null == obj || "".equals(((String) obj).trim());
 		}
 
 		return null == obj;
