@@ -783,4 +783,37 @@ public class FileUtils {
 	}
 
 
+
+	public static void saveFile(File file, String destPath, String destFileName) throws IOException {
+		saveFile(new FileInputStream(file),destPath,destFileName);
+	}
+
+	/**
+	 * 保存文件。（保留原有文件名）
+	 * @param inputStream 输入文件流
+	 * @param destPath 保存路径
+	 * @param destFileName 文件名
+	 */
+	public static void saveFile(InputStream inputStream, String destPath, String destFileName) throws IOException {
+		int bytesum = 0;
+		int byteread;
+		FileOutputStream fs = null;
+		try {
+			fs = new FileOutputStream(destPath + destFileName);
+			byte[] buffer = new byte[1444];
+			while ((byteread = inputStream.read(buffer)) != -1) {
+				bytesum += byteread;
+				System.out.println(bytesum);
+				fs.write(buffer, 0, byteread);
+			}
+		}finally {
+			if (fs != null){
+				try {
+					fs.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 }

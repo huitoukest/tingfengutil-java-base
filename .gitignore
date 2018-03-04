@@ -35,3 +35,4 @@ captures/
 /.settings
 /target
 /src/target/classes
+/*.iml
