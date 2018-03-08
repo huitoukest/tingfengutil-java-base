@@ -195,7 +195,10 @@ public class ObjectUtils {
         }
         return false;
     }
-	
+
+	public static boolean isEmpty(Object obj) {
+		return isEmpty(true,obj);
+	}
 	/**
 	 * 传入的对象是否为空（String是否等于空串，数组和集合,Map是否有内容）
 	 * @param isTrim 字符串是否自动trim
@@ -264,7 +267,9 @@ public class ObjectUtils {
 	       }
 	       return (T)v;
 	}
-	
-	
-	
+
+
+	public static boolean isNotEmpty(Object obj) {
+		return !isEmpty(obj);
+	}
 }
