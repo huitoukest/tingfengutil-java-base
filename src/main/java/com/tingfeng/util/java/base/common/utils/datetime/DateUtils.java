@@ -7,8 +7,8 @@ import java.util.Date;
 import java.util.Locale;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringConversionUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringJudgeUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 /**
  * 关于时间和日期的工具类，包含一些常用处理时间的函数
@@ -205,11 +205,11 @@ public class DateUtils {
 		String[] sa, sb;
 		// 包装sa的值大于sb;
 		if (dateA.getTime() < dateB.getTime()) {
-			sb = StringConversionUtils.getStringByDate(dateA, formatString).split(":");
-			sa = StringConversionUtils.getStringByDate(dateB, formatString).split(":");
+			sb = StringConvertUtils.getStringByDate(dateA, formatString).split(":");
+			sa = StringConvertUtils.getStringByDate(dateB, formatString).split(":");
 		} else {
-			sa = StringConversionUtils.getStringByDate(dateA, formatString).split(":");
-			sb = StringConversionUtils.getStringByDate(dateB, formatString).split(":");
+			sa = StringConvertUtils.getStringByDate(dateA, formatString).split(":");
+			sb = StringConvertUtils.getStringByDate(dateB, formatString).split(":");
 		}
 		ConvertI<Integer, Object> convertI = new ConvertI<Integer, Object>() {
 			@Override
@@ -475,7 +475,7 @@ public class DateUtils {
 	 */
 	public static Date getDate(String value,boolean isAutoConvert) {
 		if(isAutoConvert) {
-			if(StringJudgeUtils.isEmpty(value)) {
+			if(StringUtils.isEmpty(value)) {
 				return null;
 			}
 			String regEx = "^(\\d{4})\\D*(\\d{2})\\D*(\\d{2})\\D*"
@@ -488,7 +488,7 @@ public class DateUtils {
 				if(i< svalue.length ) {
 					tmpValue = svalue[i];
 				}
-				if(StringJudgeUtils.isEmpty(tmpValue)) {
+				if(StringUtils.isEmpty(tmpValue)) {
 					if(i == 0) {
 						sb.append("0000");
 					}else if(i == 6){

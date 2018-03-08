@@ -22,7 +22,7 @@ import java.util.Set;
 import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
 import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.inter.RateCallBackI;
-import com.tingfeng.util.java.base.common.utils.string.StringJudgeUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 public class FileUtils {
 	public static final int BUFFER_SIZE = 4096;
@@ -382,7 +382,7 @@ public class FileUtils {
 	 * @return 返回不带扩展名的文件名称
 	 */
 	public static String getFileNameNoExtentionName(String filePath) {
-		if (StringJudgeUtils.isEmpty(filePath))
+		if (StringUtils.isEmpty(filePath))
 			return filePath;
 		String fileNameString = getFileNameByPath(filePath);
 		return fileNameString.substring(0, fileNameString.indexOf("." + FileUtils.getFileExtension(fileNameString)));
@@ -394,7 +394,7 @@ public class FileUtils {
 	 * @return 返回文件的扩展名,如果扩展名不存在返回"",否则返回原值; 返回的扩展名不包含小点；
 	 */
 	public static String getFileExtension(String filePath) {
-		if (StringJudgeUtils.isEmpty(filePath))
+		if (StringUtils.isEmpty(filePath))
 			return filePath;
 		filePath = filePath.toLowerCase();
 		int dotIndex = filePath.lastIndexOf(".");
@@ -412,7 +412,7 @@ public class FileUtils {
 	 * @return
 	 */
 	public static String getFileNameByPath(String filePath) {
-		if (StringJudgeUtils.isEmpty(filePath))
+		if (StringUtils.isEmpty(filePath))
 			return filePath;
 		String path = filePath.replaceAll("\\\\", "/");
 		int index1 = path.lastIndexOf("/");
