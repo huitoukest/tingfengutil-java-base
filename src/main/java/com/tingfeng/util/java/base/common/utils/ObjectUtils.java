@@ -4,10 +4,12 @@ import java.beans.XMLDecoder;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
-
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.Map;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringConversionUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
 
 public class ObjectUtils {
 	
@@ -44,83 +46,185 @@ public class ObjectUtils {
 		if(obj==null) return null;
 		switch (cls.getName()) {
 		case ObjectTypeString.clsNameBoolean:
-			 return StringConversionUtils.getBoolean(value);
+			 return StringConvertUtils.getBoolean(value);
 		case ObjectTypeString.clsNameByte:
-			 return StringConversionUtils.getByte(value);
+			 return StringConvertUtils.getByte(value);
 		case ObjectTypeString.clsNameDate:
 			 return DateUtils.getDate(value);
 		case ObjectTypeString.clsNameLong:
-			 return StringConversionUtils.getLong(value);
+			 return StringConvertUtils.getLong(value);
 		case ObjectTypeString.clsNameInteger:
-			 return StringConversionUtils.getInteger(value);
+			 return StringConvertUtils.getInteger(value);
 		case ObjectTypeString.clsNameFloat:
-			 return StringConversionUtils.getFloat(value);
+			 return StringConvertUtils.getFloat(value);
 		case ObjectTypeString.clsNameDouble:
-			return StringConversionUtils.getDouble(value);
+			return StringConvertUtils.getDouble(value);
 		case ObjectTypeString.clsNameShort:
-			return StringConversionUtils.getShort(value);
+			return StringConvertUtils.getShort(value);
 		case ObjectTypeString.clsNameString:
 			return value;
 		case ObjectTypeString.fieldBoolean:
-			 return StringConversionUtils.getBoolean(value);
+			 return StringConvertUtils.getBoolean(value);
 		case ObjectTypeString.fieldByte:
-			 return StringConversionUtils.getByte(value);
+			 return StringConvertUtils.getByte(value);
 		case ObjectTypeString.fieldDate:
 			 return DateUtils.getDate(value);
 		case ObjectTypeString.fieldLong:
-			 return StringConversionUtils.getLong(value);
+			 return StringConvertUtils.getLong(value);
 		case ObjectTypeString.fieldInteger:
-			 return StringConversionUtils.getInteger(value);		 
+			 return StringConvertUtils.getInteger(value);		 
 		case ObjectTypeString.fieldFloat:
-			 return StringConversionUtils.getFloat(value);
+			 return StringConvertUtils.getFloat(value);
 		case ObjectTypeString.fieldDouble:
-			return StringConversionUtils.getDouble(value);
+			return StringConvertUtils.getDouble(value);
 		case ObjectTypeString.fieldShort:
-			return StringConversionUtils.getShort(value);
+			return StringConvertUtils.getShort(value);
 		case ObjectTypeString.fieldString:
 			return value;
 		case ObjectTypeString.clsNameBaseBoolean:
-			return StringConversionUtils.getBoolean(value, false);
+			return StringConvertUtils.getBoolean(value, false);
 		case ObjectTypeString.clsNameBaseByte:
-			return StringConversionUtils.getByte(value,(byte) 0);
+			return StringConvertUtils.getByte(value,(byte) 0);
 		case ObjectTypeString.clsNameBaseDouble:
-			return StringConversionUtils.getDouble(value, 0d);
+			return StringConvertUtils.getDouble(value, 0d);
 		case ObjectTypeString.clsNameBaseFloat:
-			return StringConversionUtils.getFloat(value, 0f);
+			return StringConvertUtils.getFloat(value, 0f);
 		case ObjectTypeString.clsNameBaseInt:
-			return StringConversionUtils.getInteger(value, 0);
+			return StringConvertUtils.getInteger(value, 0);
 		case ObjectTypeString.clsNameBaseLong:
-			return StringConversionUtils.getLong(value, 0L);
+			return StringConvertUtils.getLong(value, 0L);
 		case ObjectTypeString.clsNameBaseShort:
-			return StringConversionUtils.getShort(value, (short)0);
+			return StringConvertUtils.getShort(value, (short)0);
 		default:
 			break;
 		}
 		return obj;
 	}
 	
+	
+	public static boolean isAnyNull(Object... objs) {
+	    if(isNull(objs)) {
+	        return true;
+	    }
+        for(Object obj : objs) {
+                if(isNull(obj)) {
+                    return true;
+                }
+        }
+       return false;
+    }
+	
+	public static boolean isAllNull(Object... objs) {
+	    if(!isNull(objs)) {
+            for(Object obj : objs) {
+                if(!isNull(obj)) {
+                    return false;
+                }
+            }
+        }
+       return true;
+    }
+	
+	public static boolean isNotNull(Object obj) {
+        return !isNull(obj);
+    }
+	
+	public static boolean isAllNotNull(Object... objs) {
+	    if(!isNull(objs)) {
+            for(Object obj : objs) {
+                if(isNull(obj)) {
+                    return false;
+                }
+            }
+        }
+       return true;
+    }
+	
+	public static boolean isAnyNotNull(Object... objs) {
+        if(!isNull(objs)) {
+            for(Object obj : objs) {
+                if(!isNull(obj)) {
+                    return true;
+                }
+            }
+        }
+       return false;
+    }
+	
 	/**
-	 * 传入的对象是否为null（String是否等于空串）
+	 * 传入的对象是否为null
 	 * @param obj java对象
 	 * @return 对象为null或者空：true，以外：false
 	 */
 	public static boolean isNull(Object obj) {
-
-		return isNull(obj,false);
+		return null == obj;
 	}
 
 	/**
-	 * 传入的对象是否为null（String是否等于空串）
+     * 传入的所有对象是否为空（String是否等于空串，数组和集合,Map是否有内容）
+     * @param isTrim 字符串是否自动trim
+     * @param objs java对象的组数
+     * @return 对象为null或者空：true，以外：false
+     */
+	public static boolean isAllEmpty(boolean isTrim,Object... objs) {
+        if(isEmpty(isTrim,objs)) {
+            return true;
+        }
+	    for(Object obj : objs ) {
+	        if(!isEmpty(isTrim,obj)) {
+	            return false;
+	        }
+	    }
+	    return true;
+	}
+	
+	/**
+	 * 其中的对象是否有空对象
+	 * @param isTrim
+	 * @param objs
+	 * @return
+	 */
+	public static boolean isAnyEmpty(boolean isTrim,Object... objs) {
+        if(isEmpty(isTrim,objs)) {
+            return true;
+        }
+        for(Object obj : objs ) {
+            if(isEmpty(isTrim,obj)) {
+                return true;
+            }
+        }
+        return false;
+    }
+	
+	/**
+	 * 传入的对象是否为空（String是否等于空串，数组和集合,Map是否有内容）
+	 * @param isTrim 字符串是否自动trim
 	 * @param obj java对象
 	 * @return 对象为null或者空：true，以外：false
 	 */
-	public static boolean isNull(Object obj,boolean isTrim) {
-
-		if (obj instanceof String) {
-			return null == obj || "".equals(((String) obj).trim());
+	public static boolean isEmpty(boolean isTrim,Object obj) {
+        if(isNull(obj)) {
+            return true;
+        }
+        if (obj instanceof String) {
+            String tmp = (String)obj;          
+            if(isTrim) {
+                tmp = tmp.trim();
+            }
+            return "".equals(tmp);
 		}
-
-		return null == obj;
+        if(obj.getClass().isArray()) {
+            return Array.getLength(obj) <= 0;
+        }
+        if(obj instanceof Collection<?>) {
+            return ((Collection<?>) obj).size() <= 0;
+        }
+        
+        if(obj instanceof Map<?,?>) {
+            return ((Map<?,?>) obj).size() <= 0;
+        }
+        
+        return false;
 	}
 
 	/**
@@ -138,4 +242,29 @@ public class ObjectUtils {
 			return false;
 		}
 	}
+	
+	/**
+	 * 遇到空值的时候就返回默认值
+	 * 如果没有空值，则返回最后一个values中的值
+	 * @param defaultValue
+	 * @param values
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+    public static <T> T getValue(T defaultValue,Object ... values) {
+	       if(null == values) {
+	           return defaultValue;
+	       }
+	       Object v = null;
+	       for(Object obj : values) {
+	           if(isNull(obj)) {
+	               return defaultValue;
+	           }
+	           v = obj;
+	       }
+	       return (T)v;
+	}
+	
+	
+	
 }

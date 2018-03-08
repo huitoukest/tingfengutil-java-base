@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -21,7 +22,7 @@ import com.tingfeng.util.java.base.common.utils.LogUtils;
  * @author huitoukest
  *
  */
-public class StringConversionUtils {
+public class StringConvertUtils {
 	
 	
 	
@@ -445,7 +446,7 @@ public class StringConversionUtils {
 				Tstr = QJstr.substring(i, i + 1);
 				b = Tstr.getBytes("unicode");
 			} catch (java.io.UnsupportedEncodingException e) {
-				LogUtils.info(StringConversionUtils.class, e);
+				LogUtils.info(StringConvertUtils.class, e);
 			}
 			if (b[3] == -1) {
 				b[2] = (byte) (b[2] + 32);
@@ -453,7 +454,7 @@ public class StringConversionUtils {
 				try {
 					outStr = outStr + new String(b, "unicode");
 				} catch (java.io.UnsupportedEncodingException ex) {
-					LogUtils.info(StringConversionUtils.class, ex);
+					LogUtils.info(StringConvertUtils.class, ex);
 				}
 			} else {
 				outStr = outStr + Tstr;
@@ -471,7 +472,7 @@ public class StringConversionUtils {
 	 */
 	public static String toDecodeStringUrl(String url,String encoding) {
 		String trem = "";
-		if (StringJudgeUtils.isNotEmpty(url)) {
+		if (StringUtils.isNotEmpty(url)) {
 			try {
 				trem = URLDecoder.decode(url,encoding);
 			} catch (UnsupportedEncodingException e) {
@@ -480,4 +481,102 @@ public class StringConversionUtils {
 		}
 		return trem;
 	}
+	
+	/**
+     * 数字转字符串
+     * @param num
+     * @param minValue 如果小于minValue，则输出""
+     * @return
+     */
+    public static String getStringByNumbernumber(Number num,double minValue) {
+        if (num == null) {
+            return null;
+        } else if (num instanceof Integer && (Integer) num > minValue) {
+            return Integer.toString((Integer) num);
+        } else if (num instanceof Long && (Long) num > minValue) {
+            return Long.toString((Long) num);
+        } else if (num instanceof Float && (Float) num > minValue) {
+            return Float.toString((Float) num);
+        } else if (num instanceof Double && (Double) num > minValue) {
+            return Double.toString((Double) num);
+        } else {
+            return "";
+        }
+    }
+    
+    /**
+     * 根据传入的分割符号,把传入的字符串分割为List字符串
+     * 
+     * @param slipStr
+     *            分隔的字符串
+     * @param src
+     *            字符串
+     * @return 列表
+     */
+    public static List<String> toStringListBySlip(String slipSymbol, String src) {
+
+        if (src == null)
+            return null;
+        List<String> list = new ArrayList<String>();
+        String[] result = src.split(slipSymbol);
+        for (int i = 0; i < result.length; i++) {
+            list.add(result[i]);
+        }
+        return list;
+    }
+    
+    public static String camelToUnderline(String param) {
+        if(StringUtils.isEmpty(param)) {
+            return "";
+        } else {
+            int len = param.length();
+            StringBuilder sb = new StringBuilder(len);
+
+            for(int i = 0; i < len; ++i) {
+                char c = param.charAt(i);
+                if(Character.isUpperCase(c) && i > 0) {
+                    sb.append('_');
+                }
+
+                sb.append(Character.toLowerCase(c));
+            }
+
+            return sb.toString();
+        }
+    }
+
+    public static String underlineToCamel(String param) {
+        if(StringUtils.isEmpty(param)) {
+            return "";
+        } else {
+            String temp = param.toLowerCase();
+            int len = temp.length();
+            StringBuilder sb = new StringBuilder(len);
+
+            for(int i = 0; i < len; ++i) {
+                char c = temp.charAt(i);
+                if(c == 95) {
+                    ++i;
+                    if(i < len) {
+                        sb.append(Character.toUpperCase(temp.charAt(i)));
+                    }
+                } else {
+                    sb.append(c);
+                }
+            }
+
+            return sb.toString();
+        }
+    }
+
+    public static String firstToLowerCase(String param) {
+        if(StringUtils.isEmpty(param)) {
+            return "";
+        } else {
+            StringBuilder sb = new StringBuilder(param.length());
+            sb.append(param.substring(0, 1).toLowerCase());
+            sb.append(param.substring(1));
+            return sb.toString();
+        }
+    }
 }
