@@ -8,6 +8,24 @@ import java.util.UUID;
  *
  */
 public class RandomUtils {
+	private static final double minPositionValue = 1E-308;
+
+	public static double  getRandom(double min,double max){
+		return  Math.random() * (max - min) + min;
+	}
+
+	public static int  getRandom(int min,int max){
+		return  (int)( Math.random() * (max - min) + minPositionValue);
+	}
+
+	public static long  getRandom(long max){
+		return  (long)( Math.random() * max + minPositionValue);
+	}
+
+	public static int  getRandom(int max){
+		return  (int)( Math.random() * max + minPositionValue);
+	}
+
 
 	/**
 	 * 产生一个Long范围内的随机正数
