@@ -78,7 +78,7 @@ public class PoolHelper<T>{
                                             PoolHelper.this.delList.add(member);
                                         }
                                     }
-                                   //消除闲置超时
+                                    //消除闲置超时
                                     for(int j = 0; j < PoolHelper.this.delList.size() ; j ++) {
                                         member =  PoolHelper.this.delList.get(j);
                                         PoolHelper.this.idleList.remove(member);
@@ -192,6 +192,10 @@ public class PoolHelper<T>{
     }
     
     public synchronized void close(T t) {
+       if(null == t){
+            System.out.println("PoolHelper:can not close a null poolMember");
+            return;
+       }
        PoolMember<T> poolMember = runMap.get(t);       
        if(null != poolMember) {
                poolMember.setUse(false);
