@@ -7,7 +7,10 @@ import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.Callable;
+
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
+import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
 
@@ -268,6 +271,26 @@ public class ObjectUtils {
 	       return (T)v;
 	}
 
+	/**
+	 * 遇到空值的时候就返回默认值
+	 * 如果没有空值，则返回最后一个values中的值
+	 * @param defaultValue
+	 * @param convertIs 迭代获取值
+	 * @return
+	 */
+	public static <T,E> T getValue(T defaultValue, E source, ConvertI<Object,Object> ... convertIs) {
+		if(source== null){
+			return defaultValue;
+		}
+		Object v = null;
+		for(ConvertI<Object,Object> convert : convertIs) {
+			if(isNull(convert)) {
+				return defaultValue;
+			}
+			v = convert.convert(v);
+		}
+		return (T)v;
+	}
 
 	public static boolean isNotEmpty(Object obj) {
 		return !isEmpty(obj);
