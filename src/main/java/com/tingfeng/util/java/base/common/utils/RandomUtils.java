@@ -15,7 +15,7 @@ public class RandomUtils {
 	}
 
 	public static int  getRandom(int min,int max){
-		return  (int)( Math.random() * (max - min) + minPositionValue);
+		return  (int)( Math.random() * (max - min) + min + minPositionValue);
 	}
 
 	public static long  getRandom(long max){
@@ -24,6 +24,9 @@ public class RandomUtils {
 
 	public static int  getRandom(int max){
 		return  (int)( Math.random() * max + minPositionValue);
+	}
+	public static long  getRandom(long min,long max){
+		return  (long)( Math.random() * ( max - min) + min + minPositionValue);
 	}
 
 
