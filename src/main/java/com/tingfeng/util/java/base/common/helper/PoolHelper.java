@@ -190,6 +190,24 @@ public class PoolHelper<T>{
         }
         return false;
     }
+
+    /**
+     * 刷新t的状态，表示t仍然需要持续运行
+     * 刷新后将会更新其创建时间。
+     * @param t
+     */
+    public synchronized void keepRun(T t){
+        if(null == t){
+            System.out.println("PoolHelper:can not keepRun a null poolMember");
+            return;
+        }
+        PoolMember<T> poolMember = runMap.get(t);
+        if(null != poolMember) {
+            poolMember.setUse(true);
+            poolMember.setUpdateTime(System.currentTimeMillis());
+            poolMember.setCreateTime(System.currentTimeMillis());
+        }
+    }
     
     public synchronized void close(T t) {
        if(null == t){
