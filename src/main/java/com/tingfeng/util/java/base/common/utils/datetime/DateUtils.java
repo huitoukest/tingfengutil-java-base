@@ -310,11 +310,6 @@ public class DateUtils {
 
 	/**
 	 * 根据指定的年、月、日返回当前是星期几。1表示星期天、2表示星期一、7表示星期六。
-	 * 
-	 * @param year
-	 * @param month
-	 *            month是从1开始的12结束
-	 * @param day
 	 * @return 返回一个代表当期日期是星期几的数字。1表示星期天、2表示星期一、7表示星期六。
 	 */
 	public static int getDayOfWeek(Date date) {
@@ -478,29 +473,17 @@ public class DateUtils {
 			if(StringUtils.isEmpty(value)) {
 				return null;
 			}
-			String regEx = "^(\\d{4})\\D*(\\d{2})\\D*(\\d{2})\\D*"
-				    + "((\\d{2})\\D*(\\d{2})\\D*(\\d{2})\\D*(\\d{3})){0,1}$";
-			String content = value.replaceFirst(regEx, "$1@$2@$3@$5@$6@$7@$8");			
-			String[] svalue = content.split("@");
+			value = value.replaceAll("[^\\d]","");
 			StringBuilder sb = new StringBuilder(30);
-			for(int  i = 0;i < 7;i++) {//初始化数据
-				String tmpValue = null;
-				if(i< svalue.length ) {
-					tmpValue = svalue[i];
+			sb.append(value);
+			for(int  i = value.length() + 1 ; i < 18; i++) {//初始化数据
+				if(i == 5 || i == 7 || i >= 9){
+					sb.append(0);
 				}
-				if(StringUtils.isEmpty(tmpValue)) {
-					if(i == 0) {
-						sb.append("0000");
-					}else if(i == 6){
-						sb.append("000");
-					}else if(i == 1 ||i == 2){
-						sb.append("01");
-					}else {
-						sb.append("00");
-					}
-				}else {
-					sb.append(tmpValue);
+				if(i == 6 || i == 8){
+					sb.append(1);
 				}
+
 			}
 			return getDate(sb.toString(), FORMATE_YYYYMMDDHHMMSSSSS);
 		}else {
