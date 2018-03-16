@@ -278,20 +278,39 @@ public class ObjectUtils {
 	 * @param convertIs 迭代获取值
 	 * @return
 	 */
-	public static <T,E> T getValue(T defaultValue, E source, ConvertI<Object,Object> ... convertIs) {
+	public static <T,S> T getValue(T defaultValue, S source ,ConvertI<T,S> convert) {
 		if(source== null){
 			return defaultValue;
 		}
-		Object v = null;
-		for(ConvertI<Object,Object> convert : convertIs) {
-			if(isNull(convert)) {
-				return defaultValue;
-			}
-			v = convert.convert(v);
-		}
-		return (T)v;
+		T v;
+		try {
+		    v = convert.convert(source);
+		}catch (NullPointerException e) {
+		    v = defaultValue;
+        }
+		return v;
 	}
+	
+	/**
+     * 遇到空值的时候就返回默认值
+     * 如果没有空值，则返回最后一个values中的值
+     * @param defaultValue
+     * @param convertIs 迭代获取值
+     * @return
+     */
+	public static <T> T getValue(T defaultValue,Callable<T> call)  {
+        T v;
+        try {
+            v = call.call();
+        }catch (NullPointerException e) {
+            v = defaultValue;
+        }catch (Exception e) {
+           throw new RuntimeException(e);
+        }
+        return v;
+    }
 
+	
 	public static boolean isNotEmpty(Object obj) {
 		return !isEmpty(obj);
 	}
