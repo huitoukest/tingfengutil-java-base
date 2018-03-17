@@ -183,16 +183,15 @@ public class ObjectUtils {
 	
 	/**
 	 * 其中的对象是否有空对象
-	 * @param isTrim
 	 * @param objs
 	 * @return
 	 */
-	public static boolean isAnyEmpty(boolean isTrim,Object... objs) {
-        if(isEmpty(isTrim,objs)) {
+	public static boolean isAnyEmpty(Object... objs) {
+        if(isEmpty(true,objs)) {
             return true;
         }
         for(Object obj : objs ) {
-            if(isEmpty(isTrim,obj)) {
+            if(isEmpty(true,obj)) {
                 return true;
             }
         }
@@ -272,10 +271,12 @@ public class ObjectUtils {
 	}
 
 	/**
-	 * 遇到空值的时候就返回默认值
-	 * 如果没有空值，则返回最后一个values中的值
+	 *
 	 * @param defaultValue
-	 * @param convertIs 迭代获取值
+	 * @param source
+	 * @param convert
+	 * @param <T> 返回值类型
+	 * @param <S> 来源值类型
 	 * @return
 	 */
 	public static <T,S> T getValue(T defaultValue, S source ,ConvertI<T,S> convert) {
@@ -295,7 +296,7 @@ public class ObjectUtils {
      * 遇到空值的时候就返回默认值
      * 如果没有空值，则返回最后一个values中的值
      * @param defaultValue
-     * @param convertIs 迭代获取值
+     * @param call 迭代获取值
      * @return
      */
 	public static <T> T getValue(T defaultValue,Callable<T> call)  {
