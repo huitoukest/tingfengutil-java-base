@@ -54,7 +54,7 @@ public class PoolHelper<T>{
                                                 PoolHelper.this.poolMemberAction.onOverMaxRunTime(member.getMember());
                                                 continue;
                                             }
-                                        }catch (Exception e) {
+                                        }catch (Throwable e) {
                                             e.printStackTrace();
                                         }
                                         if(!member.isUse()) {
@@ -84,9 +84,9 @@ public class PoolHelper<T>{
                                         PoolHelper.this.idleList.remove(member);
                                         PoolHelper.this.poolMemberAction.destroy(member.getMember());
                                     }
-                                }catch (Exception e) {
+                                }catch (Throwable e) {
                                    e.printStackTrace();
-                                   PoolHelper.this.poolMemberAction.onWorkException(e);
+                                   PoolHelper.this.poolMemberAction.onWorkException(member.getMember(),e);
                                 }
                                 //如果停止标记，并且当前再没有任务
                                 if(isShutDown && PoolHelper.this.idleList.size() == 0 && PoolHelper.this.runingList.size() == 0) {
@@ -114,13 +114,13 @@ public class PoolHelper<T>{
     public PoolHelper(PoolMemberActionI<T>  poolMemberAction,PoolBaseInfo poolBaseInfo) {
         this.poolBaseInfo = poolBaseInfo;
         this.poolMemberAction = poolMemberAction;
-        startPoll();
+        startPool();
     }
     
     public PoolHelper(PoolMemberActionI<T>  poolMemberAction) {
         this.poolBaseInfo =  new PoolBaseInfo();
         this.poolMemberAction = poolMemberAction;
-        startPoll();
+        startPool();
     }    
     
     public synchronized int getPoolSize() {
@@ -224,14 +224,14 @@ public class PoolHelper<T>{
     /**
      * when all member is close,it will shutDown
      */
-    public synchronized void shutDownPoll() {
+    public synchronized void shutDownPool() {
         isShutDown = true;
     }
     
     /**
      * when all member is close,it will shutDown
      */
-    public synchronized void startPoll() {
+    public synchronized void startPool() {
         isShutDown = false;
         workCheck();
     }
