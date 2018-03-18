@@ -20,5 +20,5 @@ public interface PoolMemberActionI<T> {
         * 当运行空闲检测时发生一次，比如调用destroy发生异常
         * @param e
         */
-       public void onWorkException(Exception e); 
+       public void onWorkException(T t,Throwable e);
 }
