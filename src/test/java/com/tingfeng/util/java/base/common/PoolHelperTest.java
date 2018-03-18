@@ -54,7 +54,7 @@ public class PoolHelperTest {
             }
 
             @Override
-            public void onWorkException(Exception e) {
+            public void onWorkException(Runnable t,Throwable e) {
                 System.out.println("onWorkException : " + e.getStackTrace() );
             }
         },baseInfo);
