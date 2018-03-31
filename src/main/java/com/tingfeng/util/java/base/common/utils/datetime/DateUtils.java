@@ -24,9 +24,13 @@ public class DateUtils {
 	public static final String FORMATE_YYYYMMDD = "yyyyMMdd";
 	/** DateFormat:HH:mm:ss */
 	public static final String FORMATE_HHMMSS = "HHmmss";
+	public static final String FORMATE_YYYYMM = "yyyyMM";
+	public static final String FORMATE_YYYY = "yyyy";
 
 	/** DateFormat:yyyy-MM-dd */
 	public static final String FORMATE_YYYYMMDD_UNDERLIN = "yyyy-MM-dd";
+	/** DateFormat:yyyy-MM */
+	public static final String FORMATE_YYYYMM_UNDERLIN = "yyyy-MM";
 	/** DateFormat:yyyy-MM-dd HH:mm:ss */
 	public static final String FORMATE_YYYYMMDDHHMMSS_UNDERLIN = "yyyy-MM-dd HH:mm:ss";
 	/** DateFormat:yyyy-MM-dd HH:mm:ss.SSS */
@@ -34,6 +38,9 @@ public class DateUtils {
 
 	/** 年月日格式 */
 	public static final String FORMATE_YYYYMMDD_CHN = "yyyy年MM月dd日";
+	/** 年月格式 */
+	public static final String FORMATE_YYYYMM_CHN = "yyyy年MM月";
+
 	/** 年月日格式时分秒 */
 	public static final String FORMATE_YYYYMMDDHHMMSS_CHN = "yyyy年MM月dd日 HH:mm:ss";
 	/** 年月日格式 时分秒毫秒 */

@@ -1,9 +1,7 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import java.beans.XMLDecoder;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
@@ -315,4 +313,30 @@ public class ObjectUtils {
 	public static boolean isNotEmpty(Object obj) {
 		return !isEmpty(obj);
 	}
+
+
+	public static <T> void deepCopyArray(T[] src,T[] dest) {
+		if(null != src) {
+			System.arraycopy(src, 0, dest, 0, src.length);
+		}
+	}
+
+	public static <T> T clone(T src){
+		return deepCopy(src);
+	}
+
+	public static <T> T deepCopy(T src){
+		try {
+			ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+			ObjectOutputStream out = null;
+			out = new ObjectOutputStream(byteOut);
+			out.writeObject(src);
+			ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+			ObjectInputStream in =new ObjectInputStream(byteIn);
+			return (T)in.readObject();
+		} catch (Throwable e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 }
