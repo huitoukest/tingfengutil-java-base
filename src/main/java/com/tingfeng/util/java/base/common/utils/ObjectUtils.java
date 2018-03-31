@@ -229,6 +229,67 @@ public class ObjectUtils {
         
         return false;
 	}
+	
+	/**
+	 * 不仅仅检查数组和map等容器是否有内容，同时递归检查容器中的内容是否全部为空。
+	 * @param obj
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+    public static boolean isDeepEmpty(Object obj){
+        if(null == obj){
+            return true;
+        }
+        if(obj instanceof Map){
+            Map<Object,Object> map = ((Map<Object,Object>) obj);
+            if(map.isEmpty()){
+                return true;
+            }
+            int emptySize = 0;
+            for(Object key : map.keySet()){
+                if(isDeepEmpty(map.get(key))){
+                    emptySize++;
+                }
+            }
+            if(emptySize == map.size()){
+                return true;
+            }
+        }
+        if(obj instanceof Collection){
+            Collection<Object> data = (Collection<Object>) obj;
+            if(data.isEmpty()){
+                return true;
+            }
+            int emptySize = 0;
+            for(Object key : data){
+                if(isDeepEmpty(key)){
+                    emptySize++;
+                }
+            }
+            if(emptySize == data.size()){
+                return true;
+            }
+        }
+        if(obj instanceof String && "".equals(obj)){
+            return true;
+        }
+        if(obj.getClass().isArray()) {
+            Object[] data  = (Object[])obj;
+            if(data.length <= 0){
+                return true;
+            }
+            int emptySize = 0;
+            for(Object key : data){
+                if(isDeepEmpty(key)){
+                    emptySize++;
+                }
+            }
+            if(emptySize == data.length){
+                return true;
+            }
+        }
+        return false;
+    }
 
 	/**
 	 * 传入的两个String对象是否相等
