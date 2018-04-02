@@ -149,6 +149,28 @@ public class StringUtils {
     public static boolean contains(String[] stringArray, String source) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
+        for(String s:tempList){
+            if(s != null && s.indexOf(source) >=0){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean hashAny(String source,String[] stringArray) {
+        // 转换为list
+        List<String> tempList = Arrays.asList(stringArray);
+        for(String s:tempList){
+            if(s != null && source.indexOf(s) >=0){
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean completeContains(String[] stringArray, String source) {
+        // 转换为list
+        List<String> tempList = Arrays.asList(stringArray);
         // 利用list的包含方法,进行判断
         if (tempList.contains(source)) {
             return true;
