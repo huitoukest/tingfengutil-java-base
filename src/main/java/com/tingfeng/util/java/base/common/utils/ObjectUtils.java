@@ -386,7 +386,8 @@ public class ObjectUtils {
 		return deepCopy(src);
 	}
 
-	public static <T> T deepCopy(T src){
+	@SuppressWarnings("unchecked")
+    public static <T> T deepCopy(T src){
 		try {
 			ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
 			ObjectOutputStream out = null;
