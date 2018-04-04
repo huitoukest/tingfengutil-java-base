@@ -5,6 +5,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
@@ -12,6 +15,7 @@ import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 /**
  * 关于时间和日期的工具类，包含一些常用处理时间的函数
+ * 因为SimpleDateFormat 是线程不安全的所以使用加锁处理
  * 
  */
 public class DateUtils {
@@ -53,6 +57,40 @@ public class DateUtils {
 	/** yyyy/MM/dd HH:mm:ss.SSS */
 	public static final String FORMATE_YYYYMMDDHHMMSSSSS_OBLINE = "yyyy/MM/dd HH:mm:ss.SSS";
 
+	private static final Map<String,SimpleDateFormat> DATE_FORMATE_MAP = new ConcurrentHashMap<>(25); 
+	
+	//初始化,对常用的格式进行缓存
+	static {
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD,new SimpleDateFormat(FORMATE_YYYYMMDD));
+	    DATE_FORMATE_MAP.put(FORMATE_HHMMSS,new SimpleDateFormat(FORMATE_HHMMSS));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMM,new SimpleDateFormat(FORMATE_YYYYMM));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYY,new SimpleDateFormat(FORMATE_YYYY));
+	    
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMMDD_UNDERLIN));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMM_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMM_UNDERLIN));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_UNDERLIN));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_UNDERLIN));
+	    
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD_CHN,new SimpleDateFormat(FORMATE_YYYYMMDD_CHN));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMM_CHN,new SimpleDateFormat(FORMATE_YYYYMM_CHN));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_CHN));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_CHN));
+	    
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDD_OBLINE));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_OBLINE));
+	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE));
+	}
+	
+	private static SimpleDateFormat getSimpleDateFormat(String formateString) {
+	    SimpleDateFormat simpleDateFormat = DATE_FORMATE_MAP.get(formateString);
+	    if( simpleDateFormat == null) {
+	        return new SimpleDateFormat(formateString);
+	    }
+	    return simpleDateFormat;
+	}
+	
 	/*************************************
 	 * 时间获得与计算
 	 **************************************/
@@ -403,8 +441,8 @@ public class DateUtils {
 	 *            日期格式字符串
 	 * @return String 指定格式的日期字符串.
 	 */
-	public static String getDateString(Date date, String format) {
-		SimpleDateFormat sdf = new SimpleDateFormat(format);
+	public synchronized static String getDateString(Date date, String format) {
+		SimpleDateFormat sdf = getSimpleDateFormat(format);
 		return sdf.format(date);
 	}
 
@@ -435,8 +473,8 @@ public class DateUtils {
 	 *            异常或者value是null时返回默认值
 	 * @return 默认先用Long来获取毫秒数,失败后再用时间格式来获取相应的时间;
 	 */
-	public static Date getDate(String value, String formateString, Date defaultValue) {
-		SimpleDateFormat sdf = new SimpleDateFormat(formateString);
+	public synchronized static Date getDate(String value, String formateString, Date defaultValue) {
+		SimpleDateFormat sdf = getSimpleDateFormat(formateString);
 		if (value == null)
 			return defaultValue;
 		Date date = null;
@@ -498,12 +536,12 @@ public class DateUtils {
 		}	
 	}
 
-	/** 默认转换"yyyy-MM-dd HH:mm:ss"支持的格式
+	/** 默认转换自动转换日期格式支持的格式
 	 * @param value
 	 * @return
 	 */
 	public static Date getDate(String value) {
-		return getDate(value,false);
+		return getDate(value,true);
 	}
 
 	/*************************************
