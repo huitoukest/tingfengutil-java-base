@@ -131,6 +131,9 @@ public class CSVUtil {
     					content = getCSVLineData(data,sb);
     					bufferedWriter.append(content);
     				}
+    				if(content.length() <= 0){
+                        bufferedWriter.append(" ");
+                    }
     				if (susbs.size() >= csvDbWriter.getCountOfPerExport()) {
     					return this.write(bufferedWriter);
     				}
