@@ -157,15 +157,18 @@ public class StringUtils {
         return false;
     }
 
-    public static boolean hashAny(String source,String[] stringArray) {
-        // 转换为list
-        List<String> tempList = Arrays.asList(stringArray);
-        for(String s:tempList){
+    public static boolean hashAny(String source,List<String> stringArray) {
+        for(String s:stringArray){
             if(s != null && source.indexOf(s) >=0){
                 return true;
             }
         }
         return false;
+    }
+    public static boolean hashAny(String source,String[] stringArray) {
+        // 转换为list
+        List<String> tempList = Arrays.asList(stringArray);
+        return hashAny(source,stringArray);
     }
 
     public static boolean completeContains(String[] stringArray, String source) {
