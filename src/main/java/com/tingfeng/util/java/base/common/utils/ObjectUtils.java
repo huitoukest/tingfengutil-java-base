@@ -214,15 +214,19 @@ public class ObjectUtils {
         }
         return false;
     }
-    
-	/**
-	 * 传入的对象是否为空（String是否等于空串，数组和集合,Map是否有内容）
-	 * @param isTrim 字符串是否自动trim
-	 * @param obj java对象
-	 * @return 对象为null或者空：true，以外：false
-	 */
+
+
 	public static boolean isEmpty(Object obj,boolean isTrim) {
-	    return isEmpty(obj,false,isTrim);
+		return isEmpty(obj,false,isTrim);
+	}
+
+	/**
+	 * null or empt String ，不会trim
+	 * @param obj
+	 * @return
+	 */
+	public static boolean isEmpty(Object obj) {
+	    return isEmpty(obj,false,false);
 	}
 	
 	/**
@@ -230,7 +234,6 @@ public class ObjectUtils {
 	 * @param obj
 	 * @param recursive 是否递归检查容器
 	 * @param isTrim 是否trim
-	 * @param deal
 	 * @return
 	 */
     public static boolean isEmpty(Object obj,boolean recursive,final boolean isTrim){
