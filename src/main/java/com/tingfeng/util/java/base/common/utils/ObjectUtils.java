@@ -2,18 +2,37 @@ package com.tingfeng.util.java.base.common.utils;
 
 import java.beans.XMLDecoder;
 import java.io.*;
-import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
 
 public class ObjectUtils {
 	
+    public static <S,T> T dealObject(S source,boolean recursive,boolean isTrim,ObjectDealReturnInter<S,T> deal) {
+        if(null == source){
+            return deal.dealCommonObject(source);
+        }
+        if(source instanceof Map){
+            return deal.dealMap(source, recursive);
+        }
+        if(source instanceof Collection){
+            return deal.dealCollection(source, recursive);
+        }
+        if(source instanceof String){
+            return deal.dealString(source,isTrim);
+        }
+        if(source.getClass().isArray()) {
+            return deal.dealArray(source, recursive);
+        }
+        return deal.dealCommonObject(source);
+    }
+    
 	/**
 	 * 把xml 转为object
 	 * 
@@ -168,11 +187,11 @@ public class ObjectUtils {
      * @return 对象为null或者空：true，以外：false
      */
 	public static boolean isAllEmpty(boolean isTrim,Object... objs) {
-        if(isEmpty(isTrim,objs)) {
+        if(isEmpty(objs,isTrim)) {
             return true;
         }
 	    for(Object obj : objs ) {
-	        if(!isEmpty(isTrim,obj)) {
+	        if(!isEmpty(obj,isTrim)) {
 	            return false;
 	        }
 	    }
@@ -185,119 +204,120 @@ public class ObjectUtils {
 	 * @return
 	 */
 	public static boolean isAnyEmpty(Object... objs) {
-        if(isEmpty(true,objs)) {
+        if(isEmpty(objs,true)) {
             return true;
         }
         for(Object obj : objs ) {
-            if(isEmpty(true,obj)) {
+            if(isEmpty(obj,true)) {
                 return true;
             }
         }
         return false;
     }
-
-	public static boolean isEmpty(Object obj) {
-		return isEmpty(true,obj);
-	}
+    
 	/**
 	 * 传入的对象是否为空（String是否等于空串，数组和集合,Map是否有内容）
 	 * @param isTrim 字符串是否自动trim
 	 * @param obj java对象
 	 * @return 对象为null或者空：true，以外：false
 	 */
-	public static boolean isEmpty(boolean isTrim,Object obj) {
-        if(isNull(obj)) {
-            return true;
-        }
-        if (obj instanceof String) {
-            String tmp = (String)obj;          
-            if(isTrim) {
-                tmp = tmp.trim();
-            }
-            return "".equals(tmp);
-		}
-        if(obj.getClass().isArray()) {
-            return Array.getLength(obj) <= 0;
-        }
-        if(obj instanceof Collection<?>) {
-            return ((Collection<?>) obj).size() <= 0;
-        }
-        
-        if(obj instanceof Map<?,?>) {
-            return ((Map<?,?>) obj).size() <= 0;
-        }
-        
-        return false;
+	public static boolean isEmpty(Object obj,boolean isTrim) {
+	    return isEmpty(obj,false,isTrim);
 	}
 	
 	/**
-	 * 不仅仅检查数组和map等容器是否有内容，同时递归检查容器中的内容是否全部为空。
+	 * 
 	 * @param obj
+	 * @param recursive 是否递归检查容器
+	 * @param isTrim 是否trim
+	 * @param deal
 	 * @return
 	 */
-	@SuppressWarnings("unchecked")
-    public static boolean isDeepEmpty(Object obj){
-        if(null == obj){
-            return true;
-        }
-        if(obj instanceof Map){
-            Map<Object,Object> map = ((Map<Object,Object>) obj);
-            if(map.isEmpty()){
-                return true;
-            }
-            int emptySize = 0;
-            for(Object key : map.keySet()){
-                if(isDeepEmpty(map.get(key))){
-                    emptySize++;
-                }
-            }
-            if(emptySize == map.size()){
-                return true;
-            }
-        }
-        if(obj instanceof Collection){
-            Collection<Object> data = (Collection<Object>) obj;
-            if(data.isEmpty()){
-                return true;
-            }
-            int emptySize = 0;
-            for(Object key : data){
-                if(isDeepEmpty(key)){
-                    emptySize++;
-                }
-            }
-            if(emptySize == data.size()){
-                return true;
-            }
-        }
-        if(obj instanceof String && "".equals(obj)){
-            return true;
-        }
-        if(obj.getClass().isArray()) {
-            Object[] data  = (Object[])obj;
-            if(data.length <= 0){
-                return true;
-            }
-            int emptySize = 0;
-            for(Object key : data){
-                if(isDeepEmpty(key)){
-                    emptySize++;
-                }
-            }
-            if(emptySize == data.length){
-                return true;
-            }
-        }
-        return false;
-    }
+    public static boolean isEmpty(Object obj,boolean recursive,final boolean isTrim){
+	    return dealObject(obj,recursive,isTrim,new ObjectDealReturnInter<Object,Boolean>(){
 
+	        @Override
+            public Boolean dealCollection(Object obj, boolean recursive) {
+                @SuppressWarnings("unchecked")
+                Collection<Object> data = (Collection<Object>) obj;
+                if(data.isEmpty()){
+                    return true;
+                }
+                if(recursive) {
+                    for(Object key : data){
+                        if(!isEmpty(key,recursive,isTrim)){
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean dealMap(Object obj, boolean recursive) {
+                @SuppressWarnings("unchecked")
+                Map<Object,Object> map = ((Map<Object,Object>) obj);
+                if(map.isEmpty()){
+                    return true;
+                }
+                if(recursive) {
+                    for(Object key : map.keySet()){
+                        if(!isEmpty(key,recursive,isTrim)){
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean dealArray(Object obj, boolean recursive) {
+                Object[] data  = (Object[])obj;
+                if(data.length <= 0){
+                    return true;
+                }
+                if(recursive) {
+                    for(Object key : data){
+                        if(!isEmpty(key,recursive,isTrim)){
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean dealString(Object obj, boolean isTrim) {
+                String str = obj.toString();
+                if(isTrim) {
+                    str = str.trim();
+                }
+                if("".equals(str)){
+                    return true;
+                }
+                return false;
+            }
+
+            @Override
+            public Boolean dealCommonObject(Object obj) {
+                if(null == obj){
+                    return true;
+                }
+                return false;
+            }
+	        
+	    });
+    }
 	/**
 	 * 传入的两个String对象是否相等
 	 * @param str1 String对象1
 	 * @param str2 String对象2
 	 * @return 两个对象相等：true，以外：false
 	 */
-	public static boolean isEquals(String str1, String str2) {
+	public static boolean equals(String str1, String str2) {
 		if ((isNull(str1) && isNull(str2))
 				|| (str1 != null && str1.equals(str2))
 				|| (str2 != null && str2.equals(str1))) {
@@ -372,7 +392,7 @@ public class ObjectUtils {
 
 	
 	public static boolean isNotEmpty(Object obj) {
-		return !isEmpty(obj);
+		return !isEmpty(obj,true);
 	}
 
 
