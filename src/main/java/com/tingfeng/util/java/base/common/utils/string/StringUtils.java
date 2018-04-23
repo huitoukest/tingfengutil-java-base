@@ -138,7 +138,7 @@ public class StringUtils {
     }
     
     /**
-     * 判断某个字符串是否存在于数组中
+     * 判断某个字符串是否是存在于数组中某一个子串的subStr
      * 
      * @param stringArray
      *            原数组
@@ -146,7 +146,7 @@ public class StringUtils {
      *            查找的字符串
      * @return 是否找到
      */
-    public static boolean contains(String[] stringArray, String source) {
+    public static boolean isAnyItemContainsSource(String[] stringArray,String source) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
         for(String s:tempList){
@@ -157,7 +157,9 @@ public class StringUtils {
         return false;
     }
 
-    public static boolean hashAny(String source,List<String> stringArray) {
+
+    
+    public static boolean isContainsAnyItem(String source,List<String> stringArray) {
         for(String s:stringArray){
             if(s != null && source.indexOf(s) >=0){
                 return true;
@@ -165,21 +167,25 @@ public class StringUtils {
         }
         return false;
     }
-    public static boolean hashAny(String source,String[] stringArray) {
+    public static boolean isContainsAnyItem(String source,String[] stringArray) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
-        return hashAny(source,stringArray);
+        return isContainsAnyItem(source,tempList);
     }
-
-    public static boolean completeContains(String[] stringArray, String source) {
+    
+    public static boolean isAllItemContainsSource(String[] stringArray, String source) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
-        // 利用list的包含方法,进行判断
-        if (tempList.contains(source)) {
-            return true;
-        } else {
-            return false;
+        for(String s:tempList){
+            if(null == source) {
+                if(null != s) {
+                    return false;
+                }
+            }else if(s != null && s.indexOf(source) < 0) {
+                return false;
+            }
         }
+        return true;
     }
  
     /**
