@@ -16,6 +16,9 @@ import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.utils.RandomUtils;
 import com.tingfeng.util.java.base.file.FileUtils;
 
+/**
+ * WebService的工具类
+ */
 public class WebServiceUtils {
 	public static int http_connection_timeout = 60 * 1000;
 	/**
@@ -154,8 +157,6 @@ public class WebServiceUtils {
 		return s;
 	}
 	/**
-	 * 
-	 * @param conn
 	 *            HttpURLConnection,一个连接好的Http连接,并且此方法只是post数据,不管理此连接的生命周期
 	 * @param wsdlUrl
 	 * @param namespace

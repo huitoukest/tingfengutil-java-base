@@ -13,18 +13,37 @@ import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
  *	用反射来判断的一个工具类
  */
 public class ReflectJudgeUtils {
+	/**
+	 * 是否是静态方法
+	 * @param cls 类名
+	 * @param methodName 方法名称
+	 * @param parameterTypes 每个参数的类型
+	 * @return
+	 * @throws NoSuchMethodException
+	 * @throws SecurityException
+	 */
 	public static boolean isStaticMethod(Class<?> cls,String methodName,Class<?> ...parameterTypes) throws NoSuchMethodException, SecurityException
 	{
 		Method method = cls.getMethod(methodName, parameterTypes);
 		int  modifiers  = method.getModifiers();
 		return Modifier.isStatic(modifiers); 
 	}
-	
+
+	/**
+	 * 是否是静态方法
+	 * @param method
+	 * @return
+	 */
 	public static boolean isStaticMethod(Method method){
 		int  modifiers  = method.getModifiers();
 		return Modifier.isStatic(modifiers); 
 	}
-	
+
+	/**
+	 * 是否是静态属性
+	 * @param field
+	 * @return
+	 */
 	public static boolean isStaticField(Field field){
 	        boolean isStatic = Modifier.isStatic(field.getModifiers());
 	        return isStatic;
@@ -32,7 +51,7 @@ public class ReflectJudgeUtils {
 	
 	
 	/**
-	 * 判断这个类是不是java自带的类,几是否是java.lang/math/utils包中自带的类;
+	 * 判断这个类是不是java.lang/math/utils包中自带的类;
 	 * @param clazz
 	 * @return
 	 */
@@ -50,7 +69,7 @@ public class ReflectJudgeUtils {
 	}
 	/**
 	 * 
-	 * @param cls 
+	 * @param field
 	 * @return 如果此类是基础数据或者包装类型或者Date类型,返回true;否则返回false; 如果cls为null,返回false;
 	 */
 	public static boolean isBaseFieldClass(Field field){

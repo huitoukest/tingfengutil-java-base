@@ -278,7 +278,7 @@ public class StringConvertUtils {
 	
 	/**
 	 * 
-	 * @param formatString "yyyy-MM-dd"
+	 * formatString "yyyy-MM-dd"
 	 * @return
 	 */
 	public static String getStringByDate(Date date){
@@ -287,7 +287,7 @@ public class StringConvertUtils {
 	
 	/**
 	 * 
-	 * @param formatString "yyyy-MM-dd HH:mm:ss"
+	 * formatString "yyyy-MM-dd HH:mm:ss"
 	 * @return
 	 */
 	public static String getStringByDateAndTime(Date date){
@@ -431,11 +431,6 @@ public class StringConvertUtils {
 	}
 	/**
 	 * 全角生成半角
-	 * 
-	 * @author bailong
-	 * @date 2007-08-29
-	 * @param str
-	 * @return
 	 */
 	public static String toDbcCaseBySbcCase(String QJstr) {
 		String outStr = "";
@@ -466,7 +461,7 @@ public class StringConvertUtils {
 	/**
 	 * 解析前台encodeURIComponent编码后的参数
 	 * 
-	 * @param url前端用urldecoder，编码后的url
+	 * @param url 前端用urldecoder，编码后的url
 	 * @param encoding 编码方式，如"UTF-8"
 	 * @return
 	 */
@@ -507,7 +502,7 @@ public class StringConvertUtils {
     /**
      * 根据传入的分割符号,把传入的字符串分割为List字符串
      * 
-     * @param slipStr
+     * @param slipSymbol
      *            分隔的字符串
      * @param src
      *            字符串
@@ -524,8 +519,13 @@ public class StringConvertUtils {
         }
         return list;
     }
-    
-    public static String camelToUnderline(String param) {
+
+	/**
+	 * 驼峰风格字符串转为下划线连接的小写字符串
+	 * @param param
+	 * @return
+	 */
+	public static String camelToUnderline(String param) {
         if(StringUtils.isEmpty(param)) {
             return "";
         } else {
@@ -545,6 +545,11 @@ public class StringConvertUtils {
         }
     }
 
+	/**
+	 * 下划线风格的字符串转为驼峰原则
+	 * @param param
+	 * @return
+	 */
     public static String underlineToCamel(String param) {
         if(StringUtils.isEmpty(param)) {
             return "";
@@ -569,7 +574,12 @@ public class StringConvertUtils {
         }
     }
 
-    public static String firstToLowerCase(String param) {
+	/**
+	 * 首字母转小写
+	 * @param param
+	 * @return
+	 */
+	public static String firstToLowerCase(String param) {
         if(StringUtils.isEmpty(param)) {
             return "";
         } else {

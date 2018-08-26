@@ -17,15 +17,15 @@ public class CSVUtil {
 	public static final String  V_COMMON = ",";
 	public static final String V_NEW_LINE = "\r";
 	public static final String V_NULL_STRING = "";
-	
-	
-	/**
+
+
+    /**
      * 默认英文逗号分隔,
      * 当写入内容为空时，可以写入一个字符串""（表示csv的内容是空串），防止csv读取软件读取了csv编码内容
      * 错误会抛出异常
-     * @param dataList 数据
-     * @return
-	 * @throws IOException 
+     * @param out
+     * @param csvWriter
+     * @throws IOException
      */
     public static void writeCsv(OutputStream out,CSVWriter csvWriter) throws IOException{
         OutputStreamWriter osw=null;
@@ -55,13 +55,13 @@ public class CSVUtil {
             } 
         }
     }
-    
+
     /**
      * 导入
-     * 
-     * @param file csv文件(路径+文件)
-     * @return
-     * @throws IOException 
+     * @param reader
+     * @param csvReader
+     * @param <T>
+     * @throws IOException
      */
     public static <T> void readCsv(Reader reader,CSVReader<T> csvReader) throws IOException{      
         BufferedReader br=null;

@@ -6,7 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- *  对一个属性的描述,可以简单理解为属性名称的解释(中文翻译)意思
+ *  对一个属性的描述,可以简单理解为Field属性的描述信息，
+ *  一般用于json序列化和反序列化等
  * @author huitoukest
  *
  */

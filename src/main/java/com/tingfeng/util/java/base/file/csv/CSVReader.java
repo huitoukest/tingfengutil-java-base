@@ -1,8 +1,8 @@
 package com.tingfeng.util.java.base.file.csv;
 
 /**
- * 
- *
+ * @author huitoukest
+ * CSV文件读取
  * @param <T>
  */
 public interface CSVReader<T> {

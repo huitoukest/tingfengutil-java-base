@@ -2,10 +2,9 @@ package com.tingfeng.util.java.base.common.inter;
 
 import java.util.List;
 /**
- * 默认没有子节点的节点即父节点;
+ * 保存一个Tree 结构的信息 ， 默认没有子节点的节点即父节点;
  * T最好实现hashCode和equals方法;
  * @author huitoukest
- * 
  * @param <T>
  */
 public interface TreeDataStructureI<T>{

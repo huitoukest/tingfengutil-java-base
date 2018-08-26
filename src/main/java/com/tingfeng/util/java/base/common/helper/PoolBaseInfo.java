@@ -1,16 +1,33 @@
 package com.tingfeng.util.java.base.common.helper;
 
+/**
+ * @author huitoukest
+ * 基础的pool运行配置信息
+ */
 public class PoolBaseInfo {
+    /**
+     * pool中最小保持的并发运行线程数，此值会随着运行线程数量的增加而逐渐增加
+     * pool中打开的资源数量，在运行线程数量变小时，会释放资源，直到minSize
+     */
     private int minSize = 0;
+    /**
+     * pool中最大并发运行的线程任务数量
+     */
     private int maxSize = 100;
+    /**
+     * pool中最大的队列长度
+     */
     private int maxQueueSize = Integer.MAX_VALUE;
+    /**
+     * pool中的任务的最长运行时间
+     */
     private long maxRunTime = Integer.MAX_VALUE;
     /**
      * 默认等待获取实例的最长等待时间,perWaitTime的整数
      */
     private long maxWaitTime = Integer.MAX_VALUE;
     /**
-     * 运行的实例最长闲置时间，默认2分钟
+     * 运行的实例最长闲置时间，默认2分钟，超过此时间便会开始释放资源
      */
     private long maxIdleTime = 120000;
     /**

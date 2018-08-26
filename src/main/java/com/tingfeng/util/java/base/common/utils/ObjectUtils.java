@@ -12,8 +12,20 @@ import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
 
+/**
+ * 一些通用的对象工具类
+ */
 public class ObjectUtils {
-	
+	/**
+	 * 处理一个对象，并返回想要的结果
+	 * @param source 来源对象
+	 * @param recursive 是否递归处理
+	 * @param isTrim 是否trim
+	 * @param deal 处理的方式
+	 * @param <S> 对象类型
+	 * @param <T> 返回的结果类型
+	 * @return
+	 */
     public static <S,T> T dealObject(S source,boolean recursive,boolean isTrim,ObjectDealReturnInter<S,T> deal) {
         if(null == source){
             return deal.dealCommonObject(source);
@@ -120,8 +132,12 @@ public class ObjectUtils {
 		}
 		return obj;
 	}
-	
-	
+
+	/**
+	 *
+	 * @param objs
+	 * @return 在objs中是否有一个obj是null
+	 */
 	public static boolean isAnyNull(Object... objs) {
 	    if(isNull(objs)) {
 	        return true;
@@ -133,7 +149,11 @@ public class ObjectUtils {
         }
        return false;
     }
-	
+	/**
+	 *
+	 * @param objs
+	 * @return 在objs中是否所有obj是null
+	 */
 	public static boolean isAllNull(Object... objs) {
 	    if(!isNull(objs)) {
             for(Object obj : objs) {
@@ -148,7 +168,11 @@ public class ObjectUtils {
 	public static boolean isNotNull(Object obj) {
         return !isNull(obj);
     }
-	
+	/**
+	 *
+	 * @param objs
+	 * @return 在objs中是否所有obj不是是null
+	 */
 	public static boolean isAllNotNull(Object... objs) {
 	    if(!isNull(objs)) {
             for(Object obj : objs) {
@@ -159,7 +183,11 @@ public class ObjectUtils {
         }
        return true;
     }
-	
+	/**
+	 *
+	 * @param objs
+	 * @return 在objs中是否有一个obj不是null
+	 */
 	public static boolean isAnyNotNull(Object... objs) {
         if(!isNull(objs)) {
             for(Object obj : objs) {
@@ -215,7 +243,12 @@ public class ObjectUtils {
         return false;
     }
 
-
+	/**
+	 * 判断一个对象是否为空
+	 * @param obj
+	 * @param isTrim 如果是字符串，是否去除首尾空白字符串
+	 * @return
+	 */
 	public static boolean isEmpty(Object obj,boolean isTrim) {
 		return isEmpty(obj,false,isTrim);
 	}
@@ -230,9 +263,9 @@ public class ObjectUtils {
 	}
 	
 	/**
-	 * 
+	 * 检查一个对象是否为空，如果是数组、Collection、Map结构则检查size或length是否大于0
 	 * @param obj
-	 * @param recursive 是否递归检查容器
+	 * @param recursive 是否递归检查容器中的元素是否为空
 	 * @param isTrim 是否trim
 	 * @return
 	 */
@@ -315,7 +348,7 @@ public class ObjectUtils {
 	    });
     }
 	/**
-	 * 传入的两个String对象是否相等
+	 * 两者都是null时表示相等，传入的两个String对象是否相等
 	 * @param str1 String对象1
 	 * @param str2 String对象2
 	 * @return 两个对象相等：true，以外：false
@@ -398,18 +431,34 @@ public class ObjectUtils {
 		return !isEmpty(obj,true);
 	}
 
-
+	/**
+	 * 深度拷贝数组对象
+	 * @param src
+	 * @param dest
+	 * @param <T>
+	 */
 	public static <T> void deepCopyArray(T[] src,T[] dest) {
 		if(null != src) {
 			System.arraycopy(src, 0, dest, 0, src.length);
 		}
 	}
 
+	/**
+	 * 深度拷贝对象
+	 * @param src
+	 * @param <T>
+	 * @return
+	 */
 	public static <T> T clone(T src){
 		return deepCopy(src);
 	}
 
-	@SuppressWarnings("unchecked")
+	/**
+	 * 深度拷贝对象
+	 * @param src
+	 * @param <T>
+	 * @return
+	 */
     public static <T> T deepCopy(T src){
 		try {
 			ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

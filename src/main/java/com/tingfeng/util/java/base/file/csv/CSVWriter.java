@@ -3,6 +3,9 @@ package  com.tingfeng.util.java.base.file.csv;
 import java.io.BufferedWriter;
 import java.io.IOException;
 
+/**
+ * 写入CSV文件的工具类
+ */
 public interface CSVWriter {
 	
 	/**

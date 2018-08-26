@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.common.constant;
 /**
  * 
  * @author huitoukest
- *
+ * @describe 常见的一些数据常量
  */
 public class Constants {
 	/*****************************************编码相关Start*****************************************************/

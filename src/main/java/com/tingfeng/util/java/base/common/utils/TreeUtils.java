@@ -79,7 +79,7 @@ public class TreeUtils {
 	 * 并且在加入节点的同时进行排序;
 	 * @param parentList
 	 * @param tds
-	 * @param node
+	 * @param leafNode
 	 */
 	protected static <T> boolean addNodeToTreeList(List<T> parentList,TreeDataStructureI<T> tds,T leafNode){
 	  	if(leafNode==null||parentList==null||parentList.isEmpty())

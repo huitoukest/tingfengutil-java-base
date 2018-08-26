@@ -12,6 +12,10 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * @author huitoukest
+ * String工具类
+ */
 public class StringUtils {
 
     private static final Pattern numericPattern = Pattern.compile("^[0-9\\-]+$");
@@ -29,6 +33,11 @@ public class StringUtils {
     }  
 
 	/******************************************** 开始判断 *************************************************************/
+    /**
+     * 判断一个字符串是null或者是空白字符串
+     * @param value
+     * @return
+     */
 	public static boolean  isEmpty(String value){
         if(value == null|| value.trim().length() < 1)
             return true;
@@ -43,17 +52,33 @@ public class StringUtils {
     public static boolean isNotEmpty(String str) {
         return !isEmpty(str);
     }
-	
+
+    /**
+     * 是否是大写字符串
+     * @param str
+     * @return
+     */
     public static boolean isUpperCase(String str) {
         return match("^[A-Z]+$", str);
     }
 
+    /**
+     * 是否匹配某个正则表达式
+     * @param regex 正则表达式
+     * @param str 字符串内容
+     * @return
+     */
     public static boolean match(String regex, String str) {
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(str);
         return matcher.matches();
     }
-    
+
+    /**
+     * word是否包含大写字符串
+     * @param word
+     * @return
+     */
     public static boolean containsUpperCase(String word) {
         for(int i = 0; i < word.length(); ++i) {
             char c = word.charAt(i);
@@ -157,8 +182,12 @@ public class StringUtils {
         return false;
     }
 
-
-    
+    /**
+     * source 中是否包含stringArray中的某个字符串
+     * @param source
+     * @param stringArray
+     * @return
+     */
     public static boolean isContainsAnyItem(String source,List<String> stringArray) {
         for(String s:stringArray){
             if(s != null && source.indexOf(s) >=0){
@@ -167,12 +196,23 @@ public class StringUtils {
         }
         return false;
     }
+    /**
+     * source 中是否包含stringArray中的某个字符串
+     * @param source
+     * @param stringArray
+     * @return
+     */
     public static boolean isContainsAnyItem(String source,String[] stringArray) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
         return isContainsAnyItem(source,tempList);
     }
-    
+    /**
+     * stringArray中的某个字符串是否包含source
+     * @param source
+     * @param stringArray
+     * @return
+     */
     public static boolean isAllItemContainsSource(String[] stringArray, String source) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
@@ -203,11 +243,21 @@ public class StringUtils {
         }
         return false;
     }
-    
+
+    /**
+     * cls 是否是CharSequence
+     * @param cls
+     * @return
+     */
     public static Boolean isCharSequence(Class<?> cls) {
         return Boolean.valueOf(cls != null && CharSequence.class.isAssignableFrom(cls));
     }
-    
+
+    /**
+     * propertyType 是否是CharSequence
+     * @param propertyType 类或者属性的名称
+     * @return
+     */
     public static Boolean isCharSequence(String propertyType) {
         try {
             return isCharSequence(Class.forName(propertyType));
@@ -216,10 +266,20 @@ public class StringUtils {
         }
     }
 
+    /**
+     * 是否是布尔类
+     * @param propertyCls
+     * @return
+     */
     public static Boolean isBoolean(Class<?> propertyCls) {
         return Boolean.valueOf(propertyCls != null && (Boolean.TYPE.isAssignableFrom(propertyCls) || Boolean.class.isAssignableFrom(propertyCls)));
     }
-    
+
+    /**
+     * 是否包含消息字符串
+     * @param s
+     * @return
+     */
     public static boolean containsLowerCase(String s) {
         char[] arr$ = s.toCharArray();
         int len$ = arr$.length;
@@ -244,6 +304,12 @@ public class StringUtils {
         return prefixToLower(rawString, 1);
     }
 
+    /**
+     * 将rawString转换为小写并且替换index分隔第二种字符串的第一部分
+     * @param rawString
+     * @param index
+     * @return
+     */
     public static String prefixToLower(String rawString, int index) {
         String beforeChar = rawString.substring(0, index).toLowerCase();
         String afterChar = rawString.substring(index, rawString.length());
@@ -290,7 +356,14 @@ public class StringUtils {
         names[0]=fieldNameStrings[0];
         return names;
     }
- public static String getSubString(String subject, int size) {
+
+    /**
+     * 获取subString，自动判空
+     * @param subject
+     * @param size
+     * @return
+     */
+    public static String getSubString(String subject, int size) {
         if (subject != null && subject.length() > size) {
             subject = subject.substring(0, size);
         }
@@ -303,7 +376,7 @@ public class StringUtils {
      *            　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
      * @param str
      * @param symbol
-     * @param charset字符编码
+     * @param charset 字符编码
      * @return
      */
     public static String getLimitLengthString(String str, int len, String symbol,String charset) {
@@ -339,12 +412,11 @@ public class StringUtils {
     }
 
     /**
-     * 截取字符串　超出的字符用symbol代替 　　
+     * 截取字符串　超出的字符用...代替 　　
      * 
      * @param len
      *            　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
      * @param str
-     * @param symbol
      * @return12
      */
     public static String getLimitLengthString(String str, int len) {
@@ -416,7 +488,7 @@ public class StringUtils {
     /**
      * 把 名=值 参数表转换成字符串 (url + ?a=1&b=2)
      * @param url  url可以为null，为null则返回参数组成的字符串a=1&b=2
-     * @param map
+     * @param params url中的参数
      * @return
      */
     public static String getGetUrl(String url,Map<String, Object> params) {
@@ -547,9 +619,9 @@ public class StringUtils {
      * 
      * @param s
      *            源字符串
-     * @param fencode
+     * @param sourceEncoding
      *            源编码格式
-     * @param bencode
+     * @param targetEncoding
      *            目标编码格式
      * @return 目标编码
      */
@@ -630,7 +702,7 @@ public class StringUtils {
     /**
      * 根据正则表达式提取字符串,相同的字符串只返回一个
      * 
-     * @param str源字符串
+     * @param str 源字符串
      * @param pattern
      *            正则表达式
      * @return 目标字符串数据组
@@ -708,7 +780,7 @@ public class StringUtils {
     /**
      * ************************************************************************* 用要通过URL传输的内容进行编码
      * 
-     * @param 源字符串
+     * @param src 源字符串
      * @return 经过编码的内容
      ************************************************************************* 
      */

@@ -1,5 +1,9 @@
 package com.tingfeng.util.java.base.common.constant;
 
+/**
+ * @author huitoukest
+ * @describe 常见的java Object的class的名称
+ */
 public class ObjectTypeString {
 	/**
 	 * 包装类型属性的类型的类名,对应getGenericType;
