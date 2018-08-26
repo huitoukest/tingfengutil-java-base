@@ -12,6 +12,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
 
+/**
+ *
+ */
 public class UdpGetClientMacAddr {
 	private String sRemoteAddr;
 	private int iRemotePort = 137;

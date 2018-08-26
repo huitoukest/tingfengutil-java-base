@@ -167,7 +167,6 @@ public class VerificationCodeUtil {
 	 * @param height
 	 * @param many
 	 * @param g
-	 * @param alpha
 	 *            透明度0~255 0表示全透
 	 */
 	private static void drawInterferencePoint(int width, int height, int many, Graphics g) { // 随机产生干扰点
@@ -187,7 +186,6 @@ public class VerificationCodeUtil {
 	 * @param minMany
 	 *            最少产生的数量
 	 * @param g
-	 * @param alpha
 	 *            透明度0~255 0表示全透
 	 */
 	private static void drawInterferenceLine(int width, int height, int minMany, Graphics g) { // 随机产生干扰线条
@@ -284,7 +282,6 @@ public class VerificationCodeUtil {
 	 * 
 	 * @param colorValue
 	 * @param randomValue
-	 * @param deep,默认为0
 	 * @return
 	 */
 	private static int getCloserRandomColorValue(int colorValue, int randomValue) {

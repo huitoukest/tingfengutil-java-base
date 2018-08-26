@@ -60,9 +60,8 @@ public class ObjectTypeUtils{
 		return getObjectType(field.getType().getCanonicalName());
 	}
 	/**
-	 *是否是基础数据类型,当为other类型，返回false；
+	 * 是否是基础数据类型,当为other类型，返回false；
 	 * @param clsName
-	 * @see util.tingfeng.java.common.constant.ObjectType
 	 * @return
 	 */
 	public static boolean isBaseTypeObject(String  clsName){
@@ -71,18 +70,16 @@ public class ObjectTypeUtils{
 		return true;
 	}
 	/**
-	 *是否是基础数据类型,当为other类型，返回false；
-	 * @param clsName
-	 * @see util.tingfeng.java.common.constant.ObjectType
+	 * 是否是基础数据类型,当为other类型，返回false；
+	 * @param field
 	 * @return
 	 */
 	public static boolean isBaseTypeObject(Field field){
 		return isBaseTypeObject(field.getType().getCanonicalName());
 	}
 	/**
-	 *是否是基础数据类型,当为other类型，返回false；
-	 * @param clsName
-	 * @see util.tingfeng.java.common.constant.ObjectType
+	 * 是否是基础数据类型,当为other类型，返回false；
+	 * @param cls
 	 * @return
 	 */
 	public static boolean isBaseTypeObject(Class<?> cls){

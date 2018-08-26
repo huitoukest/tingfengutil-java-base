@@ -1,11 +1,11 @@
 package com.tingfeng.util.java.base.common.exception;
 
 /**
- * 超过最大等待队列数值的时候报错
- * @author WangGang
+ * 在Pool运行过程中，超过最大等待时间的时候报Exception
+ * @author huitoukest
  *
  */
-public class OverPoolWaitTimeException  extends RuntimeException{
+public class OverPoolWaitTimeException  extends BaseException{
 
     /**
      * 

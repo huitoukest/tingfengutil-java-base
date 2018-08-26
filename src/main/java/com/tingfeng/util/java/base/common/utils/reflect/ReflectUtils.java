@@ -17,7 +17,7 @@ public class ReflectUtils {
 	/**
 	 * 给属性设置值,会先尝试调用其setter方法,如果没有setter方法会直接给属性赋值
 	 * 支持a.b.c的链式调用取值;
-	 * @param field 如果Field属性不是public,那么直接赋值可能会失败
+	 * @param isReadNotPublicField 如果Field属性不是public,那么直接赋值可能会失败，设置是否读取非public的属性
 	 * @param obj 此属性的对象实例
 	 * @param filedName 属性的名称
 	 * @param values 参数的值
@@ -266,7 +266,7 @@ public class ReflectUtils {
 			}
 			 /**
 			 * 返回此类的列的属性名称,不包含静态属性
-			 * @param entity
+			 * @param cls
 			 * @return
 			 */
 			private static List<String> getBeanColumnNameList(Class<?> cls){
@@ -282,8 +282,13 @@ public class ReflectUtils {
 				   }
 				   return list;
 			}
-			
-			public static String firstLetterToLower(String srcString) {
+
+	/**
+	 * 将首字母小写
+	 * @param srcString
+	 * @return
+	 */
+	public static String firstLetterToLower(String srcString) {
 				StringBuilder sb = new StringBuilder();
 				sb.append(Character.toLowerCase(srcString.charAt(0)));
 				sb.append(srcString.substring(1));

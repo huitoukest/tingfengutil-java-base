@@ -7,6 +7,9 @@ import java.util.List;
 
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 
+/**
+ *
+ */
 public class CollectionUtils {
 	
 	public static <T> List<T> getListByArray(T[] array){
@@ -73,8 +76,8 @@ public class CollectionUtils {
 	}
 	
 	/**
-	 * @param souceString
-	 * @param symbol 分隔标志
+	 * @param souceString 源字符串
+	 * @param regex 正则表达式 分隔标志
 	 * @return
 	 */
 	public static List<Long> getLongList(String souceString,String regex){

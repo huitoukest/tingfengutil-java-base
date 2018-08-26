@@ -12,9 +12,14 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
+/**
+ * @author huitoukest
+ * class工具类
+ */
 public class ClassUtil {
     /**
      * 取得某个接口下所有实现这个接口的类
+     * @param c Class对象
      * */
     public static List<Class<?>> getAllClassByInterface(Class<?> c) {
             List<Class<?>>  returnClassList = null;
@@ -44,6 +49,8 @@ public class ClassUtil {
     
     /*
      * 取得某一类所在包的所有类名 不含迭代
+     * @param classLocation class的位置
+     * @param packageName 包名称
      */
     public static String[] getPackageAllClassName(String classLocation, String packageName){
         //将packageName分解
@@ -63,7 +70,7 @@ public class ClassUtil {
     
     /**
      * 从包package中获取所有的Class
-     * @param pack
+     * @param packageName
      * @return
      */
     public static List<Class<?>> getClasses(String packageName){
