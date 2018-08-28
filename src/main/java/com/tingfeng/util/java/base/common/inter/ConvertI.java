@@ -8,5 +8,5 @@ package com.tingfeng.util.java.base.common.inter;
  * @param <S>  Source 第二个参数，传入的对象和类型
  */
 public interface ConvertI<T,S>{
-	public T convert(S e);
+	 T convert(S e);
 }
