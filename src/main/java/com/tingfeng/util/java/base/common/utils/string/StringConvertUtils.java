@@ -24,7 +24,7 @@ import com.tingfeng.util.java.base.common.utils.LogUtils;
  */
 public class StringConvertUtils {
 	
-	
+
 	
 	final static int BUFFER_SIZE = 4096;
 	/**
@@ -264,7 +264,7 @@ public class StringConvertUtils {
 	 * @param formatString "yyyy-MM-dd"或者"yyyy-MM-dd HH:mm:ss",自定决定
 	 * @return
 	 */
-	public static String getStringByDate(Date date,String formatString){
+	/*public static String getStringByDate(Date date,String formatString){
 		if(date == null){
 			return "";
 		}
@@ -274,25 +274,25 @@ public class StringConvertUtils {
 		}catch(Exception e){
 			return "";
 		}
-	}
+	}*/
 	
 	/**
 	 * 
 	 * formatString "yyyy-MM-dd"
 	 * @return
 	 */
-	public static String getStringByDate(Date date){
+	/*public static String getStringByDate(Date date){
 		return getStringByDate(date, "yyyy-MM-dd");
 	}
 	
-	/**
+	*//**
 	 * 
 	 * formatString "yyyy-MM-dd HH:mm:ss"
 	 * @return
-	 */
+	 *//*
 	public static String getStringByDateAndTime(Date date){
 		return getStringByDate(date, "yyyy-MM-dd HH:mm:ss");
-	}
+	}*/
 	
 	/**
 	 * 得到指定的毫秒数所代表的日期,yyyy-mm-dd格式
@@ -432,7 +432,7 @@ public class StringConvertUtils {
 	/**
 	 * 全角生成半角
 	 */
-	public static String toDbcCaseBySbcCase(String QJstr) {
+	/*public static String toDbcCaseBySbcCase(String QJstr) {
 		String outStr = "";
 		String Tstr = "";
 		byte[] b = null;
@@ -456,7 +456,7 @@ public class StringConvertUtils {
 			}
 		}
 		return outStr;
-	}
+	}*/
 
 	/**
 	 * 解析前台encodeURIComponent编码后的参数

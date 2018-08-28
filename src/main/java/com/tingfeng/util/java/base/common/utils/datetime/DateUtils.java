@@ -10,8 +10,11 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
+import com.tingfeng.util.java.base.common.utils.LogUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 关于时间和日期的工具类，包含一些常用处理时间的函数
@@ -19,6 +22,7 @@ import com.tingfeng.util.java.base.common.utils.string.StringUtils;
  * 
  */
 public class DateUtils {
+	private static final Logger logger = LoggerFactory.getLogger(DateUtils.class);
 	/** DateFormat:yyyyMMddHHmmssSSS */
 	public static final String FORMATE_YYYYMMDDHHMMSSSSS = "yyyyMMddHHmmssSSS";
 
@@ -32,13 +36,13 @@ public class DateUtils {
 	public static final String FORMATE_YYYY = "yyyy";
 
 	/** DateFormat:yyyy-MM-dd */
-	public static final String FORMATE_YYYYMMDD_UNDERLIN = "yyyy-MM-dd";
+	public static final String FORMATE_YYYYMMDD_THROUGH_LINE = "yyyy-MM-dd";
 	/** DateFormat:yyyy-MM */
-	public static final String FORMATE_YYYYMM_UNDERLIN = "yyyy-MM";
+	public static final String FORMATE_YYYYMM_THROUGH_LINE = "yyyy-MM";
 	/** DateFormat:yyyy-MM-dd HH:mm:ss */
-	public static final String FORMATE_YYYYMMDDHHMMSS_UNDERLIN = "yyyy-MM-dd HH:mm:ss";
+	public static final String FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE = "yyyy-MM-dd HH:mm:ss";
 	/** DateFormat:yyyy-MM-dd HH:mm:ss.SSS */
-	public static final String FORMATE_YYYYMMDDHHMMSSSSS_UNDERLIN = "yyyy-MM-dd HH:mm:ss.SSS";
+	public static final String FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE = "yyyy-MM-dd HH:mm:ss.SSS";
 
 	/** 年月日格式 */
 	public static final String FORMATE_YYYYMMDD_CHN = "yyyy年MM月dd日";
@@ -57,40 +61,96 @@ public class DateUtils {
 	/** yyyy/MM/dd HH:mm:ss.SSS */
 	public static final String FORMATE_YYYYMMDDHHMMSSSSS_OBLINE = "yyyy/MM/dd HH:mm:ss.SSS";
 
-	private static final Map<String,SimpleDateFormat> DATE_FORMATE_MAP = new ConcurrentHashMap<>(25); 
+	private static final Map<String,SimpleDateFormat> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25); 
 	
 	//初始化,对常用的格式进行缓存
 	static {
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD,new SimpleDateFormat(FORMATE_YYYYMMDD));
-	    DATE_FORMATE_MAP.put(FORMATE_HHMMSS,new SimpleDateFormat(FORMATE_HHMMSS));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMM,new SimpleDateFormat(FORMATE_YYYYMM));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYY,new SimpleDateFormat(FORMATE_YYYY));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD,new SimpleDateFormat(FORMATE_YYYYMMDD));
+	    DATE_FORMAT_MAP.put(FORMATE_HHMMSS,new SimpleDateFormat(FORMATE_HHMMSS));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMM,new SimpleDateFormat(FORMATE_YYYYMM));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYY,new SimpleDateFormat(FORMATE_YYYY));
 	    
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMMDD_UNDERLIN));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMM_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMM_UNDERLIN));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_UNDERLIN));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_UNDERLIN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_UNDERLIN));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDD_THROUGH_LINE));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMM_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMM_THROUGH_LINE));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE));
 	    
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD_CHN,new SimpleDateFormat(FORMATE_YYYYMMDD_CHN));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMM_CHN,new SimpleDateFormat(FORMATE_YYYYMM_CHN));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_CHN));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_CHN));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD_CHN,new SimpleDateFormat(FORMATE_YYYYMMDD_CHN));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMM_CHN,new SimpleDateFormat(FORMATE_YYYYMM_CHN));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_CHN));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_CHN));
 	    
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDD_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDD_OBLINE));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_OBLINE));
-	    DATE_FORMATE_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDD_OBLINE));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_OBLINE));
+	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE));
 	}
 	
 	private static SimpleDateFormat getSimpleDateFormat(String formateString) {
-	    SimpleDateFormat simpleDateFormat = DATE_FORMATE_MAP.get(formateString);
+	    SimpleDateFormat simpleDateFormat = DATE_FORMAT_MAP.get(formateString);
 	    if( simpleDateFormat == null) {
 	        return new SimpleDateFormat(formateString);
 	    }
 	    return simpleDateFormat;
 	}
-	
+
+
+
+	/**
+	 * 根据给定的格式与时间(Date类型的)，返回时间字符串。最为通用。<br>
+	 *
+	 * @param date
+	 *            指定的日期
+	 * @param format
+	 *            日期格式字符串
+	 * @return String 指定格式的日期字符串.
+	 */
+	public static String getDateString(Date date, String format) {
+		return format(date,format);
+	}
+
+	/**
+	 * 根据给定的格式与时间(Date类型的)，返回时间字符串。最为通用。<br>
+	 * @param date 指定的日期
+	 * @param format 日期格式字符串
+	 * @return String 指定格式的日期字符串.
+	 */
+	public static String format(Date date,String format){
+		SimpleDateFormat sdf = getSimpleDateFormat(format);
+		if(null != sdf) {
+			synchronized (sdf) {
+				return sdf.format(date);
+			}
+		}else{
+			sdf = new SimpleDateFormat(format);
+			return sdf.format(date);
+		}
+	}
+
+	private static Date parse(SimpleDateFormat sdf,String date) throws ParseException {
+		return sdf.parse(date);
+	}
+
+	/**
+	 *
+	 * @param date 日期字符串
+	 * @param format 格式化的字符串，见常量
+	 * @return
+	 */
+	public static Date parse(String date,String format) throws ParseException {
+		SimpleDateFormat sdf = getSimpleDateFormat(format);
+		if(null != sdf) {
+			synchronized (sdf) {
+				sdf = new SimpleDateFormat(format);
+				return parse(sdf,date);
+			}
+		}else{
+			sdf = new SimpleDateFormat(format);
+			return parse(sdf,date);
+		}
+	}
+
 	/*************************************
 	 * 时间获得与计算
 	 **************************************/
@@ -149,7 +209,6 @@ public class DateUtils {
 
 	/**
 	 * 得到当日凌晨
-	 * 
 	 * @addTime 返回结果的时候增加的毫秒数;
 	 * @return
 	 */
@@ -180,8 +239,7 @@ public class DateUtils {
 	}
 
 	/**
-	 * 得到一天的结束时间
-	 * 
+	 * 得到一天的结束时间，精确到每天的23:59:59.999秒
 	 * @param date
 	 * @return
 	 */
@@ -240,7 +298,7 @@ public class DateUtils {
 	}
 
 	/**
-	 * 两个时间相差的年份; 其中小于一年的将会0; 主要可以用于生日等;精确到每一日;
+	 * 两个时间相差的年份; 其中小于一年的将会是0; 主要可以用于生日等;精确到每一日;
 	 * 
 	 * @return
 	 */
@@ -250,18 +308,13 @@ public class DateUtils {
 		String[] sa, sb;
 		// 包装sa的值大于sb;
 		if (dateA.getTime() < dateB.getTime()) {
-			sb = StringConvertUtils.getStringByDate(dateA, formatString).split(":");
-			sa = StringConvertUtils.getStringByDate(dateB, formatString).split(":");
+			sb = format(dateA,formatString).split(":");
+			sa = format(dateB,formatString).split(":");
 		} else {
-			sa = StringConvertUtils.getStringByDate(dateA, formatString).split(":");
-			sb = StringConvertUtils.getStringByDate(dateB, formatString).split(":");
+			sa = format(dateA,formatString).split(":");
+			sb = format(dateB,formatString).split(":");
 		}
-		ConvertI<Integer, Object> convertI = new ConvertI<Integer, Object>() {
-			@Override
-			public Integer convert(Object s) {
-				return Integer.parseInt(s.toString());
-			}
-		};
+		ConvertI<Integer, Object> convertI = (s) -> Integer.parseInt(s.toString());
 		Integer[] arrayA = ArrayUtils.getArray(sa, convertI);
 		Integer[] arrayB = ArrayUtils.getArray(sb, convertI);
 		count = arrayA[1] - arrayB[1];
@@ -321,20 +374,6 @@ public class DateUtils {
 			weekDates[position + i - 1] = getDateAdd(date, i);
 		}
 
-		return weekDates;
-	}
-
-	/**
-	 * 得到从当前开始的之后一周的时间的数组;
-	 * 
-	 * @param date
-	 * @return
-	 */
-	public static Date[] getWeekDatesFromNow(Date date) {
-		Date[] weekDates = new Date[7];
-		for (int i = 0; i < 7; i++) {
-			weekDates[i] = getDateAdd(date, i);
-		}
 		return weekDates;
 	}
 
@@ -432,19 +471,6 @@ public class DateUtils {
 		return sb.toString();
 	}
 
-	/**
-	 * 根据给定的格式与时间(Date类型的)，返回时间字符串。最为通用。<br>
-	 * 
-	 * @param date
-	 *            指定的日期
-	 * @param format
-	 *            日期格式字符串
-	 * @return String 指定格式的日期字符串.
-	 */
-	public synchronized static String getDateString(Date date, String format) {
-		SimpleDateFormat sdf = getSimpleDateFormat(format);
-		return sdf.format(date);
-	}
 
 	/**
 	 * 默认格式化 yyyy-MM-dd HH:mm:ss
@@ -453,7 +479,7 @@ public class DateUtils {
 	 * @return
 	 */
 	public static String getDateString(Date date) {
-		return getDateString(date, DateUtils.FORMATE_YYYYMMDDHHMMSS_UNDERLIN);
+		return getDateString(date, DateUtils.FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
 	}
 
 	/*************************************
@@ -473,13 +499,12 @@ public class DateUtils {
 	 *            异常或者value是null时返回默认值
 	 * @return 默认先用Long来获取毫秒数,失败后再用时间格式来获取相应的时间;
 	 */
-	public synchronized static Date getDate(String value, String formateString, Date defaultValue) {
-		SimpleDateFormat sdf = getSimpleDateFormat(formateString);
+	public static Date getDate(String value, String formateString, Date defaultValue) {
 		if (value == null)
 			return defaultValue;
 		Date date = null;
 		try {
-			date = sdf.parse(value);
+			date = parse(value,formateString);
 		} catch (Exception e) {
 			date = defaultValue;
 		}
@@ -494,7 +519,7 @@ public class DateUtils {
 	 * @return
 	 */
 	public static Date getDate(String value, Date defaultValue) {
-		return getDate(value, FORMATE_YYYYMMDDHHMMSS_UNDERLIN, defaultValue);
+		return getDate(value, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE, defaultValue);
 	}
 
 	/**
@@ -532,7 +557,7 @@ public class DateUtils {
 			}
 			return getDate(sb.toString(), FORMATE_YYYYMMDDHHMMSSSSS);
 		}else {
-			return getDate(value, FORMATE_YYYYMMDDHHMMSS_UNDERLIN, null);
+			return getDate(value, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE, null);
 		}	
 	}
 
@@ -548,4 +573,16 @@ public class DateUtils {
 	 * 字符串转为时间
 	 **************************************/
 
+	public static String formatDateToString(Date date){
+		return format(date, "yyyy-MM-dd");
+	}
+
+	/**
+	 *
+	 * formatString "yyyy-MM-dd HH:mm:ss"
+	 * @return
+	 */
+	public static String formatDateAndTimeToString(Date date){
+		return format(date, "yyyy-MM-dd HH:mm:ss");
+	}
 }
