@@ -16,14 +16,13 @@ import java.util.jar.JarFile;
  * @author huitoukest
  * class工具类
  */
-public class ClassUtil {
+public class ClassUtils {
     /**
      * 取得某个接口下所有实现这个接口的类
-     * @param c Class对象
+     * @param c Class对象,必须使一个接口，否则返回null
      * */
     public static List<Class<?>> getAllClassByInterface(Class<?> c) {
             List<Class<?>>  returnClassList = null;
-            
             if(c.isInterface()) {
                 // 获取当前的包名
                 String packageName = c.getPackage().getName();
