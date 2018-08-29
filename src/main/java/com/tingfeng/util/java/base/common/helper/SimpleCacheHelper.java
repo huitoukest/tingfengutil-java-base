@@ -8,12 +8,8 @@ import java.util.Set;
 
 /**
  * 实现一个简单的缓存,默认使用访问频率作为控制;
-<<<<<<< HEAD
  * 每次访问weight + 1;每次set且成员数量溢出时，所有weight -1;
  * 所以此缓存适用于maxSize大于需要缓存的数量时
-=======
- * 每次访问weight + 1;每次set且成员数量溢出时，所有weight -1
->>>>>>> 6a71cdb7c059ca32b100325286d5400089581721
  * @author huitoukest
  */
 public class SimpleCacheHelper<T> {
@@ -24,8 +20,8 @@ public class SimpleCacheHelper<T> {
     private Map<Object,SimpleCacheMember<T>> map;
 
     public SimpleCacheHelper(int maxSize){
-           map = new HashMap<>();
-           this.maxSize = maxSize;
+        map = new HashMap<>();
+        this.maxSize = maxSize;
     }
 
     /**
@@ -48,30 +44,23 @@ public class SimpleCacheHelper<T> {
      * @param value
      */
     public synchronized void set(Object key,T value){
-           SimpleCacheMember<T> member = map.get(key);
-           if(member == null){
-               member = new SimpleCacheMember<>();
-<<<<<<< HEAD
-               member.setWeight(member.getWeight() + 2);
-               currentSize ++ ;
-           }else{
-               member.setValue(value);
-               member.setWeight(member.getWeight() + 1);
-=======
-               currentSize ++ ;
-           }else{
-               member.setValue(value);
-               member.setWeight(member.getWeight() + 2);
->>>>>>> 6a71cdb7c059ca32b100325286d5400089581721
-           }
-           map.put(key,member);
+        SimpleCacheMember<T> member = map.get(key);
+        if(member == null){
+            member = new SimpleCacheMember<>();
+            member.setWeight(member.getWeight() + 2);
+            currentSize ++ ;
+        }else{
+            member.setValue(value);
+            member.setWeight(member.getWeight() + 1);
+        }
+        map.put(key,member);
     }
 
     /**
      * 将溢出的成员移出，移出权重值最低的成员
      */
     private void removeOverMember(){
-         while(currentSize > maxSize){
+        while(currentSize > maxSize){
             int minWeight = Integer.MAX_VALUE;
             Object minWeightKey = null;
             Set<Object> keys = map.keySet();
@@ -87,6 +76,6 @@ public class SimpleCacheHelper<T> {
                 map.remove(minWeightKey);
                 currentSize -- ;
             }
-         }
+        }
     }
 }
