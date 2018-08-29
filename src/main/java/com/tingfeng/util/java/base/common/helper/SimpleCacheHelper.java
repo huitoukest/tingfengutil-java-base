@@ -8,8 +8,12 @@ import java.util.Set;
 
 /**
  * 实现一个简单的缓存,默认使用访问频率作为控制;
+<<<<<<< HEAD
  * 每次访问weight + 1;每次set且成员数量溢出时，所有weight -1;
  * 所以此缓存适用于maxSize大于需要缓存的数量时
+=======
+ * 每次访问weight + 1;每次set且成员数量溢出时，所有weight -1
+>>>>>>> 6a71cdb7c059ca32b100325286d5400089581721
  * @author huitoukest
  */
 public class SimpleCacheHelper<T> {
@@ -47,11 +51,18 @@ public class SimpleCacheHelper<T> {
            SimpleCacheMember<T> member = map.get(key);
            if(member == null){
                member = new SimpleCacheMember<>();
+<<<<<<< HEAD
                member.setWeight(member.getWeight() + 2);
                currentSize ++ ;
            }else{
                member.setValue(value);
                member.setWeight(member.getWeight() + 1);
+=======
+               currentSize ++ ;
+           }else{
+               member.setValue(value);
+               member.setWeight(member.getWeight() + 2);
+>>>>>>> 6a71cdb7c059ca32b100325286d5400089581721
            }
            map.put(key,member);
     }
