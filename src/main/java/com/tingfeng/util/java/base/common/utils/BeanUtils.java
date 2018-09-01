@@ -17,7 +17,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import com.tingfeng.util.java.base.common.utils.reflect.ReflectJudgeUtils;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 /**
@@ -105,7 +104,7 @@ public class BeanUtils{
 				// 得到targetClz对象所表征的类的名为fieldName的属性，不存在就进入下次循环
 				try {
 					targetField = ReflectUtils.getField(targetClz, fieldName);		
-				} catch (NoSuchFieldException e) {				
+				} catch (Exception e) {
 					continue;				
 				}
 				fields_s[i].setAccessible(true);    
@@ -329,7 +328,7 @@ public class BeanUtils{
 				Object object=map.get(s);
 				try{
 					Class<?> typeClass=ReflectUtils.getTypeByFieldName(t.getClass(),s);
-					Object valueObject=ObjectUtils.getObject(typeClass, object);
+					Object valueObject= ObjectUtils.getObject(typeClass, object);
 					if(valueObject==null) continue;
 					ReflectUtils.setFieldValue(true,t, s,new Object[]{valueObject},valueObject.getClass());
 				}catch(Exception e){
@@ -383,7 +382,7 @@ public class BeanUtils{
 						continue;
 					Field f=fieldMap.get(nameOne);
 						if(f!=null){//如果存在此属性		
-							boolean isBaseType=ReflectJudgeUtils.isBaseFieldClass(f.getType());
+							boolean isBaseType= ReflectUtils.isJavaBaseDataField(f);
 							if(!isBaseType&&nameTwo!=null){
 								//如果此属性是一个引用类;
 								Object object=f.get(t);
