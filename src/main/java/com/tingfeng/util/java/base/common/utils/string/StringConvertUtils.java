@@ -15,8 +15,6 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.tingfeng.util.java.base.common.utils.LogUtils;
-
 /**
  * 字符串的转换工具,主要实现将字符串转换为其它格式/对象;
  * @author huitoukest

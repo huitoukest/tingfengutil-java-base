@@ -574,7 +574,7 @@ public class DateUtils {
 	 **************************************/
 
 	public static String formatDateToString(Date date){
-		return format(date, "yyyy-MM-dd");
+		return format(date, FORMATE_YYYYMMDD_THROUGH_LINE);
 	}
 
 	/**
@@ -583,6 +583,6 @@ public class DateUtils {
 	 * @return
 	 */
 	public static String formatDateAndTimeToString(Date date){
-		return format(date, "yyyy-MM-dd HH:mm:ss");
+		return format(date, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
 	}
 }

@@ -2,10 +2,13 @@ package com.tingfeng.util.java.base.common.utils;
 
 import java.beans.XMLDecoder;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import com.tingfeng.util.java.base.common.constant.ObjectType;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
@@ -16,6 +19,99 @@ import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
  * 一些通用的对象工具类
  */
 public class ObjectUtils {
+
+	/**
+	 * 通过class获取对象的类型
+	 * @param cls
+	 * @return
+	 */
+	public static ObjectType getObjectType(Class<?> cls){
+		return getObjectType(cls.getName());
+	}
+
+	/**
+	 * 通过className获取对象的类型
+	 * @param className
+	 * @return
+	 */
+	public  static ObjectType getObjectType(String className){
+		String type=className;
+		switch (type) {
+			case ObjectTypeString.clsNameBaseBoolean:
+				return ObjectType.Boolean;
+			case ObjectTypeString.clsNameBoolean:
+				return ObjectType.Boolean;
+			case ObjectTypeString.clsNameDate:
+				return ObjectType.Date;
+			case ObjectTypeString.clsNameBaseFloat:
+				return ObjectType.Float;
+			case ObjectTypeString.clsNameFloat:
+				return ObjectType.Float;
+			case ObjectTypeString.clsNameBaseDouble:
+				return ObjectType.Double;
+			case ObjectTypeString.clsNameDouble:
+				return ObjectType.Double;
+			case ObjectTypeString.clsNameBaseLong:
+				return ObjectType.Long;
+			case ObjectTypeString.clsNameLong:
+				return ObjectType.Long;
+			case ObjectTypeString.clsNameBaseInt:
+				return ObjectType.Integer;
+			case ObjectTypeString.clsNameInteger:
+				return ObjectType.Integer;
+			case ObjectTypeString.clsNameString:
+				return ObjectType.String;
+			case ObjectTypeString.clsNameBaseShort:
+				return ObjectType.Short;
+			case ObjectTypeString.clsNameShort:
+				return ObjectType.Short;
+			case ObjectTypeString.clsNameBaseByte:
+				return ObjectType.Byte;
+			case ObjectTypeString.clsNameByte:
+				return ObjectType.Byte;
+			default:
+				break;
+		}
+
+		return ObjectType.Other;
+	}
+
+	/**
+	 * 通过属性来返回此属性的类型
+	 * @param field
+	 * @return
+	 */
+	public static ObjectType getObjectType(Field field){
+		return getObjectType(field.getType().getCanonicalName());
+	}
+
+	/**
+	 * 是否是基础数据类型,当为other类型，返回false；
+	 * @param clsName
+	 * @return
+	 */
+	public static boolean isBaseTypeObject(String  clsName){
+		if(getObjectType(clsName).equals(ObjectType.Other))
+			return false;
+		return true;
+	}
+	/**
+	 * 是否是基础数据类型,当为other类型，返回false；
+	 * @param field
+	 * @return
+	 */
+	public static boolean isBaseTypeObject(Field field){
+		return isBaseTypeObject(field.getType().getCanonicalName());
+	}
+	/**
+	 * 是否是基础数据类型,当为other类型，返回false；
+	 * @param cls
+	 * @return
+	 */
+	public static boolean isBaseTypeObject(Class<?> cls){
+		return isBaseTypeObject(cls.getName());
+	}
+
 	/**
 	 * 处理一个对象，并返回想要的结果
 	 * @param source 来源对象
@@ -66,71 +162,56 @@ public class ObjectUtils {
 	}
 	/**
 	 * 如果cls是基础数据类型和包装类型则返回转换之后的值,否则返回原值
+	 * 这里如果obj是T类型，则直接返回，否则将之转为String类型后自动如果是基础数据类型
+	 * 则转为T类型，否则返回null
 	 * @param cls
-	 * @param obj
-	 * @return
+	 * @param obj 传入的数据
+	 * @return <T></>
 	 */
-	public static Object getObject(Class<?> cls,Object obj){
-		String value=null;
-		if(obj!=null)
-			value=obj.toString();
-		if(cls==null) return obj;
-		if(obj==null) return null;
+	public static <T> T getObject(Class<T> cls,Object obj){
+		if(cls == null) return (T)obj;
+		if(obj == null) return null;
+		if(cls.getName().equals(obj.getClass().getName())){
+			return (T)obj;
+		}
+		String value  = obj.toString();
 		switch (cls.getName()) {
 		case ObjectTypeString.clsNameBoolean:
-			 return StringConvertUtils.getBoolean(value);
+			 return (T)StringConvertUtils.getBoolean(value);
 		case ObjectTypeString.clsNameByte:
-			 return StringConvertUtils.getByte(value);
+			 return (T)StringConvertUtils.getByte(value);
 		case ObjectTypeString.clsNameDate:
-			 return DateUtils.getDate(value);
+			 return (T)DateUtils.getDate(value);
 		case ObjectTypeString.clsNameLong:
-			 return StringConvertUtils.getLong(value);
+			 return (T)StringConvertUtils.getLong(value);
 		case ObjectTypeString.clsNameInteger:
-			 return StringConvertUtils.getInteger(value);
+			 return (T)StringConvertUtils.getInteger(value);
 		case ObjectTypeString.clsNameFloat:
-			 return StringConvertUtils.getFloat(value);
+			 return (T)StringConvertUtils.getFloat(value);
 		case ObjectTypeString.clsNameDouble:
-			return StringConvertUtils.getDouble(value);
+			return (T)StringConvertUtils.getDouble(value);
 		case ObjectTypeString.clsNameShort:
-			return StringConvertUtils.getShort(value);
+			return (T)StringConvertUtils.getShort(value);
 		case ObjectTypeString.clsNameString:
-			return value;
-		case ObjectTypeString.fieldBoolean:
-			 return StringConvertUtils.getBoolean(value);
-		case ObjectTypeString.fieldByte:
-			 return StringConvertUtils.getByte(value);
-		case ObjectTypeString.fieldDate:
-			 return DateUtils.getDate(value);
-		case ObjectTypeString.fieldLong:
-			 return StringConvertUtils.getLong(value);
-		case ObjectTypeString.fieldInteger:
-			 return StringConvertUtils.getInteger(value);		 
-		case ObjectTypeString.fieldFloat:
-			 return StringConvertUtils.getFloat(value);
-		case ObjectTypeString.fieldDouble:
-			return StringConvertUtils.getDouble(value);
-		case ObjectTypeString.fieldShort:
-			return StringConvertUtils.getShort(value);
-		case ObjectTypeString.fieldString:
-			return value;
+			return (T)value;
 		case ObjectTypeString.clsNameBaseBoolean:
-			return StringConvertUtils.getBoolean(value, false);
+			return (T)StringConvertUtils.getBoolean(value, false);
 		case ObjectTypeString.clsNameBaseByte:
-			return StringConvertUtils.getByte(value,(byte) 0);
+			return (T)StringConvertUtils.getByte(value,(byte) 0);
 		case ObjectTypeString.clsNameBaseDouble:
-			return StringConvertUtils.getDouble(value, 0d);
+			return (T)StringConvertUtils.getDouble(value, 0d);
 		case ObjectTypeString.clsNameBaseFloat:
-			return StringConvertUtils.getFloat(value, 0f);
+			return (T)StringConvertUtils.getFloat(value, 0f);
 		case ObjectTypeString.clsNameBaseInt:
-			return StringConvertUtils.getInteger(value, 0);
+			return (T)StringConvertUtils.getInteger(value, 0);
 		case ObjectTypeString.clsNameBaseLong:
-			return StringConvertUtils.getLong(value, 0L);
+			return (T)StringConvertUtils.getLong(value, 0L);
 		case ObjectTypeString.clsNameBaseShort:
-			return StringConvertUtils.getShort(value, (short)0);
+			return (T)StringConvertUtils.getShort(value, (short)0);
 		default:
 			break;
 		}
-		return obj;
+		return (T)obj;
 	}
 
 	/**

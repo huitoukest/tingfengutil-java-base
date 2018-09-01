@@ -1,11 +1,18 @@
 package com.tingfeng.util.java.base.common.utils.reflect;
 
+import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * 
@@ -13,7 +20,200 @@ import java.util.List;
  * java反射的一些工具方法;
  */
 public class ReflectUtils {
-	
+
+	/**
+	 * 是否是静态方法
+	 * @param cls 类名
+	 * @param methodName 方法名称
+	 * @param parameterTypes 每个参数的类型
+	 * @return
+	 * @throws NoSuchMethodException
+	 * @throws SecurityException
+	 */
+	public static boolean isStaticMethod(Class<?> cls,String methodName,Class<?> ...parameterTypes)
+	{
+		Method method = null;
+		try {
+			method = cls.getMethod(methodName, parameterTypes);
+		} catch (NoSuchMethodException e) {
+			throw new BaseException(e);
+		}
+		int  modifiers  = method.getModifiers();
+		return Modifier.isStatic(modifiers);
+	}
+
+	/**
+	 * 是否是静态方法
+	 * @param method
+	 * @return
+	 */
+	public static boolean isStatic(Method method){
+		int  modifiers  = method.getModifiers();
+		return Modifier.isStatic(modifiers);
+	}
+
+	/**
+	 * 是否是静态属性
+	 * @param field
+	 * @return
+	 */
+	public static boolean isStatic(Field field){
+		boolean isStatic = Modifier.isStatic(field.getModifiers());
+		return isStatic;
+	}
+
+	/**
+	 * 是否是final属性
+	 * @param field
+	 * @return
+	 */
+	public static boolean isFinal(Field field){
+		return java.lang.reflect.Modifier.isFinal(field.getModifiers());
+	}
+
+	/**
+	 * 是否是静态方法
+	 * @param method
+	 * @return
+	 */
+	public static boolean isFinal(Method method){
+		return java.lang.reflect.Modifier.isFinal(method.getModifiers());
+	}
+
+	/**
+	 * 判断这个类是不是java.lang/math/utils包中自带的类;
+	 * @param clazz
+	 * @return
+	 */
+	public static boolean isBaseJavaClass(Class<?> clazz) {
+		boolean isBaseClass = false;
+		if(clazz.isArray()){
+			isBaseClass = false;
+		}else if (clazz.isPrimitive()||clazz.getPackage()==null
+				|| clazz.getPackage().getName().equals("java.lang")
+				|| clazz.getPackage().getName().equals("java.math")
+				|| clazz.getPackage().getName().equals("java.util")) {
+			isBaseClass =  true;
+		}
+		return isBaseClass;
+	}
+	/**
+	 *
+	 * @param field
+	 * @return 如果此类是基础数据或者包装类型或者Date类型,返回true;否则返回false; 如果cls为null,返回false;
+	 */
+	public static boolean isJavaBaseDataField(Field field){
+		return  isJavaBaseDataClass(field.getType().getCanonicalName());
+	}
+
+	/**
+	 *
+	 * @param cls
+	 * @return 如果此类是基础数据或者包装类型或者Date类型,返回true;否则返回false; 如果cls为null,返回false;
+	 */
+	public static boolean isJavaBaseDataClass(Class<?> cls){
+		if(cls==null) return false;
+		return isJavaBaseDataClass(cls.getCanonicalName());
+	}
+	/**
+	 *
+	 * @param clsName
+	 * @return 如果此类是基础数据或者包装类型或者Date类型,返回true;否则返回false; 如果cls为null,返回false;
+	 */
+	public static boolean isJavaBaseDataClass(String clsName){
+
+		switch (clsName) {
+			case ObjectTypeString.clsNameBoolean:
+				return true;
+			case ObjectTypeString.clsNameByte:
+				return true;
+			case ObjectTypeString.clsNameDate:
+				return true;
+			case ObjectTypeString.clsNameLong:
+				return true;
+			case ObjectTypeString.clsNameInteger:
+				return true;
+			case ObjectTypeString.clsNameFloat:
+				return true;
+			case ObjectTypeString.clsNameDouble:
+				return true;
+			case ObjectTypeString.clsNameShort:
+				return true;
+			case ObjectTypeString.clsNameString:
+				return true;
+			case ObjectTypeString.clsNameBaseBoolean:
+				return true;
+			case ObjectTypeString.clsNameBaseByte:
+				return true;
+			case ObjectTypeString.clsNameBaseDouble:
+				return true;
+			case ObjectTypeString.clsNameBaseFloat:
+				return true;
+			case ObjectTypeString.clsNameBaseInt:
+				return true;
+			case ObjectTypeString.clsNameBaseLong:
+				return true;
+			case ObjectTypeString.clsNameBaseShort:
+				return true;
+			default:
+				break;
+		}
+		return false;
+	}
+
+	/** 返回一个类下的所有属性
+	 * @param cls
+	 * @param isContainsStatic 是否包含静态属性
+	 * @param isFinal 是否包含final属性
+	 * @returnC
+	 */
+	public static List<Field> getFields(Class<?> cls,boolean isContainsStatic,boolean isFinal){
+		List<Field> fieldList = new ArrayList<>();
+			Collections.addAll(fieldList,cls.getDeclaredFields()) ;
+		if (!isContainsStatic){
+			fieldList = fieldList.stream().filter(f -> !isStatic(f)).collect(Collectors.toList());
+		}
+		if(!isFinal){
+			fieldList = fieldList.stream().filter(f -> !isFinal(f)).collect(Collectors.toList());
+		}
+		return fieldList;
+	}
+
+	/**
+	 * 返回一个类下的所有属性，不包含静态属性
+	 * @param cls
+	 * @return
+	 */
+	public static List<Field> getFields(Class<?> cls){
+		return getFields(cls,false,false);
+	}
+
+	/**
+	 * 在此类,和其超类中寻找此属性
+	 * @param cls
+	 * @param fieldName
+	 * @return
+	 */
+	public static Field getField(Class<?> cls,String fieldName,boolean setAccessible){
+		try {
+			Field field = cls.getField(fieldName);
+			field.setAccessible(setAccessible);
+			return field;
+		}catch (Exception e){
+			throw new BaseException(e);
+		}
+	}
+
+	/**
+	 * 在此类,和其超类中寻找此属性
+	 * @param cls
+	 * @param fieldName
+	 * @return
+	 */
+	public static Field getField(Class<?> cls,String fieldName){
+		return getField(cls,fieldName,false);
+	}
+
 	/**
 	 * 给属性设置值,会先尝试调用其setter方法,如果没有setter方法会直接给属性赋值
 	 * 支持a.b.c的链式调用取值;
@@ -77,22 +277,7 @@ public class ReflectUtils {
 			}
 		}
 	}
-	/**
-	 * 在此类,和其超类中寻找此属性
-	 * @param cls
-	 * @param fieldName
-	 * @return
-	 * @throws SecurityException 
-	 * @throws NoSuchFieldException 
-	 */
-	public static Field getField(Class<?> cls,String fieldName) throws NoSuchFieldException, SecurityException{	
-		try {
-		return	cls.getDeclaredField(fieldName);
-		} catch (NoSuchFieldException e) {
-				return cls.getSuperclass().getDeclaredField(fieldName);
-		} 
-	}
-	
+
 	/**
 	 * 取属性值,会先尝试调用其getter方法,如果没有getter方法会直接给属性赋值
 	 * @param obj 此属性的对象实例
