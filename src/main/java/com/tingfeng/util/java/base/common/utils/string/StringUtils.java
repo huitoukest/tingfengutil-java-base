@@ -299,7 +299,12 @@ public class StringUtils {
 	
 	/******************************************** 开始数据处理 *************************************************************/
 
-    
+    public static String toUpperFirstChar(String rawString) {
+        String beforeChar = rawString.substring(0, 1).toUpperCase();
+        String afterChar = rawString.substring(1, rawString.length());
+        return beforeChar + afterChar;
+    }
+
     public static String firstCharToLower(String rawString) {
         return prefixToLower(rawString, 1);
     }
