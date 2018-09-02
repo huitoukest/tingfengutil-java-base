@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 /**
@@ -138,5 +139,81 @@ public class HttpUtils {
             }
         }
         return result;
+    }
+
+    /**
+     * 把 名=值 参数表转换成字符串 (url + ?a=1&b=2)
+     *
+     * @param url    url可以为null，为null则返回参数组成的字符串a=1&b=2
+     * @param params url中的参数
+     * @return
+     */
+    public static String getGetUrl(String url, Map<String, Object> params) {
+        StringBuilder sb = new StringBuilder();
+        if (null != url) {
+            sb.append(url);
+        }
+        if (null != params && !params.isEmpty()) {
+            int i = 0;
+            for (String key : params.keySet()) {
+                Object value = params.get(key);
+                if (value != null) {
+                    if (i == 0 && null != url) {
+                        sb.append("?");
+                    } else {
+                        sb.append("&");
+                    }
+                    sb.append(key);
+                    sb.append("=");
+                    sb.append(value);
+                }
+                i++;
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 解析字符串返回 名称=值的参数表 (a=1&b=2 => a=1,b=2)
+     * 通过解析Get的参数url来得到参数
+     * @param str
+     * @return
+     */
+    public static HashMap<String, String> getParamsByGetUrl(String str) {
+        if (str != null && !str.equals("") && str.indexOf("=") > 0) {
+            HashMap<String, String> result = new HashMap<String, String>();
+
+            String name = null;
+            String value = null;
+            int i = 0;
+            while (i < str.length()) {
+                char c = str.charAt(i);
+                switch (c) {
+                    case 61: // =
+                        value = "";
+                        break;
+                    case 38: // &
+                        if (name != null && value != null && !name.equals("")) {
+                            result.put(name, value);
+                        }
+                        name = null;
+                        value = null;
+                        break;
+                    default:
+                        if (value != null) {
+                            value = (value != null) ? (value + c) : "" + c;
+                        } else {
+                            name = (name != null) ? (name + c) : "" + c;
+                        }
+                }
+                i++;
+
+            }
+            if (name != null && value != null && !name.equals("")) {
+                result.put(name, value);
+            }
+            return result;
+        }
+        return null;
     }
 }

@@ -5,6 +5,7 @@ package com.tingfeng.util.java.base.common.inter.voidfunction;
  * @author huitoukest
  *
  */
+@FunctionalInterface
 public interface Functionv {
     public void run();
 }

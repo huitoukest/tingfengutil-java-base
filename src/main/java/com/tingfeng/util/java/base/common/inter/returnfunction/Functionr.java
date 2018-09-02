@@ -5,6 +5,7 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
  * @author huitoukest
  *
  */
+@FunctionalInterface
 public interface Functionr {
     public <T> T run();
 }

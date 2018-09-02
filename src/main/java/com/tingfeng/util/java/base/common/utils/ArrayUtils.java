@@ -72,5 +72,32 @@ public class ArrayUtils {
 		data = null;
 		return outStream.toByteArray();
 	}
+
+	/**
+	 * 把整形数组转换成以“,”相隔的字符串
+	 *
+	 * @param a 数组a
+	 * @return 以“,”相隔的字符串
+	 * @author fengliang
+	 * @serialData 2008-01-08
+	 */
+	public static String toListString(Object[] a, String symbol) {
+		if (a == null)
+			return "";
+		int iMax = a.length - 1;
+		if (iMax == -1)
+			return "";
+		StringBuilder b = new StringBuilder();
+		for (int i = 0; ; i++) {
+			b.append(a[i]);
+			if (i == iMax)
+				return b.toString();
+			b.append(symbol);
+		}
+	}
+
+	public static String toListString(Object[] a) {
+		return toListString(a, ",");
+	}
 	
 }
