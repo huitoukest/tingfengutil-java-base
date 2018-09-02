@@ -5,8 +5,9 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
  * @author huitoukest
  * 
  */
-public interface FunctionrSeven<P1,P2,P3,P4,P5,P6,P7> {
+@FunctionalInterface
+public interface FunctionrSeven<R,P1,P2,P3,P4,P5,P6,P7> {
 
-    public <T> T run(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7);
+    R run(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7);
 
 }

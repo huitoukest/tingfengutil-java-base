@@ -12,12 +12,12 @@ import java.util.Set;
  * 所以此缓存适用于maxSize大于需要缓存的数量时
  * @author huitoukest
  */
-public class SimpleCacheHelper<T> {
+public class SimpleCacheHelper<K,V> {
     private int maxSize;
     private int currentSize = 0;
     /**
      */
-    private Map<Object,SimpleCacheMember<T>> map;
+    private Map<K,SimpleCacheMember<V>> map;
 
     public SimpleCacheHelper(int maxSize){
         map = new HashMap<>();
@@ -29,8 +29,8 @@ public class SimpleCacheHelper<T> {
      * @param key
      * @return
      */
-    public synchronized T get(Object key){
-        SimpleCacheMember<T> member = map.get(key);
+    public synchronized V get(K key){
+        SimpleCacheMember<V> member = map.get(key);
         if(null == member){
             return null;
         }
@@ -43,8 +43,8 @@ public class SimpleCacheHelper<T> {
      * @param key
      * @param value
      */
-    public synchronized void set(Object key,T value){
-        SimpleCacheMember<T> member = map.get(key);
+    public synchronized void set(K key,V value){
+        SimpleCacheMember<V> member = map.get(key);
         if(member == null){
             member = new SimpleCacheMember<>();
             member.setWeight(member.getWeight() + 2);
@@ -63,9 +63,9 @@ public class SimpleCacheHelper<T> {
         while(currentSize > maxSize){
             int minWeight = Integer.MAX_VALUE;
             Object minWeightKey = null;
-            Set<Object> keys = map.keySet();
+            Set<K> keys = map.keySet();
             for(Object key : keys){
-                SimpleCacheMember<T> member = map.get(key);
+                SimpleCacheMember<V> member = map.get(key);
                 if(member.getWeight() < minWeight){
                     minWeight = member.getWeight();
                     minWeightKey = key;

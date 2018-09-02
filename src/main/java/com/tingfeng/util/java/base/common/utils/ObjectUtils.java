@@ -13,7 +13,7 @@ import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringConvertUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 /**
  * 一些通用的对象工具类
@@ -160,6 +160,16 @@ public class ObjectUtils {
 			}			
 		}
 	}
+
+	/**
+	 * 是否是布尔类
+	 *
+	 * @param cls
+	 * @return
+	 */
+	public static Boolean isBoolean(Class<?> cls) {
+		return Boolean.valueOf(cls != null && (Boolean.TYPE.isAssignableFrom(cls) || Boolean.class.isAssignableFrom(cls)));
+	}
 	/**
 	 * 如果cls是基础数据类型和包装类型则返回转换之后的值,否则返回原值
 	 * 这里如果obj是T类型，则直接返回，否则将之转为String类型后自动如果是基础数据类型
@@ -177,37 +187,37 @@ public class ObjectUtils {
 		String value  = obj.toString();
 		switch (cls.getName()) {
 		case ObjectTypeString.clsNameBoolean:
-			 return (T)StringConvertUtils.getBoolean(value);
+			 return (T) StringUtils.getBoolean(value);
 		case ObjectTypeString.clsNameByte:
-			 return (T)StringConvertUtils.getByte(value);
+			 return (T)StringUtils.getByte(value);
 		case ObjectTypeString.clsNameDate:
 			 return (T)DateUtils.getDate(value);
 		case ObjectTypeString.clsNameLong:
-			 return (T)StringConvertUtils.getLong(value);
+			 return (T)StringUtils.getLong(value);
 		case ObjectTypeString.clsNameInteger:
-			 return (T)StringConvertUtils.getInteger(value);
+			 return (T)StringUtils.getInteger(value);
 		case ObjectTypeString.clsNameFloat:
-			 return (T)StringConvertUtils.getFloat(value);
+			 return (T)StringUtils.getFloat(value);
 		case ObjectTypeString.clsNameDouble:
-			return (T)StringConvertUtils.getDouble(value);
+			return (T)StringUtils.getDouble(value);
 		case ObjectTypeString.clsNameShort:
-			return (T)StringConvertUtils.getShort(value);
+			return (T)StringUtils.getShort(value);
 		case ObjectTypeString.clsNameString:
 			return (T)value;
 		case ObjectTypeString.clsNameBaseBoolean:
-			return (T)StringConvertUtils.getBoolean(value, false);
+			return (T)StringUtils.getBoolean(value, false);
 		case ObjectTypeString.clsNameBaseByte:
-			return (T)StringConvertUtils.getByte(value,(byte) 0);
+			return (T)StringUtils.getByte(value,(byte) 0);
 		case ObjectTypeString.clsNameBaseDouble:
-			return (T)StringConvertUtils.getDouble(value, 0d);
+			return (T)StringUtils.getDouble(value, 0d);
 		case ObjectTypeString.clsNameBaseFloat:
-			return (T)StringConvertUtils.getFloat(value, 0f);
+			return (T)StringUtils.getFloat(value, 0f);
 		case ObjectTypeString.clsNameBaseInt:
-			return (T)StringConvertUtils.getInteger(value, 0);
+			return (T)StringUtils.getInteger(value, 0);
 		case ObjectTypeString.clsNameBaseLong:
-			return (T)StringConvertUtils.getLong(value, 0L);
+			return (T)StringUtils.getLong(value, 0L);
 		case ObjectTypeString.clsNameBaseShort:
-			return (T)StringConvertUtils.getShort(value, (short)0);
+			return (T)StringUtils.getShort(value, (short)0);
 		default:
 			break;
 		}

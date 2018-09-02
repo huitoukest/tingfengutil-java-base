@@ -5,8 +5,9 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
  * @author huitoukest
  * 
  */
-public interface FunctionrFour<P1,P2,P3,P4> {
+@FunctionalInterface
+public interface FunctionrFour<R,P1,P2,P3,P4> {
 
-    public <T> T run(P1 p1, P2 p2, P3 p3, P4 p4);
+    R run(P1 p1, P2 p2, P3 p3, P4 p4);
 
 }

@@ -1,4 +1,7 @@
 package com.tingfeng.util.java.base.common.utils;
+
+import java.text.DecimalFormat;
+
 /**
  * 货币处理工具
  * @author huitoukest
@@ -130,5 +133,37 @@ public class CurrencyUtils {
 		
 		
 		return result;
+	}
+
+	/**
+	 * 货币转字符串
+	 *
+	 * @param money
+	 * @param style 样式 [default]要格式化成的格式 such as #.00, #.#
+	 * @return
+	 */
+
+	public static String formatMoneyString(double money, String style) {
+		if (style != null) {
+			Double num = (Double) money;
+			if (style.equalsIgnoreCase("default")) {
+				// 缺省样式 0 不输出 ,如果没有输出小数位则不输出.0
+				if (num == 0) {
+					// 不输出0
+					return "";
+				} else if ((num * 10 % 10) == 0) {
+					// 没有小数
+					return Integer.toString((int) num.intValue());
+				} else {
+					// 有小数
+					return num.toString();
+				}
+
+			} else {
+				DecimalFormat df = new DecimalFormat(style);
+				return df.format(num);
+			}
+		}
+		return money + "";
 	}
 }

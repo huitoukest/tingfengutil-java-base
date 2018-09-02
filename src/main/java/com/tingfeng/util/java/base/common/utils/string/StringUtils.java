@@ -1,14 +1,20 @@
 package com.tingfeng.util.java.base.common.utils.string;
 
+import com.tingfeng.util.java.base.common.constant.Constants;
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionrOne;
+import com.tingfeng.util.java.base.common.utils.RegExpUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,165 +23,484 @@ import java.util.regex.Pattern;
  * String工具类
  */
 public class StringUtils {
+    private final static Logger logger = LoggerFactory.getLogger(StringUtils.class);
+    private final static int BUFFER_SIZE = 4096;
 
-    private static final Pattern numericPattern = Pattern.compile("^[0-9\\-]+$");
-    private static final Pattern numericStringPattern = Pattern.compile("^[0-9\\-\\-]+$");
-    private static final Pattern floatNumericPattern = Pattern.compile("^[0-9\\-\\.]+$");
-    private static final Pattern letterPattern = Pattern.compile("^[a-z|A-Z]+$");
-	public static final String splitStrPattern = ",|，|;|；|、|\\.|。|-|_|\\(|\\)|\\[|\\]|\\{|\\}|\\\\|/| |　|\"";	
-	public static final Pattern blankPatten = Pattern.compile("\\s*|\t|\r|\n");
-	
-	public StringUtils() {
-	}
-	
-	protected static void StringUtilsLog(Object obj){
-        System.out.print(obj.toString());
-    }  
+    public StringUtils() {
 
-	/******************************************** 开始判断 *************************************************************/
+    }
+
     /**
-     * 判断一个字符串是null或者是空白字符串
+     * 将InputStream转换成String
+     *
+     * @param in InputStream
+     * @return String
+     * @throws Exception
+     */
+    public static String getStringByStream(InputStream in) {
+        return getStringByStream(in, Constants.CharSet.UTF8);
+    }
+
+    /**
+     * 将InputStream转换成某种字符编码的String
+     *
+     * @param in
+     * @param encoding
+     * @return
+     * @throws Exception
+     */
+    public static String getStringByStream(InputStream in, String encoding) {
+        String string = null;
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        byte[] data = new byte[BUFFER_SIZE];
+        int count = -1;
+        try {
+            while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
+                outStream.write(data, 0, count);
+            }
+        } catch (IOException e) {
+            throw new BaseException(e);
+        }
+        data = null; //显示数据回收
+        try {
+            string = new String(outStream.toByteArray(), encoding);
+        } catch (UnsupportedEncodingException e) {
+            throw new BaseException(e);
+        }
+        return string;
+    }
+
+    /**
+     * 将byte数组转换成String
+     *
+     * @param in
+     * @param charEncode
+     * @return
+     * @throws UnsupportedEncodingException
+     * @throws Exception
+     */
+    public static String getStringByBytes(byte[] in, String charEncode) throws UnsupportedEncodingException {
+        String string = new String(in, charEncode);
+        return string;
+    }
+
+    public static String getStringByBytes(byte[] in) throws UnsupportedEncodingException {
+        return getStringByBytes(in, "UTF-8");
+    }
+
+    /**
+     * souceString默认使用的是逗号作为分隔符号
+     * 去掉首尾的空白字符和symbol字符串
+     * @param souceString
+     * @param symbol
+     * @return
+     */
+    public static String trimSymbol(String souceString,String symbol) {
+        souceString = souceString.trim();
+        if (souceString.length() < 1) return souceString;
+        if (souceString.indexOf(symbol) == 0) {
+            souceString = souceString.substring(symbol.length());
+        }
+        if (souceString.lastIndexOf(symbol) == souceString.length() - symbol.length()) {
+            souceString = souceString.substring(0, souceString.length() - symbol.length());
+        }
+        return souceString;
+    }
+
+    /**
+     * 首字母小写
+     * @param srcString
+     * @return
+     */
+    public static String toLowerFirstChar(String srcString) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Character.toLowerCase(srcString.charAt(0)));
+        sb.append(srcString.substring(1));
+        return sb.toString();
+    }
+
+
+    /*******************************************************************************
+     * 一些基础类型数据的转换
+     *******************************************************************************/
+
+    public static <T> T getValue(String value, T emptyValue, T defaultValue, FunctionrOne<T,String> convert){
+        if (isEmpty(value)) {
+            return emptyValue;
+        }
+        try {
+            return convert.run(value);
+        }catch (Exception e){
+            return defaultValue;
+        }
+    }
+
+    /**
+     * 解析字符串
+     * @param value
+     * @param emptyValue 字符串是null或者空串时返回的值
+     * @param defaultValue 解析出错后返回的默认字符串
+     * @return
+     */
+    public static Integer getInteger(String value, Integer emptyValue,Integer defaultValue) {
+       return getValue(value,emptyValue,defaultValue,(str) -> Integer.parseInt(str));
+    }
+
+    /**
+     * 解析字符串
+     * @param value
+     * @param defaultValue 解析出错后返回的默认字符串
+     * @return
+     */
+    public static Integer getInteger(String value,Integer defaultValue) {
+        return getInteger(value, null,defaultValue);
+    }
+
+    /** 解析出错后返回的默认字符串是null
      * @param value
      * @return
      */
-	public static boolean  isEmpty(String value){
-        if(value == null|| value.trim().length() < 1)
-            return true;
-        return false;
+    public static Integer getInteger(String value) {
+        return getInteger(value, null);
+    }
+
+    public static Long getLong(String value, Long emptyValue,Long defaultValue) {
+        return getValue(value,emptyValue,defaultValue,(str) -> Long.parseLong(str));
+    }
+
+    public static Long getLong(String value,Long defaultValue) {
+        return getLong(value, null,defaultValue);
+    }
+
+    public static Long getLong(String value){
+        return getLong(value, null);
+    }
+
+    public static Double getDouble(String value, Double emptyValue,Double defaultValue) {
+        return getValue(value,emptyValue,defaultValue,(str) -> Double.parseDouble(str));
+    }
+
+    public static Double getDouble(String value,Double defaultValue){
+        return getDouble(value,null,defaultValue);
+    }
+
+    public static Double getDouble(String value) {
+        return getDouble(value, null);
+    }
+
+    public static Float getFloat(String value, Float emptyValue,Float defaultValue) {
+        return getValue(value,emptyValue,defaultValue,(str) -> Float.parseFloat(str));
+    }
+
+    public static Float getFloat(String value, Float defaultValue){
+        return getFloat(value,null,defaultValue);
+    }
+
+    public static Float getFloat(String value) {
+        return getFloat(value, null);
+    }
+
+    public static Short getShort(String value, Short emptyValue,Short defaultValue) {
+        return getValue(value,emptyValue,defaultValue,(str) -> Short.parseShort(str));
+    }
+
+    public static Short getShort(String value,Short defaultValue) {
+        return getShort(value, null,defaultValue);
+    }
+
+    public static Short getShort(String value){
+        return getShort(value,null);
+    }
+
+    public static Byte getByte(String value, Byte emptyValue,Byte defaultValue) {
+        return getValue(value,emptyValue,defaultValue,(str) -> Byte.parseByte(str));
+    }
+
+    public static Byte getByte(String value,Byte defaultValue) {
+        return getByte(value, null,defaultValue);
+    }
+
+    public static Byte getByte(String value){
+        return getByte(value, null);
+    }
+
+    public static Boolean getBoolean(String value, Boolean emptyValue,Boolean defaultValue) {
+        return getValue(value,emptyValue,defaultValue,(str) -> Boolean.parseBoolean(str));
+    }
+
+    public static Boolean getBoolean(String value,Boolean defaultValue) {
+        return getBoolean(value, null,defaultValue);
+    }
+
+    public static Boolean getBoolean(String value) {
+        return getBoolean(value, null);
+    }
+
+    /**
+     * 全角字符变半角字符
+     *
+     * @param str
+     * @return
+     * @date
+     */
+    public static String toSbcCaseByDbcCase(String str) {
+        if (str == null || "".equals(str))
+            return "";
+        StringBuffer sb = new StringBuffer();
+
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+
+            if (c >= 65281 && c < 65373)
+                sb.append((char) (c - 65248));
+            else
+                sb.append(str.charAt(i));
+        }
+
+        return sb.toString();
+
+    }
+    /**
+     * 全角生成半角
+     */
+	public static String toDbcCaseBySbcCase(String QJstr) {
+		String outStr = "";
+		String Tstr = "";
+		byte[] b = null;
+		for (int i = 0; i < QJstr.length(); i++) {
+			try {
+				Tstr = QJstr.substring(i, i + 1);
+				b = Tstr.getBytes("unicode");
+			} catch (java.io.UnsupportedEncodingException e) {
+				if(logger.isDebugEnabled()){
+				    logger.debug("UnsupportedEncodingException",e);
+                }
+			}
+			if (b[3] == -1) {
+				b[2] = (byte) (b[2] + 32);
+				b[3] = 0;
+				try {
+					outStr = outStr + new String(b, "unicode");
+				} catch (java.io.UnsupportedEncodingException ex) {
+                    if(logger.isDebugEnabled()){
+                        logger.debug("UnsupportedEncodingException",ex);
+                    }
+				}
+			} else {
+				outStr = outStr + Tstr;
+			}
+		}
+		return outStr;
 	}
-	/**
+
+    /**
+     * 解析前台encodeURIComponent编码后的参数
+     *
+     * @param url      前端用urldecoder，编码后的url
+     * @param encoding 编码方式，如"UTF-8"
+     * @return
+     */
+    public static String toDecodeStringUrl(String url, String encoding) {
+        String trem = "";
+        if (StringUtils.isNotEmpty(url)) {
+            try {
+                trem = URLDecoder.decode(url, encoding);
+            } catch (UnsupportedEncodingException e) {
+                e.printStackTrace();
+            }
+        }
+        return trem;
+    }
+
+    /**
+     * 数字转字符串
+     * @param num
+     * @param minValue 如果小于minValue，则输出""
+     * @return
+     */
+    public static String toString(Number num, double minValue) {
+        if (num == null) {
+            return null;
+        } else if (num instanceof Integer && (Integer) num > minValue) {
+            return Integer.toString((Integer) num);
+        } else if (num instanceof Long && (Long) num > minValue) {
+            return Long.toString((Long) num);
+        } else if (num instanceof Float && (Float) num > minValue) {
+            return Float.toString((Float) num);
+        } else if (num instanceof Double && (Double) num > minValue) {
+            return Double.toString((Double) num);
+        } else {
+            return "";
+        }
+    }
+
+    /**
+     * 根据传入的分割符号,把传入的字符串分割为List字符串
+     * @param src        字符串
+     * @param splitRegexSymbol 分隔的正则表达式字符串,
+     * @return 列表
+     */
+    public static  String[] split( String src,String splitRegexSymbol) {
+        if (src == null) {
+            return null;
+        }
+        return  src.split(splitRegexSymbol);
+    }
+
+    /**
+     * 驼峰风格字符串转为下划线连接的小写字符串
+     *
+     * @param param
+     * @return
+     */
+    public static String camelToUnderline(String param) {
+        if (StringUtils.isEmpty(param)) {
+            return "";
+        } else {
+            int len = param.length();
+            StringBuilder sb = new StringBuilder(len);
+            for (int i = 0; i < len; ++i) {
+                char c = param.charAt(i);
+                if (Character.isUpperCase(c) && i > 0) {//如果是大写则加入下划线，并且转为小写字符
+                    sb.append('_');
+                }
+                sb.append(Character.toLowerCase(c));
+            }
+
+            return sb.toString();
+        }
+    }
+
+    /**
+     * 下划线风格的字符串转为驼峰原则
+     * 95代表下划线_
+     * @param param
+     * @return
+     */
+    public static String underlineToCamel(String param) {
+        if (StringUtils.isEmpty(param)) {
+            return "";
+        } else {
+            String temp = param.toLowerCase();
+            int len = temp.length();
+            StringBuilder sb = new StringBuilder(len);
+            for (int i = 0; i < len; ++i) {
+                char c = temp.charAt(i);
+                if (c == 95) {
+                    ++i;
+                    if (i < len) {
+                        sb.append(Character.toUpperCase(temp.charAt(i)));
+                    }
+                } else {
+                    sb.append(c);
+                }
+            }
+            return sb.toString();
+        }
+    }
+
+    /******************************************** 开始判断 *************************************************************/
+
+    /**
+     * 判断一个字符串是null或者是空白字符串
+     *
+     * @param value
+     * @param isTrim 是否trim
+     * @return
+     */
+    public static boolean isEmpty(String value,boolean isTrim) {
+        if (value == null) {
+            return true;
+        }
+        String str = value;
+        if(isTrim){
+            str = value.trim();
+        }
+        if(str.length() < 1){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 判断一个字符串是null或者是空白字符串
+     *
+     * @param value
+     * @return
+     */
+    public static boolean isEmpty(String value) {
+        return isEmpty(value,true);
+    }
+
+    /**
      * 判断对象是否为空
-     * 
+     *
+     * @param str
+     * @return
+     */
+    public static boolean isNotEmpty(String str,boolean isTrim) {
+        return !isEmpty(str,isTrim);
+    }
+
+    /**
+     * 判断对象是否为空
+     *
      * @param str
      * @return
      */
     public static boolean isNotEmpty(String str) {
-        return !isEmpty(str);
+        return isNotEmpty(str,true);
     }
 
     /**
      * 是否是大写字符串
+     *
      * @param str
      * @return
      */
     public static boolean isUpperCase(String str) {
-        return match("^[A-Z]+$", str);
+        return isMatch("^[A-Z]+$", str);
     }
 
     /**
-     * 是否匹配某个正则表达式
+     * str的一部分是否 是否匹配某个正则表达式
+     *
+     * @param str   字符串内容
      * @param regex 正则表达式
-     * @param str 字符串内容
      * @return
      */
-    public static boolean match(String regex, String str) {
-        Pattern pattern = Pattern.compile(regex);
-        Matcher matcher = pattern.matcher(str);
-        return matcher.matches();
+    public static boolean isMatch(String str, String regex) {
+        return RegExpUtils.isMatch(str,regex);
     }
 
     /**
      * word是否包含大写字符串
+     *
      * @param word
      * @return
      */
-    public static boolean containsUpperCase(String word) {
-        for(int i = 0; i < word.length(); ++i) {
+    public static boolean isContainUpperCase(String word) {
+        for (int i = 0; i < word.length(); ++i) {
             char c = word.charAt(i);
-            if(Character.isUpperCase(c)) {
+            if (Character.isUpperCase(c)) {
                 return true;
             }
         }
-
         return false;
     }
-    
-    /**
-     * 判断是否数字表示
-     * 
-     * @param src
-     *            源字符串
-     * @return 是否数字的标志
-     */
-    public static boolean isNumer(String src) {
-        boolean return_value = false;
-        if (src != null && src.length() > 0) {
-            Matcher m = numericPattern.matcher(src);
-            if (m.find()) {
-                return_value = true;
-            }
-        }
-        return return_value;
-    }
 
-    /**
-     * 判断是否数字表示
-     * 
-     * @param src
-     *            源字符串
-     * @return 是否数字的标志
-     */
-    public static boolean isNumericString(String src) {
-        boolean return_value = false;
-        if (src != null && src.length() > 0) {
-            Matcher m = numericStringPattern.matcher(src);
-            if (m.find()) {
-                return_value = true;
-            }
-        }
-        return return_value;
-    }
-
-    /**
-     * 判断是否纯字母组合
-     * 
-     * @param src
-     *            源字符串
-     * @return 是否纯字母组合的标志
-     */
-    public static boolean isLetter(String src) {
-        boolean return_value = false;
-        if (src != null && src.length() > 0) {
-            Matcher m = letterPattern.matcher(src);
-            if (m.find()) {
-                return_value = true;
-            }
-        }
-        return return_value;
-    }
-
-    /**
-     * 判断是否浮点数字表示
-     * 
-     * @param src
-     *            源字符串
-     * @return 是否数字的标志
-     */
-    public static boolean isFloatNumer(String src) {
-        boolean return_value = false;
-        if (src != null && src.length() > 0) {
-            Matcher m = floatNumericPattern.matcher(src);
-            if (m.find()) {
-                return_value = true;
-            }
-        }
-        return return_value;
-    }
-    
     /**
      * 判断某个字符串是否是存在于数组中某一个子串的subStr
-     * 
-     * @param stringArray
-     *            原数组
-     * @param source
-     *            查找的字符串
+     *
+     * @param stringArray 原数组
+     * @param source      查找的字符串
      * @return 是否找到
      */
-    public static boolean isAnyItemContainsSource(String[] stringArray,String source) {
+    public static boolean isAnyItemContainsSource(String[] stringArray, String source) {
         // 转换为list
         List<String> tempList = Arrays.asList(stringArray);
-        for(String s:tempList){
-            if(s != null && s.indexOf(source) >=0){
+        for (String s : tempList) {
+            if (s != null && s.indexOf(source) >= 0) {
                 return true;
             }
         }
@@ -183,62 +508,53 @@ public class StringUtils {
     }
 
     /**
-     * source 中是否包含stringArray中的某个字符串
-     * @param source
-     * @param stringArray
+     * source 中是否包含items中的某个item的字符串
+     * @param source 如果source is null，返回false
+     * @param items
      * @return
      */
-    public static boolean isContainsAnyItem(String source,List<String> stringArray) {
-        for(String s:stringArray){
-            if(s != null && source.indexOf(s) >=0){
+    public static boolean isContainsAnyItem(String source, List<String> items) {
+        if(null == source){
+            return false;
+        }
+        for (String s : items) {
+            if (s != null && source.indexOf(s) >= 0) {
                 return true;
             }
         }
         return false;
     }
+
     /**
-     * source 中是否包含stringArray中的某个字符串
-     * @param source
-     * @param stringArray
+     * source中是否包含items中所有的字符串
+     *
+     * @param source 如果source is null，返回false
+     * @param items
      * @return
      */
-    public static boolean isContainsAnyItem(String source,String[] stringArray) {
-        // 转换为list
-        List<String> tempList = Arrays.asList(stringArray);
-        return isContainsAnyItem(source,tempList);
-    }
-    /**
-     * stringArray中的某个字符串是否包含source
-     * @param source
-     * @param stringArray
-     * @return
-     */
-    public static boolean isAllItemContainsSource(String[] stringArray, String source) {
-        // 转换为list
-        List<String> tempList = Arrays.asList(stringArray);
-        for(String s:tempList){
-            if(null == source) {
-                if(null != s) {
-                    return false;
-                }
-            }else if(s != null && s.indexOf(source) < 0) {
+    public static boolean isContainsAllItem(String source,List<String> items) {
+        if(null == source){
+            return false;
+        }
+        for (String s : items) {
+            if (s != null && source.indexOf(s) < 0) {
                 return false;
             }
         }
         return true;
     }
- 
+
     /**
      * 判断两个字符串是否相等 如果都为null,或者为空串则判断为相等,否则如果s1=s2则相等
-     * 
+     *
      * @param s1
      * @param s2
      * @return
      */
     public static boolean equals(String s1, String s2) {
-        if (StringUtils.isEmpty(s1) && StringUtils.isEmpty(s2)) {
+        if (StringUtils.isEmpty(s1,false) && StringUtils.isEmpty(s2,false)) {
             return true;
-        } else if (!StringUtils.isEmpty(s1) && !StringUtils.isEmpty(s2)) {
+        } else if (null != s1 && null != s2) {
             return s1.equals(s2);
         }
         return false;
@@ -254,59 +570,46 @@ public class StringUtils {
     }
 
     /**
-     * propertyType 是否是CharSequence
-     * @param propertyType 类或者属性的名称
+     * 是否是CharSequence的子类
+     * @param className 类的名称
      * @return
      */
-    public static Boolean isCharSequence(String propertyType) {
+    public static Boolean isCharSequence(String className) {
         try {
-            return isCharSequence(Class.forName(propertyType));
+            return isCharSequence(Class.forName(className));
         } catch (ClassNotFoundException var2) {
-            return Boolean.valueOf(false);
+            return Boolean.FALSE;
         }
     }
 
     /**
-     * 是否是布尔类
-     * @param propertyCls
-     * @return
-     */
-    public static Boolean isBoolean(Class<?> propertyCls) {
-        return Boolean.valueOf(propertyCls != null && (Boolean.TYPE.isAssignableFrom(propertyCls) || Boolean.class.isAssignableFrom(propertyCls)));
-    }
-
-    /**
-     * 是否包含消息字符串
+     * 是否包含小写字符串
+     *
      * @param s
      * @return
      */
-    public static boolean containsLowerCase(String s) {
-        char[] arr$ = s.toCharArray();
-        int len$ = arr$.length;
-
-        for(int i$ = 0; i$ < len$; ++i$) {
-            char c = arr$[i$];
-            if(Character.isLowerCase(c)) {
+    public static boolean isContainLowerCase(String s) {
+        char[] arr = s.toCharArray();
+        int len = arr.length;
+        for (int i = 0; i < len; ++i) {
+            char c = arr[i];
+            if (Character.isLowerCase(c)) {
                 return true;
             }
         }
 
         return false;
     }
-    
-	/******************************************** 结束判断 *************************************************************/
-	
-	
-	/******************************************** 开始数据处理 *************************************************************/
+
+    /******************************************** 结束判断 *************************************************************/
+
+
+    /******************************************** 开始数据处理 *************************************************************/
 
     public static String toUpperFirstChar(String rawString) {
         String beforeChar = rawString.substring(0, 1).toUpperCase();
         String afterChar = rawString.substring(1, rawString.length());
         return beforeChar + afterChar;
-    }
-
-    public static String firstCharToLower(String rawString) {
-        return prefixToLower(rawString, 1);
     }
 
     /**
@@ -315,76 +618,39 @@ public class StringUtils {
      * @param index
      * @return
      */
-    public static String prefixToLower(String rawString, int index) {
+    public static String toLowerByPrefix(String rawString, int index) {
         String beforeChar = rawString.substring(0, index).toLowerCase();
         String afterChar = rawString.substring(index, rawString.length());
         return beforeChar + afterChar;
     }
 
     public static String removePrefixAfterPrefixToLower(String rawString, int index) {
-        return prefixToLower(rawString.substring(index, rawString.length()), 1);
-    }
-    
-    public static String removeIsPrefixIfBoolean(String propertyName, Class<?> propertyType) {
-        if(isBoolean(propertyType).booleanValue() && propertyName.startsWith("is")) {
-            String property = propertyName.replaceFirst("is", "");
-            if(isEmpty(property)) {
-                return propertyName;
-            } else {
-                String firstCharToLowerStr = firstCharToLower(property);
-                return property.equals(firstCharToLowerStr)?propertyName:firstCharToLowerStr;
-            }
-        } else {
-            return propertyName;
-        }
-    }
-    
-    /**
-     * 
-     * @param prefix 属性名称的前缀,如"a."
-     * @param nameString "a.b.c.d"这种的完整的类.属性的级联调用方式,默认以点号分割;
-     * @return 返回一个字符串数组,0索引保存当前属性/类名称,1索引保存除开索引0和前缀的属性名称
-     *            如果没有更多属性,索引0会为null;
-     */
-    public static String[] getFieldNames(String prefix,String nameString){
-        String[] names=new String[2];
-        if(nameString.indexOf(prefix)!=0||prefix.length()>=nameString.length())
-            return names;
-        String nameString2=null;
-            nameString2=nameString.substring(prefix.length());
-        String[] fieldNameStrings=nameString2.split("\\.");
-        if(fieldNameStrings.length<2||StringUtils.isEmpty(fieldNameStrings[1])){
-            names[1]=null;
-        }else{
-            names[1]=nameString2.substring(fieldNameStrings[0].length()+1);
-        }
-        names[0]=fieldNameStrings[0];
-        return names;
+        return toLowerByPrefix(rawString.substring(index, rawString.length()), 1);
     }
 
     /**
      * 获取subString，自动判空
-     * @param subject
+     * @param src
      * @param size
      * @return
      */
-    public static String getSubString(String subject, int size) {
-        if (subject != null && subject.length() > size) {
-            subject = subject.substring(0, size);
+    public static String getSubString(String src, int size) {
+        if (src != null && src.length() > size) {
+            src = src.substring(0, size);
         }
-        return subject;
+        return src;
     }
+
     /**
-     * 截取字符串　超出的字符用symbol代替 　　
-     * 
-     * @param len
-     *            　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
+     * 截取字符串　超出的字符用symbol代替
+     *
+     * @param len     　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
      * @param str
-     * @param symbol
+     * @param symbol 超出的字符用symbol代替
      * @param charset 字符编码
      * @return
      */
-    public static String getLimitLengthString(String str, int len, String symbol,String charset) {
+    public static String getStringByLimitLength(String str, int len, String symbol, String charset) {
         int iLen = len * 2;
         int counterOfDoubleByte = 0;
         String strRet = "";
@@ -400,7 +666,7 @@ public class StringUtils {
                     }
                 }
                 if (counterOfDoubleByte % 2 == 0) {
-                    strRet = new String(b, 0, iLen,charset) + symbol;
+                    strRet = new String(b, 0, iLen, charset) + symbol;
                     return strRet;
                 } else {
                     strRet = new String(b, 0, iLen - 1, charset) + symbol;
@@ -417,22 +683,20 @@ public class StringUtils {
     }
 
     /**
-     * 截取字符串　超出的字符用...代替 　　
-     * 
-     * @param len
-     *            　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
+     * 截取字符串　超出的字符用...代替
+     *
+     * @param len 　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
      * @param str
      * @return12
      */
-    public static String getLimitLengthString(String str, int len) {
-        return getLimitLengthString(str, len, "...","UTF-8");
-    }   
+    public static String getStringByLimitLength(String str, int len) {
+        return getStringByLimitLength(str, len, "...", "UTF-8");
+    }
 
     /**
      * 取得字符串的实际长度（考虑了汉字的情况）
-     * 
-     * @param SrcStr
-     *            源字符串
+     *
+     * @param SrcStr 源字符串
      * @return 字符串的实际长度
      */
     public static int getStringLength(String SrcStr) {
@@ -445,16 +709,16 @@ public class StringUtils {
         }
         return return_value;
     }
-    
+
 
     /***************************************************************************
-     * getHideEmailPrefix - 隐藏邮件地址前缀。
-     * 
+     * toHideEmailPrefix - 获得隐藏邮件地址前缀的邮箱地址。
+     *
      * @param email
      *            - EMail邮箱地址 例如: linwenguo@koubei.com 等等...
      * @return 返回已隐藏前缀邮件地址, 如 *********@koubei.com.
      **************************************************************************/
-    public static String getHideEmailPrefix(String email) {
+    public static String toHideEmailPrefix(String email) {
         if (null != email) {
             int index = email.lastIndexOf('@');
             if (index > 0) {
@@ -466,7 +730,7 @@ public class StringUtils {
 
     /***************************************************************************
      * repeat - 通过源字符串重复生成N次组成新的字符串。
-     * 
+     *
      * @param src
      *            - 源字符串 例如: 空格(" "), 星号("*"), "浙江" 等等...
      * @param num
@@ -475,159 +739,46 @@ public class StringUtils {
      **************************************************************************/
     public static String repeat(String src, int num) {
         StringBuilder s = new StringBuilder();
-        for (int i = 0; i < num; i++)
+        for (int i = 0; i < num; i++) {
             s.append(src);
+        }
         return s.toString();
     }
+
     /**
      * 格式化一个float
-     * 
-     * @param format
-     *            要格式化成的格式 such as #.00, #.#
+     *
+     * @param format 要格式化成的格式 such as #.00, #.#
      */
 
     public static String formatFloat(float f, String format) {
         DecimalFormat df = new DecimalFormat(format);
         return df.format(f);
     }
-    /**
-     * 把 名=值 参数表转换成字符串 (url + ?a=1&b=2)
-     * @param url  url可以为null，为null则返回参数组成的字符串a=1&b=2
-     * @param params url中的参数
-     * @return
-     */
-    public static String getGetUrl(String url,Map<String, Object> params) {
-        StringBuilder sb = new StringBuilder();
-        if(null != url) {
-            sb.append(url);
-        }
-        if(null != params && !params.isEmpty()){
-            int i = 0;
-            for(String key :params.keySet()){
-                Object  value =  params.get(key);
-                if(value != null) {
-                    if (i == 0 && null != url) {
-                        sb.append("?");
-                    } else {
-                        sb.append("&");
-                    }
-                    sb.append(key);
-                    sb.append("=");
-                    sb.append(value);
-                }
-                i++;
-            }
-        }
-        return sb.toString();
-    }
 
-    /**
-     * 解析字符串返回 名称=值的参数表 (a=1&b=2 => a=1,b=2)
-     * 通过解析Get的参数url来得到参数
-     * @param str
-     * @return
-     */
-    public static HashMap<String, String> getParamsByGetUrl(String str) {
-        if (str != null && !str.equals("") && str.indexOf("=") > 0) {
-            HashMap<String,String> result = new HashMap<String,String>();
 
-            String name = null;
-            String value = null;
-            int i = 0;
-            while (i < str.length()) {
-                char c = str.charAt(i);
-                switch (c) {
-                case 61: // =
-                    value = "";
-                    break;
-                case 38: // &
-                    if (name != null && value != null && !name.equals("")) {
-                        result.put(name, value);
-                    }
-                    name = null;
-                    value = null;
-                    break;
-                default:
-                    if (value != null) {
-                        value = (value != null) ? (value + c) : "" + c;
-                    } else {
-                        name = (name != null) ? (name + c) : "" + c;
-                    }
-                }
-                i++;
-
-            }
-
-            if (name != null && value != null && !name.equals("")) {
-                result.put(name, value);
-            }
-
-            return result;
-
-        }
-        return null;
-    }
-    
-
-    
-
-    /**
-     * 货币转字符串
-     * 
-     * @param money
-     * @param style
-     *            样式 [default]要格式化成的格式 such as #.00, #.#
-     * @return
-     */
-
-    public static String formateToMoneyString(double money, String style) {
-        if (style != null) {
-            Double num = (Double) money;
-
-            if (style.equalsIgnoreCase("default")) {
-                // 缺省样式 0 不输出 ,如果没有输出小数位则不输出.0
-                if (num == 0) {
-                    // 不输出0
-                    return "";
-                } else if ((num * 10 % 10) == 0) {
-                    // 没有小数
-                    return Integer.toString((int) num.intValue());
-                } else {
-                    // 有小数
-                    return num.toString();
-                }
-
-            } else {
-                DecimalFormat df = new DecimalFormat(style);
-                return df.format(num);
-            }
-        }
-        return money + "";
-    }
 
     /**
      * 页面中去除字符串中的空格、回车、换行符、制表符
+     *
      * @param str
      * @return
      */
     public static String replaceBlank(String str) {
         if (str != null) {
-            Matcher m = blankPatten.matcher(str);
+            Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PATTERN_STR_BLANK);
+            Matcher m = pattern.matcher(str);
             str = m.replaceAll("");
         }
         return str;
     }
-    
+
     /**
-     * 
      * 转换编码
-     * 
-     * @param s
-     *            源字符串
-     * @param sourceEncoding
-     *            源编码格式
-     * @param targetEncoding
-     *            目标编码格式
+     *
+     * @param s              源字符串
+     * @param sourceEncoding 源编码格式
+     * @param targetEncoding 目标编码格式
      * @return 目标编码
      */
     public static String getStringByChangCoding(String s, String sourceEncoding, String targetEncoding) {
@@ -643,153 +794,87 @@ public class StringUtils {
             return s;
         }
     }
+
     /**
-     * 
      * 字符串替换
-     * 
-     * @param str
-     *            源字符串
-     * @param regEx
-     *            正则表达式样式
-     * @param sd
-     *            替换文本
+     *
+     * @param str   源字符串
+     * @param regEx 正则表达式样式
+     * @param sd    替换文本
      * @return 结果串
      */
-    public static String getStringByReplaceByReg(String str, String regEx, String sd) {
+    public static String replaceByReg(String str, String regEx, String sd) {
         Pattern p = Pattern.compile(regEx, Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(str);
         str = m.replaceAll(sd);
         return str;
-    }       
-    /**
-     * 
-     * 得到字符串的子串位置序列
-     * 
-     * @param str
-     *            字符串
-     * @param sub
-     *            子串
-     * @return 字符串的子串位置序列
-     */
-    public static int[] getPositionBySubString(String str, String sub) {
-        String[] sp = null;
-        int l = sub.length();
-        sp = splitString(str, sub);
-        if (sp == null) {
-            return null;
-        }
-        int[] ip = new int[sp.length - 1];
-        for (int i = 0; i < sp.length - 1; i++) {
-            ip[i] = sp[i].length() + l;
-            if (i != 0) {
-                ip[i] += ip[i - 1];
-            }
-        }
-        return ip;
     }
 
     /**
-     * 
-     * 根据正则表达式分割字符串
-     * 
-     * @param str
-     *            源字符串
-     * @param regEx
-     *            正则表达式
-     * @return 目标字符串组
+     * 得到字符串的regExp匹配的位置序列
+     *
+     * @param str 字符串
+     * @param regExp 正则表达式
+     * @return 字符串的子串位置序列
      */
-    public static String[] splitString(String str, String regEx) {
-        Pattern p = Pattern.compile(regEx, Pattern.CASE_INSENSITIVE);
-        String[] sp = p.split(str);
-        return sp;
+    public static List<Integer> getSubStringPositions(String str, String regExp) {
+        String[] sp = split(str, regExp);
+        if (sp == null || sp.length < 1) {
+            return Collections.EMPTY_LIST;
+        }
+        int spIndex = 0;
+        int lastIndex = 0;
+        if(str.indexOf(sp[0]) == 0){
+            lastIndex = sp[0].length();
+            ++spIndex;
+        }
+        List<Integer> positions = Collections.EMPTY_LIST;
+        Pattern p = Pattern.compile(regExp, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = p.matcher(str);
+        while (matcher.find()){
+              positions.add(lastIndex + 1);
+              lastIndex = lastIndex + matcher.group(0).length() + sp[++spIndex].length();
+        }
+        return positions;
     }
 
     /**
      * 根据正则表达式提取字符串,相同的字符串只返回一个
-     * 
-     * @param str 源字符串
-     * @param pattern
-     *            正则表达式
+     *
+     * @param str     源字符串
+     * @param regExp 正则表达式
      * @return 目标字符串数据组
-     ************************************************************************* 
+     * ************************************************************************
      */
 
-    // ★传入一个字符串，把符合pattern格式的字符串放入字符串数组
+    // ★传入一个字符串，把符合pattern格式的字符串放入字符串Set
     // java.util.regex是一个用正则表达式所订制的模式来对字符串进行匹配工作的类库包
-    public static String[] getStringArrayByPattern(String str, String pattern) {
-        Pattern p = Pattern.compile(pattern, Pattern.CASE_INSENSITIVE);
+    public static Set<String> getStringsByPattern(String str, String regExp) {
+        Pattern p = Pattern.compile(regExp, Pattern.CASE_INSENSITIVE);
         Matcher matcher = p.matcher(str);
         // 范型
         Set<String> result = new HashSet<String>();// 目的是：相同的字符串只返回一个。。。 不重复元素
         // boolean find() 尝试在目标字符串里查找下一个匹配子串。
         while (matcher.find()) {
             for (int i = 0; i < matcher.groupCount(); i++) { // int groupCount()
-                                                                // 返回当前查找所获得的匹配组的数量。
+                // 返回当前查找所获得的匹配组的数量。
                 // org.jeecgframework.core.util.LogUtil.info(matcher.group(i));
                 result.add(matcher.group(i));
 
             }
         }
-        String[] resultStr = null;
-        if (result.size() > 0) {
-            resultStr = new String[result.size()];
-            return result.toArray(resultStr);// 将Set result转化为String[] resultStr
-        }
-        return resultStr;
+        return result;
 
-    }
-
-    
-    
-    // 字符串的替换
-    public static String replace(String strSource, String strOld, String strNew) {
-        if (strSource == null) {
-            return null;
-        }
-        int i = 0;
-        if ((i = strSource.indexOf(strOld, i)) >= 0) {
-            char[] cSrc = strSource.toCharArray();
-            char[] cTo = strNew.toCharArray();
-            int len = strOld.length();
-            StringBuilder buf = new StringBuilder(cSrc.length);
-            buf.append(cSrc, 0, i).append(cTo);
-            i += len;
-            int j = i;
-            while ((i = strSource.indexOf(strOld, i)) > 0) {
-                buf.append(cSrc, j, i - j).append(cTo);
-                i += len;
-                j = i;
-            }
-            buf.append(cSrc, j, cSrc.length - j);
-            return buf.toString();
-        }
-        return strSource;
-    }
-
-    /**
-     * 判断是否与给定字符串样式匹配
-     * 
-     * @param str
-     *            字符串
-     * @param pattern
-     *            正则表达式样式
-     * @return 是否匹配是true,否false
-     */
-    public static boolean isMatch(String str, String pattern) {
-        Pattern pattern_hand = Pattern.compile(pattern);
-        Matcher matcher_hand = pattern_hand.matcher(str);
-        boolean b = matcher_hand.matches();
-        return b;
     }
 
     /**
      * ************************************************************************* 用要通过URL传输的内容进行编码
-     * 
+     *
      * @param src 源字符串
      * @return 经过编码的内容
-     ************************************************************************* 
+     * ************************************************************************
      */
-    public static String URLEncode(String src,String encoding) {
+    public static String encodeURL(String src, String encoding) {
         String return_value = "";
         try {
             if (src != null) {
@@ -801,67 +886,11 @@ public class StringUtils {
         }
         return return_value;
     }
-    
-    /**
-     * 判断文字内容重复
-     */
-    public static boolean isContentRepeat(String content) {
-        int similarNum = 0;
-        int forNum = 0;
-        int subNum = 0;
-        int thousandNum = 0;
-        String startStr = "";
-        String nextStr = "";
-        boolean result = false;
-        float endNum = (float) 0.0;
-        if (content != null && content.length() > 0) {
-            if (content.length() % 1000 > 0)
-                thousandNum = (int) Math.floor(content.length() / 1000) + 1;
-            else
-                thousandNum = (int) Math.floor(content.length() / 1000);
-            if (thousandNum < 3)
-                subNum = 100 * thousandNum;
-            else if (thousandNum < 6)
-                subNum = 200 * thousandNum;
-            else if (thousandNum < 9)
-                subNum = 300 * thousandNum;
-            else
-                subNum = 3000;
-            for (int j = 1; j < subNum; j++) {
-                if (content.length() % j > 0)
-                    forNum = (int) Math.floor(content.length() / j) + 1;
-                else
-                    forNum = (int) Math.floor(content.length() / j);
-                if (result || j >= content.length())
-                    break;
-                else {
-                    for (int m = 0; m < forNum; m++) {
-                        if (m * j > content.length() || (m + 1) * j > content.length() || (m + 2) * j > content.length())
-                            break;
-                        startStr = content.substring(m * j, (m + 1) * j);
-                        nextStr = content.substring((m + 1) * j, (m + 2) * j);
-                        if (startStr.equals(nextStr)) {
-                            similarNum = similarNum + 1;
-                            endNum = (float) similarNum / forNum;
-                            if (endNum > 0.4) {
-                                result = true;
-                                break;
-                            }
-                        } else
-                            similarNum = 0;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
 
     /**
-    
-
-    /**
+     * /**
      * 全角括号转为半角
+     *
      * @param str
      * @return
      */
@@ -873,106 +902,6 @@ public class StringUtils {
         return str;
     }
 
-    /**
-     * 解析字符串返回map键值对(例：a=1&b=2 => a=1,b=2)
-     * 
-     * @param query
-     *            源参数字符串
-     * @param split1
-     *            键值对之间的分隔符（例：&）
-     * @param split2
-     *            key与value之间的分隔符（例：=）
-     * @param dupLink
-     *            重复参数名的参数值之间的连接符，连接后的字符串作为该参数的参数值，可为null null：不允许重复参数名出现，则靠后的参数值会覆盖掉靠前的参数值。
-     * @return map
-     * @author sky
-     */
-    public static Map<String, String> parseQuery(String query, char split1, char split2, String dupLink) {
-        if (!StringUtils.isEmpty(query) && query.indexOf(split2) > 0) {
-            Map<String, String> result = new HashMap<String,String>();
-            
-            String name = null;
-            String value = null;
-            String tempValue = "";
-            int len = query.length();
-            for (int i = 0; i < len; i++) {
-                char c = query.charAt(i);
-                if (c == split2) {
-                    value = "";
-                } else if (c == split1) {
-                    if (!StringUtils.isEmpty(name) && value != null) {
-                        if (dupLink != null) {
-                            tempValue = result.get(name);
-                            if (tempValue != null) {
-                                value += dupLink + tempValue;
-                            }
-                        }
-                        result.put(name, value);
-                    }
-                    name = null;
-                    value = null;
-                } else if (value != null) {
-                    value += c;
-                } else {
-                    name = (name != null) ? (name + c) : "" + c;
-                }
-            }
+    /******************************************** 结束数据处理 *************************************************************/
 
-            if (!StringUtils.isEmpty(name) && value != null) {
-                if (dupLink != null) {
-                    tempValue = result.get(name);
-                    if (tempValue != null) {
-                        value += dupLink + tempValue;
-                    }
-                }
-                result.put(name, value);
-            }
-
-            return result;
-        }
-        return null;
-    }
-    /**
-     * 获取从start开始用*替换len个长度后的字符串
-     * 
-     * @param str
-     *            要替换的字符串
-     * @param start
-     *            开始位置
-     * @param len
-     *            长度
-     * @return 替换后的字符串
-     */
-    public static String replaceSubStr(String str, int start, int len) {
-        if (StringUtils.isEmpty(str)) {
-            return str;
-        }
-        if (str.length() < start) {
-            return str;
-        }
-
-        // 获取*之前的字符串
-        String ret = str.substring(0, start);
-
-        // 获取最多能打的*个数
-        int strLen = str.length();
-        if (strLen < start + len) {
-            len = strLen - start;
-        }
-
-        // 替换成*
-        for (int i = 0; i < len; i++) {
-            ret += "*";
-        }
-
-        // 加上*之后的字符串
-        if (strLen > start + len) {
-            ret += str.substring(start + len);
-        }
-
-        return ret;
-    }
-    
-	/******************************************** 结束数据处理 *************************************************************/	
-	
 }
