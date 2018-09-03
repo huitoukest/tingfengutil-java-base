@@ -2,11 +2,9 @@ package com.tingfeng.util.java.base.common.utils.datetime;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
@@ -582,5 +580,57 @@ public class DateUtils {
 	 */
 	public static String formatDateAndTimeToString(Date date){
 		return format(date, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
+	}
+
+
+	/**
+	 * 获取两个日期之间的日期(并且将每天的时间格式化为0点)
+	 * @param beginDate
+	 * @param endDate
+	 * @param isContainsBeginDate 是否包含开始时间
+	 * @param isContainsEndDate 是否包含结束时间
+	 * @return
+	 */
+	public static List<Date> getDatesBetweenTwoDate(Date beginDate, Date endDate,boolean isContainsBeginDate,boolean isContainsEndDate) {
+
+		List<Date> dates = new ArrayList<Date>();
+		Calendar cal = Calendar.getInstance();
+		cal.setTime(beginDate);
+		Date tmpDate = null;
+
+		if(isContainsBeginDate){
+			dates.add(tmpDate);
+		}
+
+		while (true) {
+			cal.add(Calendar.DAY_OF_MONTH, 1);
+			// 测试此日期是否在指定日期之后
+			if (endDate.before(cal.getTime())) {
+				dates.add(cal.getTime());
+			} else {
+				break;
+			}
+		}
+		if(isContainsEndDate){
+			dates.add(endDate);
+		}
+		return dates.stream().map(it -> {
+				cal.setTime(it);
+				cal.set(Calendar.HOUR, 0);
+				cal.set(Calendar.MINUTE, 0);
+				cal.set(Calendar.SECOND, 0);
+				cal.set(Calendar.MILLISECOND, 0);
+				return cal.getTime();
+			}).collect(Collectors.toList());
+	}
+
+	/**
+	 * 获取两个日期之间的日期(并且将每天的时间格式化为0点),默认包含开始和结束时间
+	 * @param beginDate
+	 * @param endDate
+	 * @return
+	 */
+	public static List<Date> getDatesBetweenTwoDate(Date beginDate, Date endDate){
+		   return getDatesBetweenTwoDate(beginDate,endDate,true,true);
 	}
 }

@@ -1,5 +1,8 @@
 package com.tingfeng.util.java.base.web.http;
 
+import com.tingfeng.util.java.base.common.constant.Constants;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -215,5 +218,30 @@ public class HttpUtils {
             return result;
         }
         return null;
+    }
+
+    /**
+     * 得到处理后的可用url,如果relativeUrl是http或https开头的连接
+     * 那么不处理，否者返回urlPrefix + relativeUrl.trim()的值
+     * @param urlPrefix
+     * @param relativeUrl
+     * @return
+     */
+    public static String getFileUrl(String urlPrefix,String relativeUrl){
+        if(StringUtils.isEmpty(relativeUrl)){
+            return "";
+        }
+
+        if(StringUtils.isEmpty(urlPrefix)){
+            return relativeUrl;
+        }
+
+        relativeUrl = relativeUrl.trim();
+
+        if(relativeUrl.startsWith(Constants.HttpConfig.KEY_HTTPS) || relativeUrl.startsWith(Constants.HttpConfig.KEY_HTTP)){
+            return relativeUrl;
+        }
+
+        return urlPrefix + relativeUrl;
     }
 }

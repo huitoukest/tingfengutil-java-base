@@ -25,9 +25,10 @@ import java.util.stream.Stream;
  */
 public class ReflectUtils {
     private static Pattern needConvertFiled = Pattern.compile("^[_a-z][^A-Z]|[_a-z]$");
+    private static SimpleCacheHelper<String,List<Field>> DATA_FILED_CACHE = new SimpleCacheHelper<>(100);
+
     /**
      * 是否是静态方法
-     *
      * @param cls            类名
      * @param methodName     方法名称
      * @param parameterTypes 每个参数的类型
@@ -175,16 +176,29 @@ public class ReflectUtils {
      * @param cls
      * @param isContainsStatic 是否包含静态属性
      * @param isFinal          是否包含final属性
+     * @param isUseCache 是否将结果缓存
      * @returnC
      */
-    public static List<Field> getFields(Class<?> cls, boolean isContainsStatic, boolean isFinal) {
-        List<Field> fieldList = new ArrayList<>();
-        Collections.addAll(fieldList, cls.getDeclaredFields());
-        if (!isContainsStatic) {
-            fieldList = fieldList.stream().filter(f -> !isStatic(f)).collect(Collectors.toList());
+    public static List<Field> getFields(Class<?> cls, boolean isContainsStatic, boolean isFinal,boolean isUseCache) {
+        List<Field> fieldList = null;
+        String key = cls.getCanonicalName() + isContainsStatic + isFinal;
+        boolean cacheChange = false;
+        if(isUseCache){
+            fieldList = DATA_FILED_CACHE.get(key);
         }
-        if (!isFinal) {
-            fieldList = fieldList.stream().filter(f -> !isFinal(f)).collect(Collectors.toList());
+        if(null == fieldList) {
+            cacheChange = true;
+            fieldList = new ArrayList<>();
+            Collections.addAll(fieldList, cls.getDeclaredFields());
+            if (!isContainsStatic) {
+                fieldList = fieldList.stream().filter(f -> !isStatic(f)).collect(Collectors.toList());
+            }
+            if (!isFinal) {
+                fieldList = fieldList.stream().filter(f -> !isFinal(f)).collect(Collectors.toList());
+            }
+        }
+        if(isUseCache && cacheChange) {
+            DATA_FILED_CACHE.set(key, fieldList);
         }
         return fieldList;
     }
@@ -196,7 +210,7 @@ public class ReflectUtils {
      * @return
      */
     public static List<Field> getFields(Class<?> cls) {
-        return getFields(cls, false, false);
+        return getFields(cls, false, false,true);
     }
 
     /**
