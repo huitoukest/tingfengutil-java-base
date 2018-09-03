@@ -19,13 +19,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
 import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.inter.RateCallBackI;
+import com.tingfeng.util.java.base.common.utils.Base64Utils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 public class FileUtils {
 	public static final int BUFFER_SIZE = 4096;
+	public static  final String BASE64_IMG_HEADER_START = "data:image/";
+	public static  final String BASE64_IMG_HEADER_END = ";base64";
 
 	protected static void writeLog(String s) {
 		System.out.print(s);
@@ -644,7 +648,7 @@ public class FileUtils {
 	 * 
 	 * @param srcFileName
 	 *            待复制的文件名
-	 * @param descFileName
+	 * @param destFileName
 	 *            目标文件名
 	 * @param overlay
 	 *            如果目标文件存在，是否覆盖
@@ -815,5 +819,70 @@ public class FileUtils {
 				}
 			}
 		}
+	}
+
+
+
+
+	/**
+	 * 通过base64的字符串来获取文件名data:image/png;
+	 * @param imgStr 如果没有获取到或者内容是空则返回空串
+	 * @return
+	 */
+	public static String getExtensionNameByBase64Img(String imgStr){
+		if(StringUtils.isNotEmpty(imgStr)){
+			int start = imgStr.indexOf(BASE64_IMG_HEADER_START) + 11;
+			int end = imgStr.indexOf(BASE64_IMG_HEADER_END);
+			if(start <= end){
+				return imgStr.substring(start,end);
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * 上传成功返回true，否则返回false;并且会自动关闭输出流
+	 * @param fileStr
+	 * @param out
+	 * @return
+	 */
+	public static void saveBase64File(String fileStr,OutputStream out) throws IOException {
+		//对字节数组字符串进行Base64解码并生成图片
+		if (fileStr == null) {
+			//图像数据为空
+			throw new BaseException("文件内容不能为空！");
+		}
+		try {
+			fileStr = getBase64ImgFileContent(fileStr);
+			//Base64解码
+			byte[] content = Base64Utils.deCode(fileStr);
+			for(int i = 0 ;i < content.length;++i){
+				if(content[i] < 0) {
+					content[i] += 256;//调整异常数据
+				}
+			}
+			//生成jpeg图片
+			out.write(content);
+			out.flush();
+			out.close();
+		}finally {
+			if(out!=null){
+				out.flush();
+				out.close();
+			}
+		}
+	}
+
+	/**
+	 * 获取base64的图片的内容信息
+	 * @param fileStr
+	 * @return
+	 */
+	public static String getBase64ImgFileContent(String fileStr){
+		int flag = fileStr.indexOf(",");
+		if(flag <= 0){
+			throw new BaseException("不是base64的图片文件");
+		}
+		return fileStr.substring(flag + 1);
 	}
 }

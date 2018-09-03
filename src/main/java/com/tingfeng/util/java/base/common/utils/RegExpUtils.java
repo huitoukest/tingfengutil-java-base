@@ -24,6 +24,9 @@ public class RegExpUtils {
     public static final String PATTERN_STR_URL = "^((ht|f)tps?):\\/\\/([\\w\\-]+(\\.[\\w\\-]+)*\\/)*[\\w\\-]+(\\.[\\w\\-]+)*\\/?(\\?([\\w\\-\\.,@?^=%&:\\/~\\+#]*)+)?";
     public static final String PATTERN_STR_HTTP = "^((http)s?):\\/\\/";
     public static final String PATTERN_STR_EMAIL = "^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*\\.[a-zA-Z0-9]{2,6}$";
+    public static final String PATTERN_STR_AGE  = "^[1-9][0-9]{0,1}$";
+    public static final String PATTERN_STR_BIRTHDAY  = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
+    public static final String PATTERN_STR_PHONE_CN = "^(13\\d|14[57]|15[012356789]|18\\d|17[01678]|19[89]|166)\\d{8}$";
 
     public static Pattern getPattern(String regex){
         if(null == regex){
