@@ -9,11 +9,13 @@ import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MessageDigestUtils {
 
     private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
+    private static final Map<String,MessageDigest> messageDigestMap = new HashMap<>(10);
     public enum  SHAType{
         SHA512("SHA-512"),SHAMAC512("HmacSHA512"),SHA256("SHA-256"),SHAMAC256("HmacSHA256"),
         SHA1("SHA-1");
@@ -33,10 +35,19 @@ public class MessageDigestUtils {
         System.out.println("HmacSHA512：" + toHexString(MACSHA(SHAType.SHAMAC256,"i m a sample".getBytes(),"123456".getBytes())));
     }
 
+    /**
+     * 返回的MessageDigest是单实例复用的，是线程不安全的,需要手动同步
+     * @param type
+     * @return
+     */
     private static MessageDigest getMessageDigest(String type){
         MessageDigest messageDigest;
         try {
-            messageDigest = MessageDigest.getInstance(type);
+            messageDigest = messageDigestMap.get(type);
+            if (null == messageDigest) {
+                messageDigest = MessageDigest.getInstance(type);
+                messageDigestMap.put(type, messageDigest);
+            }
             return messageDigest;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
@@ -53,20 +64,21 @@ public class MessageDigestUtils {
      */
     public static byte[] hash(String algorithmName,byte[] bytes, byte[] salt, int hashIterations){
         MessageDigest digest = getMessageDigest(algorithmName);
-        if (salt != null) {
+        synchronized (digest) {
             digest.reset();
-            digest.update(salt);
+            if (salt != null) {
+                digest.update(salt);
+            }
+
+            byte[] hashed = digest.digest(bytes);
+            int iterations = hashIterations - 1;
+
+            for (int i = 0; i < iterations; ++i) {
+                digest.reset();
+                hashed = digest.digest(hashed);
+            }
+            return hashed;
         }
-
-        byte[] hashed = digest.digest(bytes);
-        int iterations = hashIterations - 1;
-
-        for(int i = 0; i < iterations; ++i) {
-            digest.reset();
-            hashed = digest.digest(hashed);
-        }
-
-        return hashed;
     }
 
     /**
@@ -153,7 +165,10 @@ public class MessageDigestUtils {
      */
     public static byte[] MD5(byte[] plainText) {
         MessageDigest messageDigest = getMessageDigest("md5");
-        return messageDigest.digest(plainText);
+        synchronized (messageDigest) {
+            messageDigest.reset();
+            return messageDigest.digest(plainText);
+        }
     }
 
     /**
@@ -165,7 +180,10 @@ public class MessageDigestUtils {
      */
     public static byte[] SHA(SHAType shaType,byte[] plainText) {
         MessageDigest messageDigest = getMessageDigest(shaType.getValue());
-        return messageDigest.digest(plainText);
+        synchronized (messageDigest) {
+            messageDigest.reset();
+            return messageDigest.digest(plainText);
+        }
     }
 
     public static byte[] SHA(SHAType shaType,byte[] plainText,String salt) {

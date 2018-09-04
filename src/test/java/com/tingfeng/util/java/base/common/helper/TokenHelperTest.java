@@ -7,15 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TokenHelperTest {
-
-
-    @Test
-    public void test(){
-        test(true);
-    }
-
-    public void test(boolean isPrint) {
-        ArrayList<String> list = new ArrayList<>();
+    static ArrayList<String> list = new ArrayList<>();
+    static{
         //分别存入空串，用户id，过期时间，token类型，空串
         list.add("");
         list.add("");
@@ -25,7 +18,18 @@ public class TokenHelperTest {
         list.add(",,5,6,7,,");
         list.add("");
         list.add("");
+    }
 
+    public static void main(String[] args){
+        new TokenHelperTest().testSpeed();
+    }
+
+    @Test
+    public void test(){
+        test(true);
+    }
+
+    public void test(boolean isPrint) {
         TokenHelper tokenHelper = new TokenHelper();
         String token  = tokenHelper.getToken(list,"123456");
 
@@ -38,7 +42,7 @@ public class TokenHelperTest {
     @Test
     public void testSpeed(){
         long startTime = System.currentTimeMillis();
-        for(int i = 0;i < 1000000;i++){
+        for(int i = 0;i < 100000000;i++){
             if(i % 10000 == 0) {
                 test(true);
             }else {
