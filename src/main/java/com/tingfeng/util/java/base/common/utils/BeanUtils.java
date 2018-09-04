@@ -374,8 +374,8 @@ public class BeanUtils{
 				fieldMap.put(f.getName(), f);
 			}
 			for(String s:keySet){
-				try {							
-					String[] names=StringUtils.getFieldNames(prefix, s);
+				try {					//prefix,这里需要测试修改
+					String[] names= s.split(s,2);
 					String nameOne=names[0];
 					String nameTwo=names[1];
 					if(nameOne==null) 
