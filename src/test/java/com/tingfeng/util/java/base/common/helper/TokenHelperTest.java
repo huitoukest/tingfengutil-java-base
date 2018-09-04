@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TokenHelperTest {
     static ArrayList<String> list = new ArrayList<>();
@@ -42,12 +43,34 @@ public class TokenHelperTest {
     @Test
     public void testSpeed(){
         long startTime = System.currentTimeMillis();
-        for(int i = 0;i < 100000000;i++){
+        for(int i = 0;i < 10000000;i++){
             if(i % 10000 == 0) {
                 test(true);
             }else {
                 test(false);
             }
+        }
+        System.out.println("use time:" + (System.currentTimeMillis() - startTime));
+    }
+
+    @Test
+    public void testSpeed2() throws InterruptedException {
+        long startTime = System.currentTimeMillis();
+        AtomicInteger value = new AtomicInteger(0);
+        for(int i = 0 ; i < 20 ;i++) {
+         new Thread(()->{
+             for (int j = 0; j < 500000; j++) {
+                 if (value.get() % 10000 == 0) {
+                     test(true);
+                 } else {
+                     test(false);
+                 }
+                 value.incrementAndGet();
+             }
+         }).start();
+        }
+        while (value.get() < 20 * 500000){
+            Thread.sleep(5);
         }
         System.out.println("use time:" + (System.currentTimeMillis() - startTime));
     }
