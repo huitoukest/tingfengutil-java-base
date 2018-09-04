@@ -77,7 +77,11 @@ public class MessageDigestUtils {
      * @return
      */
     public static byte[] hash(String algorithmName,String content, String salt){
-        return hash(algorithmName,content.getBytes(Charset.forName("utf-8")),salt.getBytes(Charset.forName("utf-8")),1);
+        byte[] saltByte = null;
+        if(null != salt){
+            saltByte = salt.getBytes(Charset.forName("utf-8"));
+        }
+        return hash(algorithmName,content.getBytes(Charset.forName("utf-8")),saltByte,1);
     }
 
     /**

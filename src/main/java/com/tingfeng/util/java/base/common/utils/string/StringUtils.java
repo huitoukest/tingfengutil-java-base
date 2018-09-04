@@ -800,13 +800,13 @@ public class StringUtils {
      *
      * @param str   源字符串
      * @param regEx 正则表达式样式
-     * @param sd    替换文本
+     * @param insteadStr    替换文本
      * @return 结果串
      */
-    public static String replaceByReg(String str, String regEx, String sd) {
+    public static String replaceByReg(String str, String regEx, String insteadStr) {
         Pattern p = Pattern.compile(regEx, Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(str);
-        str = m.replaceAll(sd);
+        str = m.replaceAll(insteadStr);
         return str;
     }
 

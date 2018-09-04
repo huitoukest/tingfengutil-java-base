@@ -111,14 +111,14 @@ public class HtmlUtils {
 	 ************************************************************************* 
 	 */
 	public static String getStringByremoveHTMLLableExe(String str) {
-		str = StringUtils. getStringByReplaceByReg(str, ">\\s*<", "><");
-		str = StringUtils. getStringByReplaceByReg(str, "&nbsp;", " ");// 替换空格
-		str = StringUtils. getStringByReplaceByReg(str, "<br ?/?>", "\n");// 去<br><br />
-		str = StringUtils. getStringByReplaceByReg(str, "<([^<>]+)>", "");// 去掉<>内的字符
-		str = StringUtils. getStringByReplaceByReg(str, "\\s\\s\\s*", " ");// 将多个空白变成一个空格
-		str = StringUtils. getStringByReplaceByReg(str, "^\\s*", "");// 去掉头的空白
-		str = StringUtils. getStringByReplaceByReg(str, "\\s*$", "");// 去掉尾的空白
-		str = StringUtils. getStringByReplaceByReg(str, " +", " ");
+		str = StringUtils. replaceByReg(str, ">\\s*<", "><");
+		str = StringUtils. replaceByReg(str, "&nbsp;", " ");// 替换空格
+		str = StringUtils. replaceByReg(str, "<br ?/?>", "\n");// 去<br><br />
+		str = StringUtils. replaceByReg(str, "<([^<>]+)>", "");// 去掉<>内的字符
+		str = StringUtils. replaceByReg(str, "\\s\\s\\s*", " ");// 将多个空白变成一个空格
+		str = StringUtils. replaceByReg(str, "^\\s*", "");// 去掉头的空白
+		str = StringUtils. replaceByReg(str, "\\s*$", "");// 去掉尾的空白
+		str = StringUtils. replaceByReg(str, " +", " ");
 		return str;
 	}
     
@@ -131,9 +131,9 @@ public class HtmlUtils {
 	 * @return 目标字符串
 	 */
 	public static String getInnerHTMLLableAndString(String str) {
-		str = StringUtils. getStringByReplaceByReg(str, ">([^<>]+)<", "><");
-		str = StringUtils. getStringByReplaceByReg(str, "^([^<>]+)<", "<");
-		str = StringUtils. getStringByReplaceByReg(str, ">([^<>]+)$", ">");
+		str = StringUtils. replaceByReg(str, ">([^<>]+)<", "><");
+		str = StringUtils. replaceByReg(str, "^([^<>]+)<", "<");
+		str = StringUtils. replaceByReg(str, ">([^<>]+)$", ">");
 		return str;
 	}
 	
