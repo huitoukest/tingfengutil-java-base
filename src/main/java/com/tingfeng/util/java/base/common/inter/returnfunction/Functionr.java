@@ -6,6 +6,6 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
  *
  */
 @FunctionalInterface
-public interface Functionr {
-    public <T> T run();
+public interface Functionr<T> {
+    T run();
 }
