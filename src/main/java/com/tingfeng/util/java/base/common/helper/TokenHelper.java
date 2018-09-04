@@ -88,7 +88,17 @@ public class TokenHelper {
      * @return
      */
     private String escapeContent(String content){
-            return content.replaceAll(",","\\\\,");
+        synchronized (escapeStringBuilder) {
+            escapeStringBuilder.setLength(0);
+            char[] chars = content.toCharArray();
+            for(int i = 0 ; i < chars.length ; i++){
+                if(chars[i] == CHAR_COMMA){
+                    escapeStringBuilder.append(CHAR_SLASH);
+                }
+                escapeStringBuilder.append(chars[i]);
+            }
+            return escapeStringBuilder.toString();
+        }
     }
 
     /**
