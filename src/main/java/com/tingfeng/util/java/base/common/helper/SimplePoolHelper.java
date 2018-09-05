@@ -59,7 +59,9 @@ public class SimplePoolHelper<T> {
                     }
                 }
             }
-            Thread.sleep(getPerSleepTime());
+            if(getPerSleepTime() > 0) {
+                Thread.sleep(getPerSleepTime());
+            }
             return get();
         } catch (Exception e) {
             throw new BaseException(e);
