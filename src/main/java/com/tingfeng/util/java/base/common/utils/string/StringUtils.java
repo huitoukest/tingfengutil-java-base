@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.common.utils.string;
 
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionrOne;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +124,7 @@ public class StringUtils {
      * 一些基础类型数据的转换
      *******************************************************************************/
 
-    public static <T> T getValue(String value, T emptyValue, T defaultValue, FunctionrOne<T,String> convert){
+    public static <T> T getValue(String value, T emptyValue, T defaultValue, FunctionROne<T,String> convert){
         if (isEmpty(value)) {
             return emptyValue;
         }
