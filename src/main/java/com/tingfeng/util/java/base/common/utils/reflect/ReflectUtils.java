@@ -390,7 +390,8 @@ public class ReflectUtils {
      * @throws NoSuchMethodException
      */
     public static Object invokeMethod(Object obj, String methodName) throws NoSuchMethodException {
-        return invokeMethod(obj, methodName, null, null);
+        Class<?>[] classes = null;
+        return invokeMethod(obj, methodName, null, classes);
     }
 
     /**

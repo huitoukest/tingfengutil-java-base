@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.common.helper;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionrOne;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,7 +56,7 @@ public class FixedPoolHelper<T> {
      * @param <R>
      * @return
      */
-    public <R> R run(FunctionrOne<R,T> run) {
+    public <R> R run(FunctionROne<R,T> run) {
            try{
                int flag = currentThread % poolSize;
                T t = dataList.get(flag);
