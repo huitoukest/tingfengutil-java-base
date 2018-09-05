@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
- * 一个简单的池工具，提供最大并发数和资源缓存等工具
+ * 一个简单的池工具，提供最大并发数和资源缓存等工具；
+ * 效率低于FixedPoolHelper。
  */
 public class SimplePoolHelper<T> {
     public static final int DEFAULT_MAX_THREAD_SIZE = 4;
