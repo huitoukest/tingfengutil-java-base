@@ -60,7 +60,7 @@ public class TokenHelperTest {
         for(int i = 0 ; i < 20 ;i++) {
          new Thread(()->{
              for (int j = 0; j < 500000; j++) {
-                 if (value.get() % 10000 == 0) {
+                 if (value.get() % 100000 == 0) {
                      test(true);
                  } else {
                      test(false);
