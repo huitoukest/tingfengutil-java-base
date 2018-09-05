@@ -20,6 +20,7 @@ public class TokenHelperTest {
         list.add("");
         list.add("");
     }
+    TokenHelper tokenHelper = new TokenHelper();
 
     public static void main(String[] args){
         new TokenHelperTest().testSpeed();
@@ -31,7 +32,7 @@ public class TokenHelperTest {
     }
 
     public void test(boolean isPrint) {
-        TokenHelper tokenHelper = new TokenHelper();
+
         String token  = tokenHelper.getToken(list,"123456");
 
         List<String> obj = tokenHelper.parseToken(token,(contents)->contents.get(2),(contents)->contents);
@@ -60,7 +61,7 @@ public class TokenHelperTest {
         for(int i = 0 ; i < 20 ;i++) {
          new Thread(()->{
              for (int j = 0; j < 500000; j++) {
-                 if (value.get() % 10000 == 0) {
+                 if (value.get() % 100000 == 0) {
                      test(true);
                  } else {
                      test(false);
