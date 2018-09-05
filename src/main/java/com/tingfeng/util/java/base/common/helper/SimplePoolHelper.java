@@ -1,7 +1,6 @@
 package com.tingfeng.util.java.base.common.helper;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.returnfunction.Functionr;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -60,7 +59,9 @@ public class SimplePoolHelper<T> {
                     }
                 }
             }
-            Thread.sleep(getPerSleepTime());
+            if(getPerSleepTime() > 0) {
+                Thread.sleep(getPerSleepTime());
+            }
             return get();
         } catch (Exception e) {
             throw new BaseException(e);
