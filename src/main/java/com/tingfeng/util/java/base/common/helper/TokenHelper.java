@@ -23,9 +23,9 @@ public class TokenHelper {
     private static final String STR_DOT = ".";
     private static final String STR_SPLIT_DOT = "\\.";
     private static final char CHAR_SLASH = '\\';
-    
-    private  final StringBuilder tokenStringBuilder = new StringBuilder();
-    private  final StringBuilder escapeStringBuilder = new StringBuilder();
+    private static final int DEFAULT_MAX_SB_SIZE = 16;
+    private  final FixedPoolHelper<StringBuilder> tokenStringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder());
+    private  final FixedPoolHelper<StringBuilder> escapeStringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder());
     private  Function<String,byte[]> encryptAction = null;
     private  Integer contentLength = null;
     private  RuntimeException emptyTokenException = null;
@@ -62,10 +62,10 @@ public class TokenHelper {
      * @return
      */
     public String getToken(ArrayList<String> contentList,String  securityKey){
-        synchronized (tokenStringBuilder) {
+        return tokenStringBuilderPool.run((tokenStringBuilder) -> {
             tokenStringBuilder.setLength(0);
-            for(int i = 0;i < contentList.size() ; i++){
-                if(i > 0){
+            for (int i = 0; i < contentList.size(); i++) {
+                if (i > 0) {
                     tokenStringBuilder.append(",");
                 }
                 tokenStringBuilder.append(escapeContent(contentList.get(i)));
@@ -79,7 +79,7 @@ public class TokenHelper {
             tokenStringBuilder.append('.');
             tokenStringBuilder.append(signStr);
             return tokenStringBuilder.toString();
-        }
+        });
     }
 
     /**
@@ -88,17 +88,17 @@ public class TokenHelper {
      * @return
      */
     private String escapeContent(String content){
-        synchronized (escapeStringBuilder) {
+        return escapeStringBuilderPool.run(escapeStringBuilder->{
             escapeStringBuilder.setLength(0);
             char[] chars = content.toCharArray();
-            for(int i = 0 ; i < chars.length ; i++){
-                if(chars[i] == CHAR_COMMA){
+            for (int i = 0; i < chars.length; i++) {
+                if (chars[i] == CHAR_COMMA) {
                     escapeStringBuilder.append(CHAR_SLASH);
                 }
                 escapeStringBuilder.append(chars[i]);
             }
             return escapeStringBuilder.toString();
-        }
+        });
     }
 
     /**
@@ -112,36 +112,36 @@ public class TokenHelper {
         }
         List<String> list = new ArrayList<>();
         char[] chars = content.toCharArray();
-        //第一步是将转义的,字符分离
-        synchronized (escapeStringBuilder) {
+        escapeStringBuilderPool.run(escapeStringBuilder ->{
             escapeStringBuilder.setLength(0);
             for (int i = 0; i < chars.length; i++) {
-                if(i == 0){
-                    if(chars[i] != CHAR_SLASH && chars[i] == CHAR_COMMA){//判断以，开头的情况
+                if (i == 0) {
+                    if (chars[i] != CHAR_SLASH && chars[i] == CHAR_COMMA) {//判断以，开头的情况
                         list.add(escapeStringBuilder.toString());
                         escapeStringBuilder.setLength(0);
-                    }else {
+                    } else {
                         escapeStringBuilder.append(chars[i]);
                     }
-                }else if(chars[i] == CHAR_SLASH){
-                      if(i + 1 >= chars.length || chars[i + 1] != CHAR_COMMA){
-                          escapeStringBuilder.append(chars[i]);
-                      }
-                }else if(chars[i] == CHAR_COMMA){
-                    if(chars[i - 1 ] != CHAR_SLASH){
+                } else if (chars[i] == CHAR_SLASH) {
+                    if (i + 1 >= chars.length || chars[i + 1] != CHAR_COMMA) {
+                        escapeStringBuilder.append(chars[i]);
+                    }
+                } else if (chars[i] == CHAR_COMMA) {
+                    if (chars[i - 1] != CHAR_SLASH) {
                         list.add(escapeStringBuilder.toString());
                         escapeStringBuilder.setLength(0);
-                        if(i + 1 == chars.length){//判断以，结尾的情况
+                        if (i + 1 == chars.length) {//判断以，结尾的情况
                             list.add("");
                         }
-                    }else{
+                    } else {
                         escapeStringBuilder.append(CHAR_COMMA);
                     }
-                }else{
+                } else {
                     escapeStringBuilder.append(chars[i]);
                 }
             }
-        }
+            return "";
+        });
         return list;
     }
 

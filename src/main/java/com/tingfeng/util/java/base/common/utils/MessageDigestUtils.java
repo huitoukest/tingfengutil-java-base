@@ -1,6 +1,7 @@
 package com.tingfeng.util.java.base.common.utils;
 
 
+import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.helper.SimplePoolHelper;
 
 import javax.crypto.KeyGenerator;
@@ -15,12 +16,12 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MessageDigestUtils {
-    private static final int DEFAULT_MAX_MESSAGE_DIGEST_SIZE = 8;
+    private static final int DEFAULT_MAX_MESSAGE_DIGEST_SIZE = 16;
     private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
     /**
      * 用来缓存MessageDigest的资源
      */
-    private static Map<String,SimplePoolHelper<MessageDigest>> messageDigestMap = new HashMap<>();
+    private static Map<String, FixedPoolHelper<MessageDigest>> messageDigestMap = new HashMap<>();
     public enum  SHAType{
         SHA512("SHA-512"),SHAMAC512("HmacSHA512"),SHA256("SHA-256"),SHAMAC256("HmacSHA256"),
         SHA1("SHA-1"),MD5("MD5");
@@ -45,11 +46,11 @@ public class MessageDigestUtils {
      * @param type
      * @return
      */
-    private static SimplePoolHelper getMessageDigest(String type){
+    private static FixedPoolHelper<MessageDigest> getMessageDigest(String type){
         synchronized (type) {
-            SimplePoolHelper<MessageDigest> simplePoolHelper = messageDigestMap.get(type);
+            FixedPoolHelper<MessageDigest> simplePoolHelper = messageDigestMap.get(type);
             if (null == simplePoolHelper) {
-                simplePoolHelper = new SimplePoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE, () -> MessageDigest.getInstance(type));
+                simplePoolHelper = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE, () -> MessageDigest.getInstance(type));
                 messageDigestMap.put(type, simplePoolHelper);
             }
             return simplePoolHelper;
@@ -65,27 +66,21 @@ public class MessageDigestUtils {
      * @return
      */
     public static byte[] hash(String algorithmName,byte[] bytes, byte[] salt, int hashIterations){
-        SimplePoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
-        MessageDigest digest = simplePoolHelper.get();
-        try{
-            synchronized (digest) {
-                digest.reset();
-                if (salt != null) {
-                    digest.update(salt);
-                }
-
-                byte[] hashed = digest.digest(bytes);
-                int iterations = hashIterations - 1;
-
-                for (int i = 0; i < iterations; ++i) {
-                    digest.reset();
-                    hashed = digest.digest(hashed);
-                }
-                return hashed;
+        FixedPoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
+        return simplePoolHelper.run(digest->{
+            digest.reset();
+            if (salt != null) {
+                digest.update(salt);
             }
-        }finally {
-            simplePoolHelper.release(digest);
-        }
+
+            byte[] hashed = digest.digest(bytes);
+            int iterations = hashIterations - 1;
+            for (int i = 0; i < iterations; ++i) {
+                digest.reset();
+                hashed = digest.digest(hashed);
+            }
+            return hashed;
+        });
     }
 
     /**
@@ -171,16 +166,7 @@ public class MessageDigestUtils {
      * @return
      */
     public static byte[] MD5(byte[] plainText) {
-        SimplePoolHelper<MessageDigest> simplePoolHelper = getMessageDigest("md5");
-        MessageDigest digest = simplePoolHelper.get();
-        try {
-            synchronized (digest) {
-                digest.reset();
-                return digest.digest(plainText);
-            }
-        }finally {
-            simplePoolHelper.release(digest);
-        }
+        return digest("md5",plainText);
     }
 
     /**
@@ -191,16 +177,15 @@ public class MessageDigestUtils {
      * @return
      */
     public static byte[] SHA(SHAType shaType,byte[] plainText) {
-        SimplePoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(shaType.getValue());
-        MessageDigest messageDigest = simplePoolHelper.get();
-        try {
-            synchronized (messageDigest) {
-                messageDigest.reset();
-                return messageDigest.digest(plainText);
-            }
-        }finally {
-            simplePoolHelper.release(messageDigest);
-        }
+        return digest(shaType.getValue(),plainText);
+    }
+
+    private static byte[] digest(String algorithmName,byte[] plainText){
+        FixedPoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
+        return simplePoolHelper.run(digest->{
+            digest.reset();
+            return digest.digest(plainText);
+        });
     }
 
     public static byte[] SHA(SHAType shaType,byte[] plainText,String salt) {

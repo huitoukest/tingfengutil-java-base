@@ -6,8 +6,8 @@ package com.tingfeng.util.java.base.common.inter.voidfunction;
  * 
  */
 @FunctionalInterface
-public interface FunctionvTen<P1,P2,P3,P4,P5,P6,P7,P8,P9,P10> {
+public interface FunctionVSix<P1,P2,P3,P4,P5,P6> {
 
-    public void run(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p9, P10 p10);
+    public void run(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6) throws Exception;
 
 }

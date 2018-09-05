@@ -1,7 +1,6 @@
 package com.tingfeng.util.java.base.common.helper;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.returnfunction.Functionr;
 
 import java.util.LinkedList;
 import java.util.List;
