@@ -24,6 +24,9 @@ import java.util.stream.Stream;
  * java反射的一些工具方法;
  */
 public class ReflectUtils {
+    /**
+     * 判断一个属性名称的首字母是否需要被转换
+     */
     private static Pattern needConvertFiled = Pattern.compile("^[_a-z][^A-Z]|[_a-z]$");
     private static SimpleCacheHelper<String,List<Field>> DATA_FILED_CACHE = new SimpleCacheHelper<>(100);
 

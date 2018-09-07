@@ -24,8 +24,24 @@ public class TokenHelper {
     private static final String STR_SPLIT_DOT = "\\.";
     private static final char CHAR_SLASH = '\\';
     private static final int DEFAULT_MAX_SB_SIZE = 16;
-    private  final FixedPoolHelper<StringBuilder> tokenStringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder());
-    private  final FixedPoolHelper<StringBuilder> escapeStringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder());
+    /**
+     * StringBuilder默认的初始长度，如果不设置会导致StringBuilder在内存中一直保持最大长度
+     */
+    private static final int DEFAULT_MAX_SB_LENGTH = 128;
+    private static final FixedPoolHelper<StringBuilder> tokenStringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder(),(sb)->{
+        int len = sb.length();
+        if(len > DEFAULT_MAX_SB_LENGTH){
+            sb.delete(DEFAULT_MAX_SB_LENGTH,len);
+        }
+        sb.setLength(0);
+    });
+    private static final FixedPoolHelper<StringBuilder> escapeStringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder(),(sb)->{
+        int len = sb.length();
+        if(len > DEFAULT_MAX_SB_LENGTH){
+            sb.delete(DEFAULT_MAX_SB_LENGTH,len);
+        }
+        sb.setLength(0);
+    });
     private  Function<String,byte[]> encryptAction = null;
     private  Integer contentLength = null;
     private  RuntimeException emptyTokenException = null;
@@ -63,7 +79,6 @@ public class TokenHelper {
      */
     public String getToken(ArrayList<String> contentList,String  securityKey){
         return tokenStringBuilderPool.run((tokenStringBuilder) -> {
-            tokenStringBuilder.setLength(0);
             for (int i = 0; i < contentList.size(); i++) {
                 if (i > 0) {
                     tokenStringBuilder.append(",");
@@ -89,7 +104,6 @@ public class TokenHelper {
      */
     private String escapeContent(String content){
         return escapeStringBuilderPool.run(escapeStringBuilder->{
-            escapeStringBuilder.setLength(0);
             char[] chars = content.toCharArray();
             for (int i = 0; i < chars.length; i++) {
                 if (chars[i] == CHAR_COMMA) {
@@ -113,7 +127,6 @@ public class TokenHelper {
         List<String> list = new ArrayList<>();
         char[] chars = content.toCharArray();
         escapeStringBuilderPool.run(escapeStringBuilder ->{
-            escapeStringBuilder.setLength(0);
             for (int i = 0; i < chars.length; i++) {
                 if (i == 0) {
                     if (chars[i] != CHAR_SLASH && chars[i] == CHAR_COMMA) {//判断以，开头的情况
