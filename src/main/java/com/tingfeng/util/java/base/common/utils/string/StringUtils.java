@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.common.utils.string;
 
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import org.slf4j.Logger;
@@ -25,6 +26,21 @@ import java.util.regex.Pattern;
 public class StringUtils {
     private final static Logger logger = LoggerFactory.getLogger(StringUtils.class);
     private final static int BUFFER_SIZE = 4096;
+    /**
+     * 默认的StringBuilder的数量
+     */
+    private static final int DEFAULT_MAX_SB_SIZE = 16;
+    private static final int DEFAULT_MAX_SB_LENGTH = 32;
+    /**
+     * 公共的StringBuilder的资源，用于多线程时复用对象提高效率
+     */
+    private static final FixedPoolHelper<StringBuilder> stringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE,()->new StringBuilder(),(sb)->{
+        int len = sb.length();
+        if(len > DEFAULT_MAX_SB_LENGTH){
+            sb.delete(DEFAULT_MAX_SB_LENGTH,len);
+        }
+        sb.setLength(0);
+    });
 
     public StringUtils() {
 
@@ -113,10 +129,11 @@ public class StringUtils {
      * @return
      */
     public static String toLowerFirstChar(String srcString) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(Character.toLowerCase(srcString.charAt(0)));
-        sb.append(srcString.substring(1));
-        return sb.toString();
+        return stringBuilderPool.run((sb)->{
+            sb.append(Character.toLowerCase(srcString.charAt(0)));
+            sb.append(srcString.substring(1));
+            return sb.toString();
+        });
     }
 
 
@@ -358,16 +375,18 @@ public class StringUtils {
             return "";
         } else {
             int len = param.length();
-            StringBuilder sb = new StringBuilder(len);
-            for (int i = 0; i < len; ++i) {
-                char c = param.charAt(i);
-                if (Character.isUpperCase(c) && i > 0) {//如果是大写则加入下划线，并且转为小写字符
-                    sb.append('_');
+            return stringBuilderPool.run(sb->{
+                for (int i = 0; i < len; ++i) {
+                    char c = param.charAt(i);
+                    if (Character.isUpperCase(c) && i > 0) {//如果是大写则加入下划线，并且转为小写字符
+                        sb.append('_');
+                    }
+                    sb.append(Character.toLowerCase(c));
                 }
-                sb.append(Character.toLowerCase(c));
-            }
 
-            return sb.toString();
+                return sb.toString();
+            });
+
         }
     }
 
@@ -383,19 +402,20 @@ public class StringUtils {
         } else {
             String temp = param.toLowerCase();
             int len = temp.length();
-            StringBuilder sb = new StringBuilder(len);
-            for (int i = 0; i < len; ++i) {
-                char c = temp.charAt(i);
-                if (c == 95) {
-                    ++i;
-                    if (i < len) {
-                        sb.append(Character.toUpperCase(temp.charAt(i)));
+            return stringBuilderPool.run(sb->{
+                for (int i = 0; i < len; ++i) {
+                    char c = temp.charAt(i);
+                    if (c == 95) {
+                        ++i;
+                        if (i < len) {
+                            sb.append(Character.toUpperCase(temp.charAt(i)));
+                        }
+                    } else {
+                        sb.append(c);
                     }
-                } else {
-                    sb.append(c);
                 }
-            }
-            return sb.toString();
+                return sb.toString();
+            });
         }
     }
 
@@ -738,11 +758,12 @@ public class StringUtils {
      * @return 返回已生成的重复字符串
      **************************************************************************/
     public static String repeat(String src, int num) {
-        StringBuilder s = new StringBuilder();
-        for (int i = 0; i < num; i++) {
-            s.append(src);
-        }
-        return s.toString();
+        return stringBuilderPool.run(s->{
+            for (int i = 0; i < num; i++) {
+                s.append(src);
+            }
+            return s.toString();
+        });
     }
 
     /**
