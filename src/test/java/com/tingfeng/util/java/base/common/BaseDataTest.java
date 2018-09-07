@@ -4,7 +4,7 @@ import java.lang.reflect.Array;
 
 import org.junit.Test;
 
-public class BaseTest {
+public class BaseDataTest {
     @Test
     public void testStrings()
     {

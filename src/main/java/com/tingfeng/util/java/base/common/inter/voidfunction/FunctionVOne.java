@@ -8,6 +8,6 @@ package com.tingfeng.util.java.base.common.inter.voidfunction;
 @FunctionalInterface
 public interface FunctionVOne<P1> {
 
-    void run(P1 p1) throws InterruptedException;
+    void run(P1 p1) throws Exception;
 
 }
