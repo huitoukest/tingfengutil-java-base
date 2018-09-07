@@ -924,5 +924,12 @@ public class StringUtils {
     }
 
     /******************************************** 结束数据处理 *************************************************************/
-
+    /**
+     * 一个高效的支持多线程的字符串append工具，传入StringBuilder用于自定义append
+     * @param functionROne
+     * @return
+     */
+    public static String doAppend(FunctionROne<String,StringBuilder> functionROne){
+        return stringBuilderPool.run(functionROne);
+    }
 }

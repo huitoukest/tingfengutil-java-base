@@ -20,7 +20,7 @@ public class StringAppendTest extends BaseTest {
         }
         sb.setLength(0);
     });
-    
+
 
 
     @Test
