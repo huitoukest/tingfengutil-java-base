@@ -826,7 +826,7 @@ public class StringUtils {
      * @return 结果串
      */
     public static String replaceByReg(String str, String regEx, String insteadStr) {
-        Pattern p = Pattern.compile(regEx, Pattern.CASE_INSENSITIVE);
+        Pattern p = RegExpUtils.getPattern(regEx);
         Matcher m = p.matcher(str);
         str = m.replaceAll(insteadStr);
         return str;
