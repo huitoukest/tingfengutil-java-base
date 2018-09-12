@@ -1,5 +1,7 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import com.tingfeng.util.java.base.common.exception.BaseException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -49,8 +51,7 @@ public class StreamUtils {
 		try {
 			fileInputStream = new FileInputStream(filepath);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileInputStream;
 	}
@@ -65,8 +66,7 @@ public class StreamUtils {
 		try {
 			fileInputStream = new FileInputStream(file);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileInputStream;
 	}
@@ -82,8 +82,7 @@ public class StreamUtils {
 		try {
 			fileOutputStream = new FileOutputStream(file,append);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileOutputStream;
 	}
@@ -99,8 +98,7 @@ public class StreamUtils {
 		try {
 			fileOutputStream = new FileOutputStream(filepath,append);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileOutputStream;
 	}
