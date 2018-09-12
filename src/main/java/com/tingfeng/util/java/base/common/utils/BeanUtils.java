@@ -88,7 +88,8 @@ public class BeanUtils{
 	 * @param source
 	 */
 	public static void copyProperties(Object target,Object source){
-		copyProperties(target,source,null);
+		String[] args = null;
+		copyProperties(target,source,args);
 	}
 
 	public static String firstLetterToLower(String srcString) {
