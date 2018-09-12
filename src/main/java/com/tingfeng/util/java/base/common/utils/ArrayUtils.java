@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
@@ -85,5 +86,17 @@ public class ArrayUtils {
 	public static String join(Object[] a) {
 		return join(a, Constants.Symbol.comma);
 	}
-	
+
+	/**
+	 * 将多个srcArray 拷贝到target中
+	 * @param target
+	 * @param srcArray List<Object[]>
+	 */
+    public static void concatArray(Object[] target,List<Object[]> srcArray) {
+		int startPosition = 0;
+		for(int i = 0 ; i < srcArray.size() ; i++){
+			System.arraycopy(target,startPosition,srcArray.get(i),0,srcArray.get(i).length);
+			startPosition += srcArray.get(i).length;
+		}
+	}
 }
