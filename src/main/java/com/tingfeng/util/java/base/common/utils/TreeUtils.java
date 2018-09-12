@@ -1,120 +1,129 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.tingfeng.util.java.base.common.inter.TreeDataStructureI;
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
+import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVTwo;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * @author huitoukest
  * 一个通用的对Tree结构(数据)操作的工具类
+ *
  */
 public class TreeUtils {
-    /**
-     * 将list中的数据转换为树形结构的数据;
-     *
-     * @param tds
-     * @param list
-     * @return 返回个树形结构的list;
-     * @throws NoSuchFieldException
-     * @throws InvocationTargetException
-     * @throws IllegalArgumentException
-     * @throws SecurityException
-     */
-    public static <T> List<T> getTreeListBycommonList(TreeDataStructureI<T> tds, List<T> list, Class<T> cls) throws SecurityException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException {
-        List<T> parentList = new ArrayList<T>();
-        List<T> tmpList = BeanUtils.copyListProperties(list, cls);
-        return getTreeListBycommonList(parentList, tds, tmpList);
-
-    }
 
     /**
      * 找出指定列表中的所有的根节点;
-     * 即没有父节点的节点都是根节点,如果父节点是自己,那么自己是根节点;
-     *
-     * @param tds
-     * @param list
+     * 即1. 没有父节点的节点都是根节点,2. 如果父节点是自己,那么自己是根节点;
+     * @param list 数据List
+     * @param isChildAction 判断第一个参数是否是第二个参数的子节点
      * @return
      */
-    public static <T> List<T> getRootParentsOfTree(TreeDataStructureI<T> tds, List<T> list) {
+    public static <T> List<T> getRootNodes( List<T> list,FunctionRTwo<Boolean,T,T> isChildAction) {
         List<T> parentList = new ArrayList<T>();
-        if (list == null || list.isEmpty())
+        if (list == null || list.isEmpty()) {
             return parentList;
-        for (int i = 0; i < list.size(); i++) {
-            T parentT = list.get(i);
-            boolean isParent = true;
-            for (int j = 0; j < list.size(); j++) {
-                if (j == i)
-                    continue;
-                T nodeT = list.get(j);
-                //如果parentT节点有父节点,那么它不是父节点;
-                if (tds.isChildOfNode(parentT, nodeT)) {
-                    isParent = false;
-                    break;
+        }
+        try {
+            for (int i = 0; i < list.size(); i++) {
+                T parentT = list.get(i);
+                boolean isParent = true;
+                for (int j = 0; j < list.size(); j++) {
+                    if (j == i) {
+                        continue;
+                    }
+                    T nodeT = list.get(j);
+                    //如果parentT节点有父节点,那么它不是父节点;
+                    if (isChildAction.run(parentT, nodeT)) {
+                        isParent = false;
+                        break;
+                    }
+                }
+                if (isParent) {
+                    parentList.add(parentT);
                 }
             }
-            if (isParent) {
-                parentList.add(parentT);
-            }
+        }catch (Exception e){
+            throw new BaseException(e);
         }
         return parentList;
     }
 
-    protected static <T> List<T> getTreeListBycommonList(List<T> parentList, TreeDataStructureI<T> tds, List<T> list) {
+    /**
+     * 将list中的数据转换为树形结构的数据;
+     * 操作时将会直接引用List中的对象，所以会影响原对象
+     * @param list 数据来源list
+     * @param addChildAction 加入一个child的Action,第一个参数是child，第二个是parent
+     * @param isChildAction  判断第一个参数是否是第二个参数的子节点,第一个参数是child，第二个是parent，返回true/false
+     * @param orderAction 排序操作
+     * @param <T> 当前操作的类型
+     * @return
+     */
+    public static <T> List<T> getTreeList(List<T> list, FunctionVTwo<T,T> addChildAction, FunctionRTwo<Boolean,T,T> isChildAction, FunctionROne<Integer,T> orderAction) {
         if (list == null || list.isEmpty()) {
-            return parentList;
+            return Collections.EMPTY_LIST;
         } else {
-            List<T> rootList = getRootParentsOfTree(tds, list);
-            if (parentList.isEmpty()) {
-                parentList.addAll(rootList);
-            } else {
-                for (T t : rootList) {
-                    addNodeToTreeList(parentList, tds, t);
+            List<T> rootList = getRootNodes(list, isChildAction);
+            rootList = sortList(rootList,orderAction);
+            List<T> remainList = new ArrayList<>();
+            remainList.addAll(list);
+            remainList.removeAll(rootList);
+            if(!remainList.isEmpty()) {
+                List<T> childList = getTreeList(remainList, addChildAction, isChildAction, orderAction);
+                for (T t : childList) {
+                    addNodeToTreeList(rootList, t, addChildAction, isChildAction);
                 }
             }
-            list.removeAll(rootList);
-            return getTreeListBycommonList(parentList, tds, list);
+            return rootList;
         }
     }
 
     /**
      * 将一个叶子节点加入到parentList中;
      * 并且在加入节点的同时进行排序;
-     *
-     * @param parentList
-     * @param tds
-     * @param leafNode
+     * @param parentList 父列表
+     * @param childNode 子node
+     * @param addChildAction 加入一个child的Action,第一个参数是child，第二个是parent
+     * @param isChildAction 判断第一个参数是否是第二个参数的子节点,第一个参数是child，第二个是parent，返回true/false
+     * @param <T> 当前操作的类型
+     * @return
      */
-    protected static <T> boolean addNodeToTreeList(List<T> parentList, TreeDataStructureI<T> tds, T leafNode) {
-        if (leafNode == null || parentList == null || parentList.isEmpty())
+    protected static <T> boolean addNodeToTreeList(List<T> parentList, T childNode, FunctionVTwo<T,T> addChildAction, FunctionRTwo<Boolean,T,T> isChildAction) {
+        if (childNode == null || parentList == null || parentList.isEmpty()) {
             return false;
-        for (T parent : parentList) {
-            if (tds.isChildOfNode(leafNode, parent)) {
-                boolean isAdd = false;
-                List<T> childrendsList = tds.getChilrens(parent);
-                if (childrendsList == null) {
-                    childrendsList = new ArrayList<T>();
-                    tds.setChilrens(parent, childrendsList);
-                }
-                for (int i = 0; i < childrendsList.size(); i++) {
-                    T brother = childrendsList.get(i);
-                    if (tds.getOrder(brother) > tds.getOrder(leafNode)) {
-                        tds.getChilrens(parent).add(i, leafNode);
-                        isAdd = true;
-                        break;
-                    }
-                }
-                if (!isAdd)
-                    tds.getChilrens(parent).add(leafNode);
-                return true;
-            } else {
-                boolean result = addNodeToTreeList(tds.getChilrens(parent), tds, leafNode);
-                if (result) {
-                    return result;
+        }
+        try {
+            for (T parent : parentList) {
+                if (isChildAction.run(childNode, parent)) {
+                    addChildAction.run(childNode,parent);
+                    return true;
                 }
             }
+        }catch (Exception e){
+            throw new BaseException(e);
         }
         return false;
+    }
+    
+    /**
+     * 非递归排序 默认升序
+     * @param list
+     * @param orderAction
+     * @param <T>
+     * @return
+     */
+    public static <T> List<T> sortList(List<T> list,FunctionROne<Integer,T> orderAction){
+        Collections.sort(list,(a,b)->{
+            try {
+                return orderAction.run(a) - orderAction.run(b);
+            }catch (Exception e){
+                throw new BaseException(e);
+            }
+        });
+        return list;
     }
 }
