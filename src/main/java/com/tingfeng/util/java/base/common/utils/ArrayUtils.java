@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 
+import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 
 /**
@@ -14,7 +15,7 @@ import com.tingfeng.util.java.base.common.inter.ConvertI;
  *@version20160517
  */
 public class ArrayUtils {
-	final static int BUFFER_SIZE=1024;
+	final static int BUFFER_SIZE = 1024;
 	
 	public static <T> boolean isContain(T[] array, T t) {
 		if(array==null) return false;
@@ -27,30 +28,13 @@ public class ArrayUtils {
 			return false;
 		}
 	}			
-	@SuppressWarnings("unchecked")
+
 	public static <T> T[] getArray(Object[] array,ConvertI<T,Object> convertI){
-		Object[] objs=new Object[array.length];
-		for(int i=0;i<array.length;i++){
-			objs[i]=convertI.convert(array[i]);
+		Object[] objs = new Object[array.length];
+		for(int i = 0 ; i < array.length ; i++){
+			objs[i] = convertI.convert(array[i]);
 		}
 		return (T[])objs;
-	}
-	/**
-	 * 判断一个值是否存在于一个数组;
-	 * @param key
-	 * @param values
-	 * @return
-	 */
-	protected static boolean isExitedInArray(String key,String...values){
-		if(key==null)
-			return false;
-		if(values==null)
-			return false;
-		for(String s:values){
-			if(s.equals(key))
-				return true;
-		}
-		return false;
 	}
 	
 	/**
@@ -62,15 +46,17 @@ public class ArrayUtils {
 	 * @throws IOException
 	 */
 	public static byte[] getBytesByInputStream(InputStream in) throws IOException {
-
-		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
 		byte[] data = new byte[BUFFER_SIZE];
-		int count = -1;
-		while ((count = in.read(data, 0, BUFFER_SIZE)) != -1)
-			outStream.write(data, 0, count);
-
-		data = null;
-		return outStream.toByteArray();
+		ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+		try {
+			int count = -1;
+			while ((count = in.read(data, 0, BUFFER_SIZE)) != -1) {
+				outStream.write(data, 0, count);
+			}
+			return outStream.toByteArray();
+		}finally {
+			outStream.close();
+		}
 	}
 
 	/**
@@ -81,7 +67,7 @@ public class ArrayUtils {
 	 * @author fengliang
 	 * @serialData 2008-01-08
 	 */
-	public static String toListString(Object[] a, String symbol) {
+	public static String join(Object[] a, String symbol) {
 		if (a == null)
 			return "";
 		int iMax = a.length - 1;
@@ -96,8 +82,8 @@ public class ArrayUtils {
 		}
 	}
 
-	public static String toListString(Object[] a) {
-		return toListString(a, ",");
+	public static String join(Object[] a) {
+		return join(a, Constants.Symbol.comma);
 	}
 	
 }

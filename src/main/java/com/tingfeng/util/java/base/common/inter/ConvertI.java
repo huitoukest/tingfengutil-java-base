@@ -7,6 +7,7 @@ package com.tingfeng.util.java.base.common.inter;
  * @param  <T> Target 第一个参数，得到的对象和类型
  * @param <S>  Source 第二个参数，传入的对象和类型
  */
+@FunctionalInterface
 public interface ConvertI<T,S>{
 	 T convert(S e);
 }

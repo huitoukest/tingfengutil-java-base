@@ -37,7 +37,7 @@ public class TokenHelperTest {
 
         List<String> obj = tokenHelper.parseToken(token,(contents)->contents.get(2),(contents)->contents);
         if(isPrint) {
-            System.out.println(CollectionUtils.toListString(obj,"$"));
+            System.out.println(CollectionUtils.join(obj,"$"));
         }
     }
 
