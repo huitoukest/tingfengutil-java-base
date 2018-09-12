@@ -18,13 +18,13 @@ public class TreeUtils {
 	 * @param list
 	 * @return 返回个树形结构的list;
 	 * @throws NoSuchFieldException 
-	 * @throws InvocationTargetException 
+	 * @throws InvocationTargetException
 	 * @throws IllegalArgumentException 
 	 * @throws SecurityException 
 	 */
 	public static <T> List<T> getTreeListBycommonList(TreeDataStructureI<T> tds,List<T> list,Class<T> cls) throws SecurityException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException{
 		   List<T> parentList=new ArrayList<T>();
-		   List<T>  tmpList=BeanUtils.middleCopyListByField(list,cls);
+		   List<T>  tmpList = BeanUtils.copyListProperties(list,cls);
 		   return getTreeListBycommonList(parentList, tds, tmpList);
 		   
 	} 

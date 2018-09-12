@@ -9,4 +9,13 @@ public class StringUtilsTest {
     public void trimSymbolTest(){
         System.out.print(StringUtils.trimSymbol(",2,3,",","));
     }
+
+    @Test
+    public void testAppend(){
+        System.out.println(StringUtils.append(false,null));
+        System.out.println(StringUtils.append(true,null));
+        System.out.println(StringUtils.append(false,null,null,"123123"));
+
+        System.out.println(StringUtils.append(true,null,"123123",null));
+    }
 }

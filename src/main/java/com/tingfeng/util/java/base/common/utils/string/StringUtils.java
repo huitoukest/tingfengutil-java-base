@@ -18,6 +18,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 /**
  * @author huitoukest
@@ -931,5 +932,31 @@ public class StringUtils {
      */
     public static String doAppend(FunctionROne<String,StringBuilder> functionROne){
         return stringBuilderPool.run(functionROne);
+    }
+
+    /**
+     * 将objects中的对象按照顺序依次append到StringBuilder中并且返回
+     * @param objects
+     * @param isAppendNull 是否将null值也append到字符串中，默认为false
+     * @return
+     */
+    public static String append(boolean isAppendNull,Object ... objects){
+        if(objects == null){
+           if(isAppendNull){
+               return String.valueOf("null");
+           }else{
+               return "";
+           }
+        }
+        return stringBuilderPool.run(sb -> {
+            Stream.of(objects).forEach(it->{
+                if(isAppendNull){
+                    sb.append(it);
+                }else if(!isAppendNull && it != null){
+                    sb.append(it);
+                }
+            });
+            return sb.toString();
+        });
     }
 }

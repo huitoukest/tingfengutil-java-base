@@ -12,7 +12,9 @@ public class Constants {
 	public interface Symbol{
 		char dot = '.';
 		String spliteDot = "\\.";
-	}
+        String comma = ",";
+        String semicolon = ";";
+    }
 
 	/*****************************************编码相关Start*****************************************************/
 	public interface CharSet{
