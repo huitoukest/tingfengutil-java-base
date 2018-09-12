@@ -1,6 +1,7 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,8 +14,7 @@ public class RegExpUtils {
      * 用来缓存用到的正则表达式提高效率；这里k是String，value是Pattern
      * 注意Matcher 是一个非线程安全，所以调用matcher.find()是线程不安全的
      */
-    private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(30);
-
+    private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(50);
     public static final String PATTERN_STR_INTEGER = "^[\\-\\+]{0,1}[1-9][0-9]+$";
     public static final String PATTERN_STR_FLOAT = "(^[\\-\\+]{0,1}([1-9][0-9]+\\.[0-9]+|0\\.[0-9]+)$";
     public static final String PATTERN_STR_INT_OR_FLOAT_NUMBER = "^[\\-\\+]([0-9]*$|^0+\\.[0-9]+$|^[1-9]+[0-9]*$|^[1-9]+[0-9]*.[0-9]+)$";
@@ -28,14 +28,35 @@ public class RegExpUtils {
     public static final String PATTERN_STR_BIRTHDAY  = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
     public static final String PATTERN_STR_PHONE_CN = "^(13\\d|14[57]|15[012356789]|18\\d|17[01678]|19[89]|166)\\d{8}$";
 
+
+    private static String getPatternKey(String regex,int flags){
+        return StringUtils.append(false,flags,"_",regex);
+    }
+
+    /* 先从缓存中取Pattern，没有则新建并写入缓存中
+     * 默认Pattern.CASE_INSENSITIVE
+     * @param regex 正则表达式
+     * @return
+     */
     public static Pattern getPattern(String regex){
+        return getPattern(regex,Pattern.CASE_INSENSITIVE);
+    }
+
+    /**
+     * 先从缓存中取Pattern，没有则新建并写入缓存中
+     * @param regex 正则表达式
+     * @param flags ，同Pattern.compile(regex,flags)
+     * @return
+     */
+    public static Pattern getPattern(String regex,int flags){
         if(null == regex){
            return null;
         }
-        Pattern pattern = patternCache.get(regex);
+        String patternKey =  getPatternKey(regex,flags);
+        Pattern pattern = patternCache.get(patternKey);
         if(pattern == null){
-            pattern = Pattern.compile(regex);
-            patternCache.set(regex,pattern);
+            pattern = Pattern.compile(regex,flags);
+            patternCache.set(patternKey,pattern);
         }
         return pattern;
     }

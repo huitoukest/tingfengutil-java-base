@@ -24,5 +24,4 @@ public class EnumUtils {
         }
         return null;
     }
-
 }
