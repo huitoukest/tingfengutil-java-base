@@ -24,7 +24,7 @@ public class BaseTest {
                             functionVOne.run(j);
                         }
                     } catch (Exception e) {
-                        throw new BaseException();
+                        throw new BaseException(e);
                     }
                 }finally {
                     value.incrementAndGet();

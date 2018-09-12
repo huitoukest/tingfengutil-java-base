@@ -130,6 +130,7 @@ public class CollectionUtils {
         if (!i.hasNext()) {
             return "";
         }
+        boolean isAppend = symbol.length() > 0 ? true : false;
         return StringUtils.doAppend(sb->{
             for (; ; ) {
                 T e = i.next();
@@ -137,7 +138,9 @@ public class CollectionUtils {
                 if (!i.hasNext()) {
                     return sb.toString();
                 }
-                sb.append(symbol);
+                if(isAppend) {
+                    sb.append(symbol);
+                }
             }
         });
     }

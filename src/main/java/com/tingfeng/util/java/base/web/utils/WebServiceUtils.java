@@ -79,7 +79,7 @@ public class WebServiceUtils {
 		File file = null;
 		try {
 			FileInputStream fin = null;			
-			String uuidString = RandomUtils.getRandomLong() + "";
+			String uuidString = RandomUtils.randomString(16);
 			int bufferSize =1024 *500;
 			byte[] buffer = new byte[bufferSize];
 			String fileKeyName = "";

@@ -940,7 +940,7 @@ public class StringUtils {
      * @param isAppendNull 是否将null值也append到字符串中，默认为false
      * @return
      */
-    public static String append(boolean isAppendNull,Object ... objects){
+    public static String appendValue(boolean isAppendNull,Object... objects){
         if(objects == null){
            if(isAppendNull){
                return String.valueOf("null");
@@ -958,5 +958,15 @@ public class StringUtils {
             });
             return sb.toString();
         });
+    }
+
+    /**
+     * 将objects中的对象按照顺序依次append到StringBuilder中并且返回
+     * 默认将null对象忽略，不会append到字符串中
+     * @param objects
+     * @return
+     */
+    public static String append(Object ... objects){
+        return append(false,objects);
     }
 }
