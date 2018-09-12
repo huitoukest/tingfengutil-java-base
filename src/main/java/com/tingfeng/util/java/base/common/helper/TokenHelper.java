@@ -151,6 +151,10 @@ public class TokenHelper {
                     }
                 } else {
                     escapeStringBuilder.append(chars[i]);
+                    if(i == chars.length - 1){//如果是最后一个字母
+                        list.add(escapeStringBuilder.toString());
+                        escapeStringBuilder.setLength(0);
+                    }
                 }
             }
             return "";
