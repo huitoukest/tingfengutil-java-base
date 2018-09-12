@@ -23,6 +23,8 @@ public class User {
     private String[] otherNames;
     private List<String> homeNames;
     private Map<String,Object> map;
+    public List<User> childList;
+    public String parentUserName;
 
     public User(){
         this.homeNames = CollectionUtils.getList(new String[]{"1","2","3"});

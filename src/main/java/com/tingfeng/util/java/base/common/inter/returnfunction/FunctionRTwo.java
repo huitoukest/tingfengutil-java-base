@@ -6,7 +6,7 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
  * 
  */
 @FunctionalInterface
-public interface FunctionrTwo<R,P1,P2> {
+public interface FunctionRTwo<R,P1,P2> {
 
     R run(P1 p1, P2 p2) throws Exception;
 
