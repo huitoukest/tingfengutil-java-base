@@ -44,4 +44,14 @@ public class RandomUtilsTest extends BaseTest {
             }
         }));
     }
+
+    @Test
+    public void testRandomInt(){
+        printTime(50,1000000,(index->{
+            Integer value = RandomUtils.randomInt(9,10);
+            if(index % 1000000 == 0) {
+                System.out.println(value);
+            }
+        }));
+    }
 }
