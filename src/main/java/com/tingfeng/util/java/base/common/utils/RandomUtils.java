@@ -17,7 +17,6 @@ public class RandomUtils {
 	 * 用来保存类型和char数组的对应关系
 	 */
 	private static final Map<String,char[]> RANDOM_TYPE_MAP = new HashMap<>();
-	private static final double minPositionValue = 1E-308;
 
 	private static char[] getRandomValue(RandomType ... randomTypes){
 		String key = ArrayUtils.join(randomTypes);
@@ -100,35 +99,82 @@ public class RandomUtils {
 	 *            随机字符串长度
 	 * @return 随机字符串
 	 */
-	public static String randomNumber(int length) {
+	public static String randomNumberString(int length) {
 		return randomString(length,RandomType.number);
 	}
 
-	public static double  randomDecimal(double min,double max){
-		return  Math.random() * (max - min) + min;
+	/**
+	 * @param origin the least value returned
+	 * @param bound the upper bound (exclusive)
+	 * @return 返回大于等于origin，小于bound的值
+	 */
+	public static double  randomDouble(double origin,double bound){
+		return  ThreadLocalRandom.current().nextDouble(origin,bound);
 	}
 
-	public static int  randomInt(int min,int max){
-		return  (int)( Math.random() * (max - min) + min + minPositionValue);
+	/**
+	 * @param origin the least value returned
+	 * @param bound the upper bound (exclusive)
+	 * @return 返回大于等于origin，小于bound的值
+	 */
+	public static int randomInt(int origin,int bound){
+		return  ThreadLocalRandom.current().nextInt(origin,bound);
 	}
 
-	public static long  randomLong(long max){
-		return  (long)( Math.random() * max + minPositionValue);
+	/**
+	 * @param bound the upper bound (exclusive)
+	 * @return 返回小于bound的值
+	 */
+	public static long  randomLong(long bound){
+		return  ThreadLocalRandom.current().nextLong(bound);
 	}
 
-	public static int  randomInt(int max){
-		return  (int)( Math.random() * max + minPositionValue);
+	/**
+	 * @param bound the upper bound (exclusive)
+	 * @return 返回小于bound的值
+	 */
+	public static int  randomInt(int bound){
+		return  ThreadLocalRandom.current().nextInt(bound);
 	}
-	public static long  randomLong(long min,long max){
-		return  (long)( Math.random() * ( max - min) + min + minPositionValue);
+	/**
+	 * @param origin the least value returned
+	 * @param bound the upper bound (exclusive)
+	 * @return 返回大于等于origin，小于bound的值
+	 */
+	public static long  randomLong(long origin,long bound){
+		return ThreadLocalRandom.current().nextLong(origin,bound);
 	}
 
 	/**
 	 * 产生一个Long范围内的随机正数
 	 * @return
 	 */
-	public static Long randomLong(){
-		return (long)(Math.random()*Long.MAX_VALUE);
+	public static long randomLong(){
+		return ThreadLocalRandom.current().nextLong();
+	}
+
+	/**
+	 * 产生一个int范围内的随机正数
+	 * @return
+	 */
+	public static int randomInt(){
+		return ThreadLocalRandom.current().nextInt();
+	}
+
+	/**
+	 * 产生一个double范围内的随机正数
+	 * @return
+	 */
+	public static double randomDouble(){
+		return ThreadLocalRandom.current().nextDouble();
+	}
+
+	/**
+	 * 产生一个float范围内的随机正数
+	 * @return
+	 */
+	public static float randomFloat(){
+		return ThreadLocalRandom.current().nextFloat();
 	}
 
 	/**
