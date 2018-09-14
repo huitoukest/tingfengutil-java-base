@@ -2,6 +2,8 @@ package com.tingfeng.util.java.base.common.utils;
 
 import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.User;
+import com.tingfeng.util.java.base.common.bean.UserWechatServiceFansInfo;
+import com.tingfeng.util.java.base.common.bean.WechatServiceUserInfo;
 import org.junit.Test;
 
 import java.util.Date;
@@ -37,5 +39,19 @@ public class BeanUtilsTest {
         map.put("user.interval",110);
         User user = BeanUtils.getBeanByMap(User.class,map);
         System.out.println(JSON.toJSONString(user));
+    }
+
+    @Test
+    public void testCopy(){
+        UserWechatServiceFansInfo wechatServiceFansInfo = new UserWechatServiceFansInfo();
+        WechatServiceUserInfo wechatServiceUserInfo = new WechatServiceUserInfo();
+        wechatServiceUserInfo.setUnionid("1231");
+        wechatServiceUserInfo.setGroupid(123456);
+        wechatServiceUserInfo.setHeadimgurl("http://sdsds/dsdd");
+        wechatServiceUserInfo.setNickname("dddd");
+        wechatServiceUserInfo.setQr_scene_str("xxxxx");
+        BeanUtils.copyProperties(wechatServiceFansInfo,wechatServiceUserInfo);
+
+        System.out.println(JSON.toJSONString(wechatServiceFansInfo));
     }
 }
