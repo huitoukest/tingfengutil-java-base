@@ -10,11 +10,11 @@ public interface CSVReader<T> {
 	 * 读取行,调用getObject方法,传入t
 	 * @param t
 	 */
-	public void read(T t);
+	 void read(T t);
 	/**
 	 * 将一行的内容转为T
 	 * @param line
 	 * @return
 	 */
-	public T getObject(String line);
+	 T getObject(String line);
 }
