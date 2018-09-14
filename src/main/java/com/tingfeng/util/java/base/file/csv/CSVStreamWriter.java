@@ -7,31 +7,31 @@ import java.util.List;
  * @param <T> 读取的数据返回的domain类型
  */
 public interface CSVStreamWriter<T> {
-	public long getTotalCount();	
-	public long getMaxExportCount();
+	 long getTotalCount();
+	 long getMaxExportCount();
 	/**
 	 * 当导出的记录数量超过最大导出数量的时候,抛出此异常
 	 * @return
 	 */
-	public Exception getOverMaxExportCountException();
+	 RuntimeException getOverMaxExportCountException();
 	/**
 	 * 每次获取数据的传入参数
 	 * @param params
 	 * @return
 	 */
-	public List<T> getList(Object ...params);
+	 List<T> getList(Object ...params);
 	/**
 	 * 
 	 * @return 返回单次获取的数据量
 	 */
-	public int getCountOfPerExport();
+	 int getCountOfPerExport();
 	/**
 	 * 返回表头
 	 */
-	public String[] getTableHearder();
+	 String[] getTableHearder();
 	/**
 	 * 返回单行表格数据
 	 * @return
 	 */
-	public Object[] getTableLineData(T t);
+	 Object[] getTableLineData(T t);
 }

@@ -15,18 +15,18 @@ import java.util.Enumeration;
 /**
  *
  */
-public class UdpGetClientMacAddr {
+public class RuntimeUtils {
 	private String sRemoteAddr;
 	private int iRemotePort = 137;
 	private byte[] buffer = new byte[1024];
 	private DatagramSocket ds = null;
 
-	public UdpGetClientMacAddr(String strAddr) throws Exception {
+	public RuntimeUtils(String strAddr) throws Exception {
 		sRemoteAddr = strAddr;
 		ds = new DatagramSocket();
 	}
 
-	public UdpGetClientMacAddr() {
+	public RuntimeUtils() {
 
 	}
 
@@ -344,7 +344,7 @@ public class UdpGetClientMacAddr {
 	public static void main(String[] args) {
 		 /*String address = "";
 		 String host = "*.*.*.*";
-		 UdpGetClientMacAddr test = new UdpGetClientMacAddr();
+		 RuntimeUtils test = new RuntimeUtils();
 		 address = test.getMacAddress();
 		 System.out.println("Physical Address is : " + address);
 		 address = test.getMacAddress(host);
@@ -360,7 +360,7 @@ public class UdpGetClientMacAddr {
 		 String mac = getUnixMACAddress();
 		 System.out.println(mac);
 		 }
-		UdpGetClientMacAddr.getAllMacAdress();*/
+		RuntimeUtils.getAllMacAdress();*/
 	}
 
 }

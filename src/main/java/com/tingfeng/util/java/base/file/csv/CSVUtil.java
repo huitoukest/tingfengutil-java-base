@@ -1,5 +1,9 @@
 package  com.tingfeng.util.java.base.file.csv;
 
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -59,19 +63,22 @@ public class CSVUtil {
     /**
      * 导入
      * @param reader
-     * @param csvReader
+     * @param converter 将读取的csv单行数据转换为T类型
+     * @Param functionVOne
      * @param <T>
      * @throws IOException
      */
-    public static <T> void readCsv(Reader reader,CSVReader<T> csvReader) throws IOException{      
+    public static <T> void readCsv(Reader reader, ConvertI<T,String> converter, FunctionVOne<T> functionVOne){
         BufferedReader br=null;
         try { 
             br = new BufferedReader(reader);
             String line = ""; 
             while ((line = br.readLine()) != null) { 
-                T t =csvReader.getObject(line);
-                csvReader.read(t);
+                T t = converter.convert(line);
+                functionVOne.run(t);
             }
+        }catch (Throwable e){
+
         }finally{
             if(br!=null){
                 try {
@@ -102,50 +109,52 @@ public class CSVUtil {
     * 
     * @param out 输出流 ,此方法关闭输出流
     * @param fileName 导出文件名称
-    * @param csvDbWriter
+    * @param csvPageWriter
     * @param params 获取数据传入的参数,在每次取得数据后因该对参数内容做调整以做到分批得到数据
     * @throws Exception  当导出的记录数量超过最大导出数量的时候,抛出传入的异常
     */
-    public static <T> void writeCsvFromDb(OutputStream out, String fileName,final CSVStreamWriter<T> csvDbWriter,final Object... params) throws Exception{
-    		final long count = csvDbWriter.getTotalCount();
-            if (count > csvDbWriter.getMaxExportCount()) {
-    			throw csvDbWriter.getOverMaxExportCountException();
+    public static <T> void writeCsvByPage(OutputStream out, String fileName,final CSVStreamWriter<T> csvPageWriter,final Object... params){
+    		final long count = csvPageWriter.getTotalCount();
+            if (count > csvPageWriter.getMaxExportCount()) {
+    			throw csvPageWriter.getOverMaxExportCountException();
     		}    		
     		CSVWriter csvWriter = new CSVWriter() {
     			StringBuilder sb = new StringBuilder(150);
     			@Override
     			public boolean write(BufferedWriter bufferedWriter) throws IOException {
-    				List<T> susbs = csvDbWriter.getList(params);	
+    				List<T> susbs = csvPageWriter.getList(params);
     				String content = null;
     				Object[]  data = null;
     				for (int i = 0; i < susbs.size(); i++) {
     					if (i == 0) {
-    						data = csvDbWriter.getTableHearder();
+    						data = csvPageWriter.getTableHearder();
     						content = getCSVLineData(data,sb);
     						bufferedWriter.append(content).append(V_NEW_LINE);
     					}else if(i > 0){
     						bufferedWriter.append(V_NEW_LINE);
     					}
     					T lineData = susbs.get(i);
-    					data = csvDbWriter.getTableLineData(lineData);
+    					data = csvPageWriter.getTableLineData(lineData);
     					content = getCSVLineData(data,sb);
     					bufferedWriter.append(content);
     				}
     				if(content == null || content.length() <= 0){
                         bufferedWriter.append(" ");
                     }
-    				if (susbs.size() >= csvDbWriter.getCountOfPerExport()) {
+    				if (susbs.size() >= csvPageWriter.getCountOfPerExport()) {
     					return this.write(bufferedWriter);
     				}
     				return true;
     			}
     		};
-
-    		CSVUtil.writeCsv(out, csvWriter);
-    		out.flush();
-    		out.close();
-    		out = null;
-      
+            try {
+                CSVUtil.writeCsv(out, csvWriter);
+                out.flush();
+                out.close();
+                out = null;
+            }catch (Throwable e){
+                throw new BaseException(e);
+            }
     }
     /**
      * 
