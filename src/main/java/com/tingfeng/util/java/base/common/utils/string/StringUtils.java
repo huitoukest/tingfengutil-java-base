@@ -936,11 +936,11 @@ public class StringUtils {
 
     /**
      * 将objects中的对象按照顺序依次append到StringBuilder中并且返回
-     * @param objects
+     * @param objects Object[]
      * @param isAppendNull 是否将null值也append到字符串中，默认为false
      * @return
      */
-    public static String appendValue(boolean isAppendNull,Object... objects){
+    public static String appendValue(boolean isAppendNull,Object[] objects){
         if(objects == null){
            if(isAppendNull){
                return String.valueOf("null");
@@ -966,7 +966,7 @@ public class StringUtils {
      * @param objects
      * @return
      */
-    public static String append(Object ... objects){
-        return append(false,objects);
+    public static String append(Objects ... objects){
+        return    appendValue(false,objects);
     }
 }
