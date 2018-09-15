@@ -12,10 +12,10 @@ public class StringUtilsTest {
 
     @Test
     public void testAppend(){
-        System.out.println(StringUtils.append(false,null));
-        System.out.println(StringUtils.append(true,null));
-        System.out.println(StringUtils.append(false,null,null,"123123"));
+        System.out.println(StringUtils.appendValue(false,null));
+        System.out.println(StringUtils.appendValue(true,null));
+        System.out.println(StringUtils.appendValue(false,new Object[]{null,null,"123123"}));
 
-        System.out.println(StringUtils.append(true,null,"123123",null));
+        System.out.println(StringUtils.appendValue(true,new Object[]{null,"123123",null}));
     }
 }

@@ -3,6 +3,7 @@ package com.tingfeng.util.java.base.common;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import org.junit.Test;
 
 /**
@@ -34,4 +35,16 @@ public class RegExTest {
 		content = content.replaceAll("@", "\\\n");
 		System.out.println(content);
 	}
+
+	@Test
+	public void testGetHttpStatus(){
+		String str = "HTTP/1.1 200 OK";
+		Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PATTERN_STR_HTTP_STATUS);
+		Matcher m = pattern.matcher(str);
+		if(m.find()) {
+			System.out.println(m.group(1));;
+		}
+	}
+
+
 }

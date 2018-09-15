@@ -27,10 +27,13 @@ public class RegExpUtils {
     public static final String PATTERN_STR_AGE  = "^[1-9][0-9]{0,1}$";
     public static final String PATTERN_STR_BIRTHDAY  = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
     public static final String PATTERN_STR_PHONE_CN = "^(13\\d|14[57]|15[012356789]|18\\d|17[01678]|19[89]|166)\\d{8}$";
-
-
+    public static final String PATTERN_STR_NOT_INTEGER_PART = "[^\\d]";
+    /**
+     * group 1是具体的status
+     */
+    public static final String PATTERN_STR_HTTP_STATUS = "HTTPS?/[\\d\\.]+\\s(\\d+)\\s\\S+";
     private static String getPatternKey(String regex,int flags){
-        return StringUtils.append(false,flags,"_",regex);
+        return StringUtils.appendValue(false,new Object[]{flags,"_",regex});
     }
 
     /* 先从缓存中取Pattern，没有则新建并写入缓存中
