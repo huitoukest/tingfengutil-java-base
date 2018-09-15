@@ -8,5 +8,5 @@ public interface RateCallBackI {
 	 * @param rate 当前操作的进度回调用;
 	 *        rate从0~100,表示百分比进度;
 	 */
-	public void updateRate(double rate);
+	void updateRate(double rate);
 }

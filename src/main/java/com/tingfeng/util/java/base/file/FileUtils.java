@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
@@ -25,22 +26,17 @@ import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.inter.RateCallBackI;
 import com.tingfeng.util.java.base.common.utils.Base64Utils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 文件相关工具类
+ */
+@Slf4j
 public class FileUtils {
 	public static final int BUFFER_SIZE = 4096;
 	public static  final String BASE64_IMG_HEADER_START = "data:image/";
 	public static  final String BASE64_IMG_HEADER_END = ";base64";
-
-	protected static void writeLog(String s) {
-		System.out.print(s);
-	}
-
-	protected static void writeLog(String tag, String s) {
-		System.out.print(tag + "-" + s);
-	}
-
 	/**
-	 * 
 	 * @param url
 	 *            上传的url
 	 * @param path
@@ -48,21 +44,23 @@ public class FileUtils {
 	 * @param params
 	 *            参数
 	 * @param callBack
-	 *            回调
+	 *            回调 PercentActionCallBackI ，在文件操作完成之后回调成功或者失败的操作,以及上传文件过程中的百分比回调
 	 */
-	public static void uploadFileToServer(final String url, final String path, final Map<String, String> params,
+	public static void uploadFile(final String url, final String path, final Map<String, String> params,
 			final PercentActionCallBackI<File> callBack) {
-		Thread thread = new Thread() {
-			@Override
-			public void run() {
+		Thread thread = new Thread(()->{
 				final String end = "/r/n";
 				final String Hyphens = "--";
 				final String boundary = "*****";
+				DataOutputStream ds = null;
+				HttpURLConnection conn = null;
+				FileInputStream fStream = null;
+				InputStream is = null;
 				try {
 					File uploadFile = new File(path);
 
 					URL urlTemp = new URL(url);
-					HttpURLConnection conn = (HttpURLConnection) urlTemp.openConnection();
+					conn = (HttpURLConnection) urlTemp.openConnection();
 					/* 允许Input、Output，不使用Cache */
 					conn.setDoInput(true);
 					conn.setDoOutput(true);
@@ -81,13 +79,13 @@ public class FileUtils {
 						}
 					}
 					/* 设定DataOutputStream */
-					DataOutputStream ds = new DataOutputStream(conn.getOutputStream());
+					ds = new DataOutputStream(conn.getOutputStream());
 					ds.writeBytes(Hyphens + boundary + end);
 					ds.writeBytes("Content-Disposition: form-data;" + "name=\"file1\";filename=\""
 							+ uploadFile.getName() + "\"" + end);
 					ds.writeBytes(end);
 					/* 取得文件的FileInputStream */
-					FileInputStream fStream = new FileInputStream(uploadFile);
+					fStream = new FileInputStream(uploadFile);
 					/* 设定每次写入2048bytes */
 					int bufferSize = 2048;
 					byte[] buffer = new byte[bufferSize];
@@ -112,23 +110,36 @@ public class FileUtils {
 					}
 					ds.writeBytes(end);
 					ds.writeBytes(Hyphens + boundary + Hyphens + end);
-					fStream.close();
 					ds.flush();
 					/* 取得Response内容 */
-					InputStream is = conn.getInputStream();
+					is = conn.getInputStream();
 					int ch;
 					StringBuffer b = new StringBuffer();
 					while ((ch = is.read()) != -1) {
 						b.append((char) ch);
 					}
-					ds.close();
-
+					callBack.actionSuccess(uploadFile);
 				} catch (Exception e) {
-					callBack.actionFailed(e.toString());
-					e.printStackTrace();
+					callBack.actionFailed(e);
+				}finally {
+					try {
+						if(conn != null){
+							conn.disconnect();
+						}
+						if (fStream != null) {
+							fStream.close();
+						}
+						if (is != null) {
+							is.close();
+						}
+						if (ds != null) {
+							ds.close();
+						}
+					}catch (Throwable e){
+						log.error("close stream error",e);
+					}
 				}
-			}
-		};
+		});
 		thread.start();
 	}
 
@@ -143,23 +154,25 @@ public class FileUtils {
 	 *            此url的参数
 	 * @param callBack
 	 *            下载完毕之后的回调,实现DownFileFromServerCallBack接口
-	 * @return Thread 返回一个线程的引用
+	 * @param connectTimeout 10000
+	 * @return void
 	 */
-	public static Thread downFileFromServer(final String url, final String path, final Map<String, String> params,
-			final PercentActionCallBackI<File> callBack) {
-		Thread thread = new Thread() {
-			@Override
-			public void run() {
+	public static void downFile(final String url, final String path, final Map<String, String> params,
+			final PercentActionCallBackI<File> callBack,int connectTimeout) {
+		Thread thread = new Thread(()-> {
 				URL myFileUrl = null;
 				File file = null;
-				try {
+			HttpURLConnection conn = null;
+			FileOutputStream fStream = null;
+			InputStream is = null;
+			try {
 					// 判断是否存在此文件夹，不存在创建
 					file = new File(path);
-					if (!file.exists())
+					if (!file.exists()) {
 						file.createNewFile();
+					}
 					myFileUrl = new URL(url);
-					HttpURLConnection conn = (HttpURLConnection) myFileUrl.openConnection();
-
+					conn = (HttpURLConnection) myFileUrl.openConnection();
 					if (params != null) {
 						Set<String> keys = params.keySet();
 						for (String s : keys) {
@@ -167,11 +180,11 @@ public class FileUtils {
 						}
 					}
 					conn.setDefaultUseCaches(false);
-					conn.setConnectTimeout(10000);
+					conn.setConnectTimeout(connectTimeout);
 					conn.setDoInput(true);
 					conn.connect();
-					FileOutputStream fos = new FileOutputStream(file);
-					InputStream is = conn.getInputStream();
+					fStream = new FileOutputStream(file);
+					is = conn.getInputStream();
 					byte[] b = new byte[BUFFER_SIZE];
 					int lengthPerTime = 0;// 循环读写中,每一次读取的字节
 					int lengthReadSum = 0;// 循环读写中,读取的字节的总数量
@@ -182,7 +195,7 @@ public class FileUtils {
 					}
 					int countOfNowCycle = 0;// 当前循环的次数
 					while ((lengthPerTime = (is.read(b))) != -1) {
-						fos.write(b);
+						fStream.write(b);
 						lengthReadSum += lengthPerTime;
 						if (countOfNowCycle >= countOfUpdate) {
 							countOfNowCycle = 0;
@@ -190,25 +203,26 @@ public class FileUtils {
 						}
 						countOfNowCycle++;
 					}
-					is.close();
-					fos.close();
-					conn.disconnect();
 					callBack.actionSuccess(file);
-				} catch (FileNotFoundException e) {
-					writeLog(this.getClass().getName() + ":downFileFromServer:01", e.toString());
-					callBack.actionFailed(e.toString());
-				} catch (IOException e) {
-					writeLog(this.getClass().getName() + ":downFileFromServer:02", e.toString());
-					callBack.actionFailed(e.toString());
-				} catch (Exception ex) {
-					writeLog(this.getClass().getName() + ":downFileFromServer:03", ex.toString());
-					callBack.actionFailed(ex.toString());
+				} catch (Throwable e) {
+					callBack.actionFailed(e);
 				} finally {
+					try {
+						if(conn != null){
+							conn.disconnect();
+						}
+						if (fStream != null) {
+							fStream.close();
+						}
+						if (is != null) {
+							is.close();
+						}
+					}catch (Throwable e){
+						log.error("close stream error",e);
+					}
 				}
-			}// end run
-		};// end Thread
+		});// end Thread
 		thread.start();
-		return thread;
 	}
 
 	/**
@@ -385,9 +399,10 @@ public class FileUtils {
 	 * @param filePath
 	 * @return 返回不带扩展名的文件名称
 	 */
-	public static String getFileNameNoExtentionName(String filePath) {
-		if (StringUtils.isEmpty(filePath))
+	public static String getFileNoExtensionName(String filePath) {
+		if (StringUtils.isEmpty(filePath)) {
 			return filePath;
+		}
 		String fileNameString = getFileNameByPath(filePath);
 		return fileNameString.substring(0, fileNameString.indexOf("." + FileUtils.getFileExtension(fileNameString)));
 	}
@@ -398,8 +413,9 @@ public class FileUtils {
 	 * @return 返回文件的扩展名,如果扩展名不存在返回"",否则返回原值; 返回的扩展名不包含小点；
 	 */
 	public static String getFileExtension(String filePath) {
-		if (StringUtils.isEmpty(filePath))
+		if (StringUtils.isEmpty(filePath)) {
 			return filePath;
+		}
 		filePath = filePath.toLowerCase();
 		int dotIndex = filePath.lastIndexOf(".");
 		if (dotIndex <= 0 || (dotIndex + 1 == filePath.length())) {
@@ -416,15 +432,18 @@ public class FileUtils {
 	 * @return
 	 */
 	public static String getFileNameByPath(String filePath) {
-		if (StringUtils.isEmpty(filePath))
+		if (StringUtils.isEmpty(filePath)) {
 			return filePath;
+		}
 		String path = filePath.replaceAll("\\\\", "/");
 		int index1 = path.lastIndexOf("/");
 		int index2 = path.lastIndexOf(":");
-		if (index1 < index2)
+		if (index1 < index2) {
 			index1 = index2;
-		if (index1 < 0)
+		}
+		if (index1 < 0) {
 			return filePath;
+		}
 		return filePath.substring(index1 + 1);
 	}
 
@@ -436,34 +455,27 @@ public class FileUtils {
 	 */
 	public static String transFileToString(File file, Base64ConvertToStringI base64ConvertToStringI)
 			throws IOException {
-		if (file == null || !file.exists())
+		if (file == null || !file.exists()) {
 			return null;
+		}
 		String content = "";
 		byte[] bs = new byte[BUFFER_SIZE];
 		InputStream is = new FileInputStream(file);
 		BufferedInputStream br = new BufferedInputStream(is);
 		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		int readLength = 0;
-		while ((readLength = is.read(bs)) != -1) {
-			bos.write(bs, 0, readLength);
+		try{
+			int readLength = 0;
+			while ((readLength = is.read(bs)) != -1) {
+				bos.write(bs, 0, readLength);
 
+			}
+			content = base64ConvertToStringI.convertToString(bos.toByteArray(), 0);
+		}finally {
+			bos.close();
+			br.close();
+			is.close();
 		}
-		content = base64ConvertToStringI.convertToString(bos.toByteArray(), 0);
-		bos.close();
-		br.close();
-		is.close();
 		return content;
-	}
-
-	public static String encodeBase64File(String path) throws Exception {
-		File file = new File(path);
-		;
-		FileInputStream inputFile = new FileInputStream(file);
-		byte[] buffer = new byte[(int) file.length()];
-		inputFile.read(buffer);
-		inputFile.close();
-		return "";// Base64InputStream b6=new Base64InputStream(in, flags).encode(buffer);
-
 	}
 
 	/**
@@ -471,46 +483,55 @@ public class FileUtils {
 	 * 
 	 * @param file
 	 * @param os
-	 * @param callBack
-	 * @throws Exception
+	 * @param callBack callBack 回调 PercentActionCallBackI ，在文件操作完成之后回调成功或者失败的操作,以及上传文件过程中的百分比回调
+	 * @throws
 	 */
-	public static void writeFile(File file, OutputStream os, PercentActionCallBackI<File> callBack) throws Exception {
-		/* 取得文件的FileInputStream */
-		FileInputStream fStream = new FileInputStream(file);
-		/* 设定每次写入4096bytes */
-		int bufferSize = 4096;
-		byte[] buffer = new byte[bufferSize];
-		int lengthPerTime = 0;// 循环读写中,每一次读取的字节
-		int lengthReadSum = 0;// 循环读写中,读取的字节的总数量
-		Long fileSize = file.length();// 得到文件的总长度
-		int countOfUpdate = (int) (fileSize / bufferSize / 100);
-		if (countOfUpdate == 0) {
-			countOfUpdate = 1;
-		}
-		int countOfNowCycle = 0;// 当前循环的次数
-		try {
-			/* 从文件读取数据到缓冲区 */
-			while ((lengthPerTime = fStream.read(buffer)) != -1) {
-				/* 将数据写入DataOutputStream中 */
-				os.write(buffer, 0, lengthPerTime);
-				lengthReadSum += lengthPerTime;
-				if (countOfNowCycle >= countOfUpdate) {
-					countOfNowCycle = 0;
-					if (callBack != null)
-						callBack.updateRate(lengthReadSum / fileSize);
+	public static void writeFile(File file, OutputStream os, PercentActionCallBackI<File> callBack){
+		new Thread(()->{
+			FileInputStream fStream = null;
+			try {
+				/* 取得文件的FileInputStream */
+				fStream = new FileInputStream(file);
+				/* 设定每次写入4096bytes */
+				int bufferSize = 4096;
+				byte[] buffer = new byte[bufferSize];
+				int lengthPerTime = 0;// 循环读写中,每一次读取的字节
+				int lengthReadSum = 0;// 循环读写中,读取的字节的总数量
+				Long fileSize = file.length();// 得到文件的总长度
+				int countOfUpdate = (int) (fileSize / bufferSize / 100);
+				if (countOfUpdate == 0) {
+					countOfUpdate = 1;
 				}
-				countOfNowCycle++;
+				int countOfNowCycle = 0;// 当前循环的次数
+				/* 从文件读取数据到缓冲区 */
+				while ((lengthPerTime = fStream.read(buffer)) != -1) {
+					/* 将数据写入DataOutputStream中 */
+					os.write(buffer, 0, lengthPerTime);
+					lengthReadSum += lengthPerTime;
+					if (countOfNowCycle >= countOfUpdate) {
+						countOfNowCycle = 0;
+						if (callBack != null)
+							callBack.updateRate(lengthReadSum / fileSize);
+					}
+					countOfNowCycle++;
+				}
+				callBack.actionSuccess(file);
+			}catch (Throwable e){
+				callBack.actionFailed(e);
+			}finally {
+				try {
+					if (fStream != null) {
+						fStream.close();
+					}
+					if (os != null) {
+						os.flush();
+						os.close();
+					}
+				}catch (Throwable e){
+					log.error("close stream error",e);
+				}
 			}
-		} finally {
-			if (fStream != null) {
-				fStream.close();
-			}
-			if (os != null) {
-				os.flush();
-				os.close();
-			}
-		}
-
+		}).start();
 	}
 
 	/**
@@ -530,14 +551,21 @@ public class FileUtils {
 				}
 				result = new String(byteArrayOutputStream.toByteArray(), encode);
 			} catch (IOException e) {
-				e.printStackTrace();
+				throw new BaseException(e);
+			}finally {
+				try {
+					inputStream.close();
+					byteArrayOutputStream.close();
+				}catch (Throwable e){
+					log.error("close stream error",e);
+				}
 			}
 		}
 		return result;
 	}
 
 	/**
-	 * 带进度的文件拷贝
+	 * 文件拷贝
 	 *
 	 * @param srcPath
 	 * @param destPath
@@ -561,7 +589,7 @@ public class FileUtils {
 	}
 
 	/**
-	 * 带进度的文件拷贝
+	 * 带进度的文件拷贝,同步的
 	 * 
 	 * @param source
 	 * @param target
@@ -569,8 +597,7 @@ public class FileUtils {
 	 *            当fileCopyActionCallBack为null的时候,将不会更新进度;
 	 * @throws IOException
 	 */
-	public static void copyFileByFileChannel(File source, File target, RateCallBackI fileCopyActionCallBack)
-			throws IOException {
+	public static void copyFileByFileChannel(File source, File target, RateCallBackI fileCopyActionCallBack) {
 		FileChannel in = null;
 		FileChannel out = null;
 		FileInputStream inStream = null;
@@ -605,22 +632,25 @@ public class FileUtils {
 					countOfNowCycle++;
 				}
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw e;
+		} catch (Throwable e) {
+			throw new BaseException(e);
 		} finally {
-			if (null != inStream) {
-				inStream.close();
-			}
-			if (null != outStream) {
-				outStream.flush();
-				outStream.close();
-			}
-			if (null != in) {
-				in.close();
-			}
-			if (null != out) {
-				out.close();
+			try {
+				if (null != inStream) {
+					inStream.close();
+				}
+				if (null != outStream) {
+					outStream.flush();
+					outStream.close();
+				}
+				if (null != in) {
+					in.close();
+				}
+				if (null != out) {
+					out.close();
+				}
+			}catch (Throwable e){
+				log.error("close stream error",e);
 			}
 		}
 	}
@@ -637,10 +667,6 @@ public class FileUtils {
 	public static void copyFileByFileChannel(String source, String target, RateCallBackI fileCopyActionCallBack)
 			throws IOException {
 		copyFileByFileChannel(new File(source), new File(target), fileCopyActionCallBack);
-	}
-
-	public static void log(String msg) {
-		System.out.println(msg);
 	}
 
 	/**
@@ -663,7 +689,9 @@ public class FileUtils {
 			return false;
 		} else if (!srcFile.isFile()) {
 			msg = "复制文件失败，源文件：" + srcFileName + "不是一个文件！";
-			log(msg);
+			if(log.isInfoEnabled()) {
+				log.info(msg);
+			}
 			return false;
 		}
 		// 判断目标文件是否存在
@@ -697,18 +725,18 @@ public class FileUtils {
 				out.write(buffer, 0, byteread);
 			}
 			return true;
-		} catch (FileNotFoundException e) {
+		} catch (Throwable e) {
 			return false;
-		} catch (IOException e) {
-			return false;
-		} finally {
+		}finally {
 			try {
-				if (out != null)
+				if (out != null) {
 					out.close();
-				if (in != null)
+				}
+				if (in != null) {
 					in.close();
-			} catch (IOException e) {
-				e.printStackTrace();
+				}
+			} catch (Throwable e) {
+				log.error("close stream error",e);
 			}
 		}
 	}
@@ -730,11 +758,11 @@ public class FileUtils {
 		File srcDir = new File(srcDirName);
 		if (!srcDir.exists()) {
 			msg = "复制目录失败：源目录" + srcDirName + "不存在！";
-			log(msg);
+			log.info(msg);
 			return false;
 		} else if (!srcDir.isDirectory()) {
 			msg = "复制目录失败：" + srcDirName + "不是目录！";
-			log(msg);
+			log.info(msg);
 			return false;
 		}
 
@@ -750,14 +778,17 @@ public class FileUtils {
 				new File(destDirName).delete();
 			} else {
 				msg = "复制目录失败：目的目录" + destDirName + "已存在！";
-				log(msg);
+				if(log.isInfoEnabled()) {
+					log.info(msg);
+				}
 				return false;
 			}
 		} else {
 			// 创建目的目录
-			log("目的目录不存在，准备创建。。。");
 			if (!destDir.mkdirs()) {
-				log("复制目录失败：创建目的目录失败！");
+				if(log.isInfoEnabled()){
+					log.info("复制目录失败：创建目的目录失败！");
+				}
 				return false;
 			}
 		}
@@ -779,7 +810,9 @@ public class FileUtils {
 		}
 		if (!flag) {
 			msg = "复制目录" + srcDirName + "至" + destDirName + "失败！";
-			log(msg);
+			if(log.isInfoEnabled()) {
+				log.info(msg);
+			}
 			return false;
 		} else {
 			return true;
@@ -787,9 +820,15 @@ public class FileUtils {
 	}
 
 
-
-	public static void saveFile(File file, String destPath, String destFileName) throws IOException {
-		saveFile(new FileInputStream(file),destPath,destFileName);
+	/**
+	 * 拷贝并重命名文件
+	 * @param file
+	 * @param destPath
+	 * @param destFileName
+	 * @throws IOException
+	 */
+	public static void copyFile(File file, String destPath, String destFileName) throws IOException {
+		copyFile(new FileInputStream(file),destPath,destFileName);
 	}
 
 	/**
@@ -798,7 +837,7 @@ public class FileUtils {
 	 * @param destPath 保存路径
 	 * @param destFileName 文件名
 	 */
-	public static void saveFile(InputStream inputStream, String destPath, String destFileName) throws IOException {
+	public static void copyFile(InputStream inputStream, String destPath, String destFileName) throws IOException {
 		int bytesum = 0;
 		int byteread;
 		FileOutputStream fs = null;
@@ -864,10 +903,8 @@ public class FileUtils {
 			//生成jpeg图片
 			out.write(content);
 			out.flush();
-			out.close();
 		}finally {
 			if(out!=null){
-				out.flush();
 				out.close();
 			}
 		}

@@ -31,7 +31,7 @@ public class CSVUtil {
      * @param csvWriter
      * @throws IOException
      */
-    public static void writeCsv(OutputStream out,CSVWriter csvWriter) throws IOException{
+    public static void writeCsv(OutputStream out,CSVWriter csvWriter){
         OutputStreamWriter osw=null;
         BufferedWriter bw=null;
         try {
@@ -40,6 +40,8 @@ public class CSVUtil {
             byte[] bom ={(byte) 0xEF,(byte) 0xBB,(byte) 0xBF};//UTF-8编码bom头
             out.write(bom);
             csvWriter.write(bw);
+        }catch (Throwable e){
+           throw new BaseException(e);
         }finally{
             if(bw!=null){
                 try {
@@ -70,7 +72,7 @@ public class CSVUtil {
      */
     public static <T> void readCsv(Reader reader, ConvertI<T,String> converter, FunctionVOne<T> functionVOne){
         BufferedReader br=null;
-        try { 
+        try {
             br = new BufferedReader(reader);
             String line = ""; 
             while ((line = br.readLine()) != null) { 
@@ -113,7 +115,7 @@ public class CSVUtil {
     * @param params 获取数据传入的参数,在每次取得数据后因该对参数内容做调整以做到分批得到数据
     * @throws Exception  当导出的记录数量超过最大导出数量的时候,抛出传入的异常
     */
-    public static <T> void writeCsvByPage(OutputStream out, String fileName,final CSVStreamWriter<T> csvPageWriter,final Object... params){
+    public static <T> void writeCsvByPage(OutputStream out, String fileName, final CSVPageWriter<T> csvPageWriter, final Object... params){
     		final long count = csvPageWriter.getTotalCount();
             if (count > csvPageWriter.getMaxExportCount()) {
     			throw csvPageWriter.getOverMaxExportCountException();
@@ -121,30 +123,34 @@ public class CSVUtil {
     		CSVWriter csvWriter = new CSVWriter() {
     			StringBuilder sb = new StringBuilder(150);
     			@Override
-    			public boolean write(BufferedWriter bufferedWriter) throws IOException {
-    				List<T> susbs = csvPageWriter.getList(params);
-    				String content = null;
-    				Object[]  data = null;
-    				for (int i = 0; i < susbs.size(); i++) {
-    					if (i == 0) {
-    						data = csvPageWriter.getTableHearder();
-    						content = getCSVLineData(data,sb);
-    						bufferedWriter.append(content).append(V_NEW_LINE);
-    					}else if(i > 0){
-    						bufferedWriter.append(V_NEW_LINE);
-    					}
-    					T lineData = susbs.get(i);
-    					data = csvPageWriter.getTableLineData(lineData);
-    					content = getCSVLineData(data,sb);
-    					bufferedWriter.append(content);
-    				}
-    				if(content == null || content.length() <= 0){
-                        bufferedWriter.append(" ");
+    			public boolean write(BufferedWriter bufferedWriter){
+    				try {
+                        List<T> susbs = csvPageWriter.getList(params);
+                        String content = null;
+                        Object[] data = null;
+                        for (int i = 0; i < susbs.size(); i++) {
+                            if (i == 0) {
+                                data = csvPageWriter.getTableHearder();
+                                content = getCSVLineData(data, sb);
+                                bufferedWriter.append(content).append(V_NEW_LINE);
+                            } else if (i > 0) {
+                                bufferedWriter.append(V_NEW_LINE);
+                            }
+                            T lineData = susbs.get(i);
+                            data = csvPageWriter.getTableLineData(lineData);
+                            content = getCSVLineData(data, sb);
+                            bufferedWriter.append(content);
+                        }
+                        if (content == null || content.length() <= 0) {
+                            bufferedWriter.append(" ");
+                        }
+                        if (susbs.size() >= csvPageWriter.getCountOfPerExport()) {
+                            return this.write(bufferedWriter);
+                        }
+                        return true;
+                    }catch (Throwable e){
+    				    throw new BaseException(e);
                     }
-    				if (susbs.size() >= csvPageWriter.getCountOfPerExport()) {
-    					return this.write(bufferedWriter);
-    				}
-    				return true;
     			}
     		};
             try {

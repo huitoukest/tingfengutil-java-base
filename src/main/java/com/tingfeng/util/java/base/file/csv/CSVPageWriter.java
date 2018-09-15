@@ -2,11 +2,11 @@ package com.tingfeng.util.java.base.file.csv;
 import java.util.List;
 
 /**
- * 流式读取导出CSV格式
+ * 分页读取导出CSV格式
  * @author huitoukest
  * @param <T> 读取的数据返回的domain类型
  */
-public interface CSVStreamWriter<T> {
+public interface CSVPageWriter<T> {
 	 long getTotalCount();
 	 long getMaxExportCount();
 	/**
