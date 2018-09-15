@@ -5,15 +5,15 @@ package com.tingfeng.util.java.base.common.inter;
  * @author huitoukest
  * @param <T> 操作成功后传入的对象
  */
-	public interface PercentActionCallBackI<T> extends RateCallBackI{
+public interface PercentActionCallBackI<T> extends RateCallBackI{
 	/**
 	 * 操作完毕之后的回调方法
 	 * @param t <T>
 	 */
-	public void actionSuccess(T t);
+	 void actionSuccess(T t);
 	/**
 	 * 操作失败后会调用此函数,传入失败的原因
-	 * @param o Object
+	 * @param e Throwable
 	 */
-	public void actionFailed(Object o);
+	 void actionFailed(Throwable e);
 }

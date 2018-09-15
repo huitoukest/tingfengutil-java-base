@@ -6,6 +6,7 @@ import java.io.IOException;
 /**
  * 写入CSV文件的工具类
  */
+@FunctionalInterface
 public interface CSVWriter {
 	
 	/**
@@ -14,5 +15,5 @@ public interface CSVWriter {
 	 * @return
 	 * @throws IOException 
 	 */
-	public boolean write(BufferedWriter bufferedWriter) throws IOException;
+	 boolean write(BufferedWriter bufferedWriter);
 }
