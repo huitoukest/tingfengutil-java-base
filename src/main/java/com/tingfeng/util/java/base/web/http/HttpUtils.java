@@ -19,7 +19,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 待测试
+ * 待测试,目前不支持Https
  * @author huitoukest
  *
  */
