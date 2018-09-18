@@ -167,7 +167,7 @@ public class DateUtils {
 
 	/**
 	 * 根据指定时间设定相关参数值
-	 * 
+	 * HOUR是12小时制度，HOUR_OF_DAY是24小时制度
 	 * @param calendar
 	 * @param hour
 	 * @param minute
@@ -176,7 +176,7 @@ public class DateUtils {
 	 * @return
 	 */
 	public static Calendar getInitCalendar(Calendar calendar, int hour, int minute, int second, int milliSecond) {
-		calendar.set(Calendar.HOUR, hour);
+		calendar.set(Calendar.HOUR_OF_DAY, hour);
 		calendar.set(Calendar.MINUTE, minute);
 		calendar.set(Calendar.SECOND, second);
 		calendar.set(Calendar.MILLISECOND, milliSecond);
@@ -196,7 +196,7 @@ public class DateUtils {
 	public static Calendar getInitCalendar(Date date, int hour, int minute, int second, int milliSecond) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
-		calendar.set(Calendar.HOUR, hour);
+		calendar.set(Calendar.HOUR_OF_DAY, hour);
 		calendar.set(Calendar.MINUTE, minute);
 		calendar.set(Calendar.SECOND, second);
 		calendar.set(Calendar.MILLISECOND, milliSecond);
@@ -616,7 +616,7 @@ public class DateUtils {
 		}
 		return dates.stream().map(it -> {
 				cal.setTime(it);
-				cal.set(Calendar.HOUR, 0);
+				cal.set(Calendar.HOUR_OF_DAY, 0);
 				cal.set(Calendar.MINUTE, 0);
 				cal.set(Calendar.SECOND, 0);
 				cal.set(Calendar.MILLISECOND, 0);
