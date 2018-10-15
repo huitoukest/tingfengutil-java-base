@@ -3,6 +3,7 @@ package com.tingfeng.util.java.base.common.utils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -28,14 +29,22 @@ public class ArrayUtils {
 		} else {
 			return false;
 		}
-	}			
+	}
 
-	public static <T> T[] getArray(Object[] array,ConvertI<T,Object> convertI){
-		Object[] objs = new Object[array.length];
+	/**
+	 * 转换一个数组的类型
+	 * @param array
+	 * @param cls
+	 * @param convertI
+	 * @param <T>
+	 * @return
+	 */
+	public static <T> T[] getArray(Object[] array,Class<T> cls,ConvertI<T,Object> convertI){
+		T[] objs = (T[]) Array.newInstance(cls, array.length);
 		for(int i = 0 ; i < array.length ; i++){
 			objs[i] = convertI.convert(array[i]);
 		}
-		return (T[])objs;
+		return objs;
 	}
 	
 	/**
