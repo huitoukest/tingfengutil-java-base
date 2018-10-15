@@ -311,8 +311,8 @@ public class DateUtils {
 			sb = format(dateB,formatString).split(":");
 		}
 		ConvertI<Integer, Object> convertI = (s) -> Integer.parseInt(s.toString());
-		Integer[] arrayA = ArrayUtils.getArray(sa, convertI);
-		Integer[] arrayB = ArrayUtils.getArray(sb, convertI);
+		Integer[] arrayA = ArrayUtils.getArray(sa,Integer.class, convertI);
+		Integer[] arrayB = ArrayUtils.getArray(sb,Integer.class, convertI);
 		count = arrayA[1] - arrayB[1];
 		// 比较月份;
 		if (count > 0 && arrayA[2] < arrayB[2]) {
