@@ -231,6 +231,28 @@ public class TokenHelper {
         return parseContent(content);
     }
 
+    /**
+     * 检查并且做签名校验
+     * @param token
+     * @pram securityKey 加密字符串
+     * @return 返回token中的签名:base64字符串
+     */
+    public String checkSignature(String token,String  securityKey){
+        String[] strArray = tokenBaseParseAndCheck(token);
+        String sign = strArray[1];//数据校验
+        String content = Base64Utils.deCodeToString(strArray[0]);
+        byte[] expectSignBytes = this.encryptAction.apply(content + securityKey);
+        String expectSign = Base64Utils.enCode(expectSignBytes);
+        if (!expectSign.equals(sign)) {
+            if(null != signErrorException){
+                throw signErrorException;
+            }else {
+                throw new InfoException("token 错误！");
+            }
+        }
+        return sign;
+    }
+
     public Exception getEmptyTokenException() {
         return emptyTokenException;
     }
