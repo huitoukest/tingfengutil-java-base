@@ -15,8 +15,8 @@ public class RegExpUtils {
      * 注意Matcher 是一个非线程安全，所以调用matcher.find()是线程不安全的
      */
     private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(50);
-    public static final String PATTERN_STR_INTEGER = "^[\\-\\+]{0,1}[1-9][0-9]+$";
-    public static final String PATTERN_STR_FLOAT = "(^[\\-\\+]{0,1}([1-9][0-9]+\\.[0-9]+|0\\.[0-9]+)$";
+    public static final String PATTERN_STR_INTEGER = "^[\\-\\+]{0,1}[1-9][0-9]*$";
+    public static final String PATTERN_STR_FLOAT = "(^[\\-\\+]{0,1}([1-9][0-9]*\\.[0-9]+|0\\.[0-9]+)$";
     public static final String PATTERN_STR_INT_OR_FLOAT_NUMBER = "^[\\-\\+]([0-9]*$|^0+\\.[0-9]+$|^[1-9]+[0-9]*$|^[1-9]+[0-9]*.[0-9]+)$";
     public static final String PATTERN_STR_SPLIT = ",|，|;|；|、|\\.|。|-|_|\\(|\\)|\\[|\\]|\\{|\\}|\\\\|/| |　|\"";
     public static final String PATTERN_STR_BLANK = "\\s*|\t|\r|\n";
