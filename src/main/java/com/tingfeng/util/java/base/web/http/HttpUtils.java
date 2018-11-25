@@ -146,6 +146,7 @@ public class HttpUtils {
             if(null != reqCharset) {
                 conn.setRequestProperty("Charset", "charset=" + reqCharset);
             }
+            //conn.setRequestProperty("Accept-Charset", "UTF-8");
             // 设置文件类型:
             conn.setRequestProperty("Content-Type",contentType);
             conn.setRequestProperty("accept", "*/*");
