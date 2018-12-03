@@ -133,7 +133,7 @@ public class RuntimeUtils {
 		// 获取网卡，获取地址
 		InetAddress ia = InetAddress.getLocalHost();
 		byte[] mac = NetworkInterface.getByInetAddress(ia).getHardwareAddress();
-		System.out.println("mac数组长度：" + mac.length);
+		//System.out.println("mac数组长度：" + mac.length);
 		StringBuffer sb = new StringBuffer("");
 		for (int i = 0; i < mac.length; i++) {
 			if (i != 0) {
@@ -307,12 +307,12 @@ public class RuntimeUtils {
 			// 获得所有网络接口
 			netInterfaces = NetworkInterface.getNetworkInterfaces();
 			while (netInterfaces.hasMoreElements()) {
-				System.out.println("==============================================");
+				//System.out.println("==============================================");
 				String mac = "";
 				StringBuffer sb = new StringBuffer();
 				NetworkInterface ni = netInterfaces.nextElement();
-				System.out.println("DisplayName: " + ni.getDisplayName());
-				System.out.println("Name: " + ni.getName());
+				//System.out.println("DisplayName: " + ni.getDisplayName());
+				//System.out.println("Name: " + ni.getName());
 
 				byte[] macs = ni.getHardwareAddress();
 				// 该interface不存在HardwareAddress，继续下一次循环
@@ -329,12 +329,12 @@ public class RuntimeUtils {
 				}
 				mac = sb.toString();
 				mac = mac.substring(0, mac.length() - 1);
-				System.out.println(mac);
+				//System.out.println(mac);
 
 				Enumeration<InetAddress> ips = ni.getInetAddresses();
-				while (ips.hasMoreElements()) {
-					System.out.println("IP: " + ips.nextElement().getHostAddress());
-				}
+				//while (ips.hasMoreElements()) {
+				//	System.out.println("IP: " + ips.nextElement().getHostAddress());
+				//}
 			}
 		} catch (SocketException e) {
 			e.printStackTrace();

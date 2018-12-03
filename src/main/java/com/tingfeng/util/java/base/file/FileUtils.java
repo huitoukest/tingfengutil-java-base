@@ -846,7 +846,6 @@ public class FileUtils {
 			byte[] buffer = new byte[1444];
 			while ((byteread = inputStream.read(buffer)) != -1) {
 				bytesum += byteread;
-				System.out.println(bytesum);
 				fs.write(buffer, 0, byteread);
 			}
 		}finally {
