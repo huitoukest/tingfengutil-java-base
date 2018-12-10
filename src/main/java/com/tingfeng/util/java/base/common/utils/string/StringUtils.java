@@ -936,12 +936,12 @@ public class StringUtils {
 
     /**
      * 将objects中的对象按照顺序依次append到StringBuilder中并且返回
-     * @param freeMemory 当内存占用大于64字节的时候，删除超过64字节的部分，即最低保留64字节
+     * @param freeMemoryThen 使用完毕后，当内存占用大于64字节的时候，删除超过64字节的部分，即最低保留64字节
      * @param objects Object[]
      * @param isAppendNull 是否将null值也append到字符串中，默认为false
      * @return
      */
-    public static String appendValue(boolean freeMemory,boolean isAppendNull,Object[] objects){
+    public static String appendValue(boolean freeMemoryThen,boolean isAppendNull,Object[] objects){
         if(objects == null){
             if(isAppendNull){
                 return String.valueOf("null");
@@ -950,9 +950,6 @@ public class StringUtils {
             }
         }
         return stringBuilderPool.run(sb -> {
-            if(freeMemory && sb.capacity() > 64){
-                sb.delete(0,sb.capacity() - 64);
-            }
             Stream.of(objects).forEach(it->{
                 if(isAppendNull){
                     sb.append(it);
@@ -960,6 +957,9 @@ public class StringUtils {
                     sb.append(it);
                 }
             });
+            if(freeMemoryThen && sb.capacity() > 64){
+                sb.delete(0,sb.capacity() - 64);
+            }
             return sb.toString();
         });
     }
