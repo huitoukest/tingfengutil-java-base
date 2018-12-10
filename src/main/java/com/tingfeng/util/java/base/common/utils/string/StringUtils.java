@@ -43,7 +43,7 @@ public class StringUtils {
         sb.setLength(0);
     });
 
-    public StringUtils() {
+    private StringUtils() {
 
     }
 
@@ -936,19 +936,23 @@ public class StringUtils {
 
     /**
      * 将objects中的对象按照顺序依次append到StringBuilder中并且返回
+     * @param freeMemory 当内存占用大于64字节的时候，删除超过64字节的部分，即最低保留64字节
      * @param objects Object[]
      * @param isAppendNull 是否将null值也append到字符串中，默认为false
      * @return
      */
-    public static String appendValue(boolean isAppendNull,Object[] objects){
+    public static String appendValue(boolean freeMemory,boolean isAppendNull,Object[] objects){
         if(objects == null){
-           if(isAppendNull){
-               return String.valueOf("null");
-           }else{
-               return "";
-           }
+            if(isAppendNull){
+                return String.valueOf("null");
+            }else{
+                return "";
+            }
         }
         return stringBuilderPool.run(sb -> {
+            if(freeMemory && sb.capacity() > 64){
+                sb.delete(0,sb.capacity() - 64);
+            }
             Stream.of(objects).forEach(it->{
                 if(isAppendNull){
                     sb.append(it);
@@ -958,6 +962,16 @@ public class StringUtils {
             });
             return sb.toString();
         });
+    }
+
+    /**
+     * 将objects中的对象按照顺序依次append到StringBuilder中并且返回
+     * @param objects Object[]
+     * @param isAppendNull 是否将null值也append到字符串中，默认为false
+     * @return
+     */
+    public static String appendValue(boolean isAppendNull,Object[] objects){
+           return appendValue(false,false,objects);
     }
 
     /**
