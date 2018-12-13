@@ -68,7 +68,7 @@ public class BeanUtils{
 				String fieldName = field.getName();
 				Field targetField = targetFieldMap.get(fieldName);
 				if(null != targetField){
-					Object value = ReflectUtils.getFieldValue(true, source,fieldName,null);//即使value是null也拷贝
+					Object value = ReflectUtils.getFieldValue(true, source,fieldName,null,null);//即使value是null也拷贝
 					Class<?> valueClass = targetField.getType();
 					if(value != null){
 						valueClass = value.getClass();
