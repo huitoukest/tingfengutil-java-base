@@ -1,13 +1,10 @@
 package com.tingfeng.util.java.base.common.utils.reflect;
 
-import com.tingfeng.util.java.base.common.constant.ObjectType;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
-import com.tingfeng.util.java.base.common.utils.ObjectUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
-import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,7 +14,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * @author huitoukest
@@ -264,7 +260,7 @@ public class ReflectUtils {
         if (filedName.indexOf(".") > 0 && !filedName.endsWith(".")) {
             String[] fieldNameStrings = filedName.split("\\.", 2);
             String nextString = filedName.substring(fieldNameStrings[0].length() + 1);
-            Object objTemp = getFieldValue(isReadNotPublicField, obj, fieldNameStrings[0], null);
+            Object objTemp = getFieldValue(isReadNotPublicField, obj, fieldNameStrings[0], null,null);
             Class<?> clsTemp = null;
             if (objTemp == null) {
                 try {
@@ -342,17 +338,29 @@ public class ReflectUtils {
      * 取属性值,会先尝试调用其getter方法,如果没有getter方法会直接给操作属性
      *
      * @param obj            此属性的对象实例
+     * @return 如果没有找到属性会返回null;
+     */
+    public static Object getFieldValue(boolean isReadNotPublicField, Object obj, String filedName){
+        Object[] values = null;
+        Class<?>[]  parameterTypes = null;
+        return getFieldValue(isReadNotPublicField,obj,filedName,values,parameterTypes);
+    }
+
+    /**
+     * 取属性值,会先尝试调用其getter方法,如果没有getter方法会直接给操作属性
+     * 支持a.b.c 对象链式属性调用
+     * @param obj            此属性的对象实例
      * @param values         参数的值
      * @param parameterTypes 参数类型
      * @return 如果没有找到属性会返回null;
      */
-    public static Object getFieldValue(boolean isReadNotPublicField, Object obj, String filedName, Object[] values, Class<?>... parameterTypes) {
+    public static Object getFieldValue(boolean isReadNotPublicField, Object obj, String filedName, Object[] values, Class<?>[] parameterTypes) {
         if (obj == null) {
             return null;
         }
         if (filedName.indexOf(".") > 0 && !filedName.endsWith(".")) {
             String[] fieldNameStrings = filedName.split("\\.", 2);
-            Object objTemp = getFieldValue(isReadNotPublicField, obj, fieldNameStrings[0], null);
+            Object objTemp = getFieldValue(isReadNotPublicField, obj, fieldNameStrings[0], null,null);
             return getFieldValue(isReadNotPublicField, objTemp, fieldNameStrings[1], values, parameterTypes);
         } else {
             Field field = null;
