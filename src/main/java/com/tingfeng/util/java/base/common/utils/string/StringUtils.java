@@ -1012,16 +1012,19 @@ public class StringUtils {
      * @param sArray          主串
      * @param pArray       子串、模式串
      * @param kmpNextArray KMP的next数组，传入null时会自动获取
+     * @param skipLength 跳过主串中前面skipLength个长度的字符
      * @return
      */
-    public static int indexOfByKMP(char[] sArray, char[] pArray, int[] kmpNextArray) {
+    public static int indexOfByKMP(char[] sArray, char[] pArray, int[] kmpNextArray,int skipLength) {
         if (kmpNextArray == null) {
             kmpNextArray = getKmpNextArray(pArray);
         }
 
-        int i = 0;
+        int i = skipLength;
+        int maxLength = sArray.length - skipLength;
+        int pLength = pArray.length;
         int j = 0;
-        while (i < sArray.length && j < pArray.length) {
+        while (j < pLength && i < maxLength) {
             //①如果j = -1，或者当前字符匹配成功（即S[i] == P[j]），都令i++，j++
             if (j == -1 || sArray[i] == pArray[j]) {
                 //①如果当前字符匹配成功（即S[i] == P[j]），则i++，j++
@@ -1039,6 +1042,19 @@ public class StringUtils {
         }
         return -1;
 
+    }
+
+    /**
+     * 如果str或者subStr为null，返回-1 （-1 表示不存在匹配的子串），否则返回其子串在主串中的索引值
+     * 一般情况下，朴素indexOf的速度更快，前缀的重复率越高，KMP的速度越快
+     *
+     * @param sArray          主串
+     * @param pArray       子串、模式串
+     * @param kmpNextArray KMP的next数组，传入null时会自动获取
+     * @return
+     */
+    public static int indexOfByKMP(char[] sArray, char[] pArray, int[] kmpNextArray) {
+        return indexOfByKMP(sArray,pArray,kmpNextArray,0);
     }
 
     /**
