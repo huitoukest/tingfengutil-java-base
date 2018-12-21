@@ -29,15 +29,13 @@ public class StringUtilsTest {
     public void testKMPIndexOf(){
            //String str = RandomUtils.randomLetterString(5000);
            //String str = RandomUtils.randomNumberString(5000);
-           List<Integer> strList = Stream.generate(() -> ThreadLocalRandom.current().nextInt(5))
+           List<Integer> strList = Stream.generate(() -> ThreadLocalRandom.current().nextInt(2))
                             .limit(900000).collect(Collectors.toList());
            String str = CollectionUtils.join(strList,"");
-           String subStr = str.substring(860000,860200);
+           String subStr = str.substring(860000,860100);
             int[] next = StringUtils.getKmpNextArray(StringUtils.getCharArray(subStr));
            StringUtils.indexOfByKMP(str,subStr,next);
            System.out.println("start ...");
-           //char[] strs = StringUtils.getCharArray(str);
-           //char[] subStrs = StringUtils.getCharArray(subStr);
            TestUtils.printTime(10,1,index ->{
                int position = str.indexOf(subStr);
                if(index == 0){

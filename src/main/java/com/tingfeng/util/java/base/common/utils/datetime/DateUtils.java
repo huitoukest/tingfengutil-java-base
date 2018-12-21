@@ -540,9 +540,13 @@ public class DateUtils {
 				return null;
 			}
 			value = value.replaceAll("[^\\d]","");
+			int length = value.length();
+			if(length == 13){//默认识别为毫秒数量
+				return new Date(Long.parseLong(value));
+			}
 			StringBuilder sb = new StringBuilder(30);
 			sb.append(value);
-			for(int  i = value.length() + 1 ; i < 18; i++) {//初始化数据
+			for(int  i = length + 1 ; i < 18; i++) {//初始化数据
 				if(i == 5 || i == 7 || i >= 9){
 					sb.append(0);
 				}
