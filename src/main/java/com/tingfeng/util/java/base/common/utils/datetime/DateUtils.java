@@ -521,12 +521,12 @@ public class DateUtils {
 	/**
 	 * 
 	 * @param value
-	 * @param formateString
+	 * @param formatString
 	 *            "yyyy-MM-dd HH:mm:ss"等支持的格式
 	 * @return
 	 */
-	public static Date getDate(String value, String formateString) {
-		return getDate(value, formateString, null);
+	public static Date getDate(String value, String formatString) {
+		return getDate(value, formatString, null);
 	}
 
 	/** isAutoConvert是false时返回,"yyyy-MM-dd HH:mm:ss"支持的格式
@@ -582,7 +582,7 @@ public class DateUtils {
 	 * formatString "yyyy-MM-dd HH:mm:ss"
 	 * @return
 	 */
-	public static String formatDateAndTimeToString(Date date){
+	public static String formatDateTimeToString(Date date){
 		return format(date, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
 	}
 
