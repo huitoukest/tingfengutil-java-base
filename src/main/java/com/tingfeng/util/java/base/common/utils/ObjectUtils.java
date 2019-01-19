@@ -503,13 +503,13 @@ public class ObjectUtils {
      * @param <S>          来源值类型
      * @return
      */
-    public static <T, S> T getValue(T defaultValue, S source, ConvertI<T, S> convert) {
+    public static <T, S> T getValue(T defaultValue, S source, ConvertI<S,T> convert) {
         if (source == null) {
             return defaultValue;
         }
         T v;
         try {
-            v = convert.convert(source);
+            v = convert.apply(source);
         } catch (NullPointerException e) {
             v = defaultValue;
         }

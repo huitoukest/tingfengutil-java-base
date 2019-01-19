@@ -11,7 +11,6 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,7 +78,7 @@ public class HttpUtils {
                 if(statusList != null && !statusList.isEmpty()){
                     String status = statusList.get(0);
                     if(null != status){
-                        Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PATTERN_STR_HTTP_STATUS);
+                        Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PatternStr.httpStatus);
                         Matcher m = pattern.matcher(status);
                         if(m.find()) {
                             status = m.group(1);
@@ -96,11 +95,15 @@ public class HttpUtils {
 	       if(null != in) {
                final BufferedReader appendIn = in;
                result = StringUtils.doAppend(sb -> {
-                   String line = null;
-                   while ((line = appendIn.readLine()) != null) {
-                       sb.append(line);
+                   try {
+                       String line = null;
+                       while ((line = appendIn.readLine()) != null) {
+                           sb.append(line);
+                       }
+                       return sb.toString();
+                   }catch (Exception e){
+                       throw new BaseException(e);
                    }
-                return sb.toString();
                });
            }
             responseInfo.setBody(result);

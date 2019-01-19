@@ -81,7 +81,7 @@ public class FixedPoolHelper<T> {
                currentThread ++;
                synchronized (t) {
                    if(null != initDataAction){
-                       initDataAction.run(t);
+                       initDataAction.accept(t);
                    }
                    return run.run(t);
                }

@@ -8,6 +8,6 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
 @FunctionalInterface
 public interface FunctionRThree<R,P1,P2,P3> {
 
-    R run(P1 p1, P2 p2, P3 p3) throws Exception;
+    R run(P1 p1, P2 p2, P3 p3) ;
 
 }

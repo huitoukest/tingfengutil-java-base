@@ -39,10 +39,10 @@ public class ArrayUtils {
 	 * @param <T>
 	 * @return
 	 */
-	public static <T> T[] getArray(Object[] array,Class<T> cls,ConvertI<T,Object> convertI){
+	public static <T> T[] getArray(Object[] array,Class<T> cls,ConvertI<Object,T> convertI){
 		T[] objs = (T[]) Array.newInstance(cls, array.length);
 		for(int i = 0 ; i < array.length ; i++){
-			objs[i] = convertI.convert(array[i]);
+			objs[i] = convertI.apply(array[i]);
 		}
 		return objs;
 	}

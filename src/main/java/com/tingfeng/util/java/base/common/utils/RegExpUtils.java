@@ -15,23 +15,34 @@ public class RegExpUtils {
      * 注意Matcher 是一个非线程安全，所以调用matcher.find()是线程不安全的
      */
     private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(50);
-    public static final String PATTERN_STR_INTEGER = "^[\\-\\+]{0,1}[1-9][0-9]*$";
-    public static final String PATTERN_STR_FLOAT = "(^[\\-\\+]{0,1}([1-9][0-9]*\\.[0-9]+|0\\.[0-9]+)$";
-    public static final String PATTERN_STR_INT_OR_FLOAT_NUMBER = "^[\\-\\+]([0-9]*$|^0+\\.[0-9]+$|^[1-9]+[0-9]*$|^[1-9]+[0-9]*.[0-9]+)$";
-    public static final String PATTERN_STR_SPLIT = ",|，|;|；|、|\\.|。|-|_|\\(|\\)|\\[|\\]|\\{|\\}|\\\\|/| |　|\"";
-    public static final String PATTERN_STR_BLANK = "\\s*|\t|\r|\n";
-    public static final String PATTERN_STR_LETTER = "^[a-zA-Z]+$";
-    public static final String PATTERN_STR_URL = "^((ht|f)tps?):\\/\\/([\\w\\-]+(\\.[\\w\\-]+)*\\/)*[\\w\\-]+(\\.[\\w\\-]+)*\\/?(\\?([\\w\\-\\.,@?^=%&:\\/~\\+#]*)+)?";
-    public static final String PATTERN_STR_HTTP = "^((http)s?):\\/\\/";
-    public static final String PATTERN_STR_EMAIL = "^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*\\.[a-zA-Z0-9]{2,6}$";
-    public static final String PATTERN_STR_AGE  = "^[1-9][0-9]{0,1}$";
-    public static final String PATTERN_STR_BIRTHDAY  = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
-    public static final String PATTERN_STR_PHONE_CN = "^(13\\d|14[57]|15[012356789]|18\\d|17[01678]|19[89]|166)\\d{8}$";
-    public static final String PATTERN_STR_NOT_INTEGER_PART = "[^\\d]";
+
     /**
-     * group 1是具体的status
+     * 用来存储各种Pattern
      */
-    public static final String PATTERN_STR_HTTP_STATUS = "HTTPS?/[\\d\\.]+\\s(\\d+)\\s\\S+";
+    public interface PatternStr{
+         String integer = "^[\\-\\+]{0,1}[1-9][0-9]*$";
+         String floatValue = "(^[\\-\\+]{0,1}([1-9][0-9]*\\.[0-9]+|0\\.[0-9]+)$";
+         String intOrFloatNumber = "^[\\-\\+]([0-9]*$|^0+\\.[0-9]+$|^[1-9]+[0-9]*$|^[1-9]+[0-9]*.[0-9]+)$";
+         String split = ",|，|;|；|、|\\.|。|-|_|\\(|\\)|\\[|\\]|\\{|\\}|\\\\|/| |　|\"";
+         String blank = "\\s*|\t|\r|\n";
+         String letter = "^[a-zA-Z]+$";
+         String url = "^((ht|f)tps?):\\/\\/([\\w\\-]+(\\.[\\w\\-]+)*\\/)*[\\w\\-]+(\\.[\\w\\-]+)*\\/?(\\?([\\w\\-\\.,@?^=%&:\\/~\\+#]*)+)?";
+         String http = "^((http)s?):\\/\\/";
+         String email = "^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\\.[a-zA-Z0-9-]+)*\\.[a-zA-Z0-9]{2,6}$";
+         String age  = "^[1-9][0-9]{0,1}$";
+         String birthday  = "^[0-9]{4}-[0-9]{2}-[0-9]{2}$";
+         String phoneCN = "^(13\\d|14[57]|15[012356789]|18\\d|17[01678]|19[89]|166)\\d{8}$";
+         String notInteger = "[^\\d]";
+         String ipV4 = "^(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|[1-9])\\."
+                + "(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\." + "(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)\\."
+                + "(1\\d{2}|2[0-4]\\d|25[0-5]|[1-9]\\d|\\d)$";
+        /**
+         * group 1是具体的status
+         */
+         String httpStatus = "HTTPS?/[\\d\\.]+\\s(\\d+)\\s\\S+";
+    }
+
+
     private static String getPatternKey(String regex,int flags){
         return StringUtils.appendValue(false,new Object[]{flags,"_",regex});
     }
@@ -103,7 +114,7 @@ public class RegExpUtils {
      * @return 是否整数
      */
     public static boolean isIntegerNumber(String src) {
-        return isMatch(src,PATTERN_STR_INTEGER,true);
+        return isMatch(src,PatternStr.integer,true);
     }
 
     /**
@@ -113,7 +124,7 @@ public class RegExpUtils {
      * @return 是否浮点数
      */
     public static boolean isFloatNumber(String src) {
-        return isMatch(src,PATTERN_STR_FLOAT,true);
+        return isMatch(src,PatternStr.floatValue,true);
     }
 
     /**
@@ -123,7 +134,7 @@ public class RegExpUtils {
      * @return 是否纯字母组合的标志
      */
     public static boolean isLetter(String src) {
-        return isMatch(src,PATTERN_STR_LETTER,true);
+        return isMatch(src,PatternStr.letter,true);
     }
 
 }
