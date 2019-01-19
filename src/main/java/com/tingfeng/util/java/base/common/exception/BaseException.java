@@ -5,6 +5,8 @@ package com.tingfeng.util.java.base.common.exception;
  * @describe 用BaseException表示所有tingfengutil工具包下的异常
  */
 public class BaseException extends RuntimeException {
+    private static final long serialVersionUID = 3593377889771697624L;
+
     public BaseException() {
         super();
     }

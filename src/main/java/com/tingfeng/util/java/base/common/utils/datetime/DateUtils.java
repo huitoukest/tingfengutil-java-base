@@ -310,7 +310,7 @@ public class DateUtils {
 			sa = format(dateA,formatString).split(":");
 			sb = format(dateB,formatString).split(":");
 		}
-		ConvertI<Integer, Object> convertI = (s) -> Integer.parseInt(s.toString());
+		ConvertI<Object,Integer> convertI = (s) -> Integer.parseInt(s.toString());
 		Integer[] arrayA = ArrayUtils.getArray(sa,Integer.class, convertI);
 		Integer[] arrayB = ArrayUtils.getArray(sb,Integer.class, convertI);
 		count = arrayA[1] - arrayB[1];

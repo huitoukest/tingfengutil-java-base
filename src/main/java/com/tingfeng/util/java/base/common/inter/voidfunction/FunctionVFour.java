@@ -8,6 +8,6 @@ package com.tingfeng.util.java.base.common.inter.voidfunction;
 @FunctionalInterface
 public interface FunctionVFour<P1,P2,P3,P4> {
 
-    public void run(P1 p1, P2 p2, P3 p3, P4 p4) throws Exception;
+    public void run(P1 p1, P2 p2, P3 p3, P4 p4) ;
 
 }

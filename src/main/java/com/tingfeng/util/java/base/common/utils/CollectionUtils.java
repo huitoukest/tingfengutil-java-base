@@ -25,7 +25,7 @@ public class CollectionUtils {
      * @param <T>
      * @return
      */
-    public static <T> List<T> getList(String sourceString, String regex, ConvertI<T, String> convert) {
+    public static <T> List<T> getList(String sourceString, String regex, ConvertI<String,T> convert) {
         List<T> list = new ArrayList<T>();
         sourceString = sourceString.trim();
         if (sourceString.length() < 1) return list;
@@ -34,7 +34,7 @@ public class CollectionUtils {
             for (String s : ss) {
                 T t = null;
                 try {
-                    t = convert.convert(s);
+                    t = convert.apply(s);
                 } catch (FormatFlagsConversionMismatchException e) {
                 }
                 list.add(t);
@@ -51,12 +51,7 @@ public class CollectionUtils {
      * @return
      */
     public static List<String> getStringList(String sourceString, String regex) {
-        return getList(sourceString, regex, new ConvertI<String, String>() {
-            @Override
-            public String convert(String e) {
-                return e;
-            }
-        });
+        return getList(sourceString, regex, it -> it);
     }
 
     /**
@@ -75,12 +70,7 @@ public class CollectionUtils {
      * @return
      */
     public static List<Integer> getIntegerList(String sourceString, String regex) {
-        return getList(sourceString, regex, new ConvertI<Integer, String>() {
-            @Override
-            public Integer convert(String e) {
-                return Integer.parseInt(e);
-            }
-        });
+        return getList(sourceString, regex, it -> Integer.parseInt(it));
     }
 
     public static List<Integer> getIntegerList(String souceString) {
@@ -93,12 +83,7 @@ public class CollectionUtils {
      * @return
      */
     public static List<Long> getLongList(String sourceString, String regex) {
-        return getList(sourceString, regex, new ConvertI<Long, String>() {
-            @Override
-            public Long convert(String e) {
-                return Long.parseLong(e);
-            }
-        });
+        return getList(sourceString, regex, it -> Long.parseLong(it));
     }
 
     /**

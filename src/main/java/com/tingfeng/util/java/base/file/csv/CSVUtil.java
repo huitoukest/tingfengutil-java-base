@@ -70,14 +70,14 @@ public class CSVUtil {
      * @param <T>
      * @throws IOException
      */
-    public static <T> void readCsv(Reader reader, ConvertI<T,String> converter, FunctionVOne<T> functionVOne){
+    public static <T> void readCsv(Reader reader, ConvertI<String,T> converter, FunctionVOne<T> functionVOne){
         BufferedReader br=null;
         try {
             br = new BufferedReader(reader);
             String line = ""; 
             while ((line = br.readLine()) != null) { 
-                T t = converter.convert(line);
-                functionVOne.run(t);
+                T t = converter.apply(line);
+                functionVOne.accept(t);
             }
         }catch (Throwable e){
 

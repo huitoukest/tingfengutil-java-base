@@ -4,6 +4,8 @@ package com.tingfeng.util.java.base.common.exception;
  * 此异常用于传递信息
  */
 public class InfoException extends BaseException {
+    private static final long serialVersionUID = 7737146872131649279L;
+
     public InfoException() {
     }
 

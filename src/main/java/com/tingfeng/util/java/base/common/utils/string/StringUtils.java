@@ -805,7 +805,7 @@ public class StringUtils {
      */
     public static String replaceBlank(String str) {
         if (str != null) {
-            Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PATTERN_STR_BLANK);
+            Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PatternStr.blank);
             Matcher m = pattern.matcher(str);
             str = m.replaceAll("");
         }

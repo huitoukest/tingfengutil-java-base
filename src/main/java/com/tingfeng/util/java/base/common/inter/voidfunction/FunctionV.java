@@ -6,6 +6,6 @@ package com.tingfeng.util.java.base.common.inter.voidfunction;
  *
  */
 @FunctionalInterface
-public interface FunctionV {
-    public void run() throws Exception;
+public interface FunctionV extends Runnable{
+    void run() ;
 }

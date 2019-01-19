@@ -9,6 +9,6 @@ package com.tingfeng.util.java.base.common.inter.returnfunction;
 @FunctionalInterface
 public interface FunctionROne<R,P1> {
 
-    R run(P1 p1) throws Exception;
+    R run(P1 p1);
 
 }
