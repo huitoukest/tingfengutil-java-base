@@ -39,7 +39,7 @@ public class RegExTest {
 	@Test
 	public void testGetHttpStatus(){
 		String str = "HTTP/1.1 200 OK";
-		Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PATTERN_STR_HTTP_STATUS);
+		Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PatternStr.httpStatus);
 		Matcher m = pattern.matcher(str);
 		if(m.find()) {
 			System.out.println(m.group(1));;

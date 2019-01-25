@@ -21,7 +21,7 @@ public class BaseTest {
                 try{
                     try {
                         for(int  j = 0;j < cycleCountInThread ; j++) {
-                            functionVOne.run(j);
+                            functionVOne.accept(j);
                         }
                     } catch (Exception e) {
                         throw new BaseException(e);
