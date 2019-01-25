@@ -36,3 +36,4 @@ captures/
 /target
 /src/target/classes
 /*.iml
+/src/test/*.iml
