@@ -196,11 +196,7 @@ public class DateUtils {
 	public static Calendar getInitCalendar(Date date, int hour, int minute, int second, int milliSecond) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
-		calendar.set(Calendar.HOUR_OF_DAY, hour);
-		calendar.set(Calendar.MINUTE, minute);
-		calendar.set(Calendar.SECOND, second);
-		calendar.set(Calendar.MILLISECOND, milliSecond);
-		return calendar;
+		return getInitCalendar(calendar,hour,minute,second,milliSecond);
 	}
 
 	/**
