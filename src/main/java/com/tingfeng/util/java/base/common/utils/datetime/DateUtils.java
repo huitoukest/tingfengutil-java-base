@@ -599,15 +599,23 @@ public class DateUtils {
 		Date tmpDate = null;
 
 		if(isContainsBeginDate){
-			dates.add(tmpDate);
+			dates.add(beginDate);
 		}
-
+		int addCount = 0;
+		if(beginDate.getTime() > endDate.getTime()){
+			addCount = -1;
+		}else if(beginDate.getTime() < endDate.getTime()){
+			addCount = 1;
+		}
 		while (true) {
 			cal.add(Calendar.DAY_OF_MONTH, 1);
 			// 测试此日期是否在指定日期之后
-			if (endDate.before(cal.getTime())) {
-				dates.add(cal.getTime());
-			} else {
+			Date tmp  =  cal.getTime();
+			if (addCount == 1 && endDate.after(tmp)) {
+				dates.add(tmp);
+			} else if(addCount == -1 && endDate.before(tmp)) {
+				dates.add(tmp);
+			}else {
 				break;
 			}
 		}
