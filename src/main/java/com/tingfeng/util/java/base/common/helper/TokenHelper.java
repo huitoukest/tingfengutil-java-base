@@ -106,7 +106,7 @@ public class TokenHelper {
         return escapeStringBuilderPool.run(escapeStringBuilder->{
             char[] chars = content.toCharArray();
             for (int i = 0; i < chars.length; i++) {
-                if (chars[i] == CHAR_COMMA) {
+                if (chars[i] == CHAR_COMMA || chars[i] == CHAR_SLASH) {
                     escapeStringBuilder.append(CHAR_SLASH);
                 }
                 escapeStringBuilder.append(chars[i]);
@@ -117,6 +117,7 @@ public class TokenHelper {
 
     /**
      * 对整个内容解密为List<Object> Object可以是数字或者字符串,有序List
+     * 解析的时候必须都是从前往后顺序解析。
      * @param content
      * @return
      */
@@ -128,26 +129,28 @@ public class TokenHelper {
         char[] chars = content.toCharArray();
         escapeStringBuilderPool.run(escapeStringBuilder ->{
             for (int i = 0; i < chars.length; i++) {
-                if (i == 0) {
+                if(chars[i] == CHAR_SLASH && i + 1 < chars.length ){
+                    if(chars[i + 1] == CHAR_SLASH){//如果是两个\\，则表示这可能是，的转意；
+                        escapeStringBuilder.append(CHAR_SLASH);
+                    }else if(chars[i + 1] == CHAR_COMMA){
+                        escapeStringBuilder.append(CHAR_COMMA);
+                    }
+                    i = i + 1;
+                    if(i == chars.length - 1){
+                        list.add(escapeStringBuilder.toString());
+                    }
+                }else if (i == 0) {
                     if (chars[i] != CHAR_SLASH && chars[i] == CHAR_COMMA) {//判断以，开头的情况
                         list.add(escapeStringBuilder.toString());
                         escapeStringBuilder.setLength(0);
                     } else {
                         escapeStringBuilder.append(chars[i]);
                     }
-                } else if (chars[i] == CHAR_SLASH) {
-                    if (i + 1 >= chars.length || chars[i + 1] != CHAR_COMMA) {
-                        escapeStringBuilder.append(chars[i]);
-                    }
-                } else if (chars[i] == CHAR_COMMA) {
-                    if (chars[i - 1] != CHAR_SLASH) {
-                        list.add(escapeStringBuilder.toString());
-                        escapeStringBuilder.setLength(0);
-                        if (i + 1 == chars.length) {//判断以，结尾的情况
-                            list.add("");
-                        }
-                    } else {
-                        escapeStringBuilder.append(CHAR_COMMA);
+                }else if (chars[i] == CHAR_COMMA) {
+                    list.add(escapeStringBuilder.toString());
+                    escapeStringBuilder.setLength(0);
+                    if(i + 1 == chars.length){//判断以，结尾的情况
+                        list.add("");
                     }
                 } else {
                     escapeStringBuilder.append(chars[i]);
