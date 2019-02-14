@@ -18,18 +18,18 @@ public class TokenHelperTest {
 
         ArrayList<String> list = new ArrayList<>();
 
-        list.add("\\");
+        list.add("\\,");
         list.add("\\");
         list.add("123456");
-        list.add("\\");
+        list.add("\\,");
         test(true,list);
         System.out.println();
         list.clear();
 
-        list.add("\\,");
+        list.add("\\");
         list.add("\\");
         list.add("123456");
-        list.add("\\,");
+        list.add("\\");
         test(true,list);
         System.out.println();
         list.clear();
