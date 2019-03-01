@@ -130,7 +130,8 @@ public class TokenHelper {
         escapeStringBuilderPool.run(escapeStringBuilder ->{
             for (int i = 0; i < chars.length; i++) {
                 if(chars[i] == CHAR_SLASH && i + 1 < chars.length ){
-                    if(chars[i + 1] == CHAR_SLASH){//如果是两个\\，则表示这可能是，的转意；
+                    //如果是两个\\，则表示这可能是，的转意；
+                    if(chars[i + 1] == CHAR_SLASH){
                         escapeStringBuilder.append(CHAR_SLASH);
                     }else if(chars[i + 1] == CHAR_COMMA){
                         escapeStringBuilder.append(CHAR_COMMA);
@@ -140,7 +141,8 @@ public class TokenHelper {
                         list.add(escapeStringBuilder.toString());
                     }
                 }else if (i == 0) {
-                    if (chars[i] != CHAR_SLASH && chars[i] == CHAR_COMMA) {//判断以，开头的情况
+                    //判断以，开头的情况
+                    if (chars[i] != CHAR_SLASH && chars[i] == CHAR_COMMA) {
                         list.add(escapeStringBuilder.toString());
                         escapeStringBuilder.setLength(0);
                     } else {
@@ -148,13 +150,15 @@ public class TokenHelper {
                     }
                 }else if (chars[i] == CHAR_COMMA) {
                     list.add(escapeStringBuilder.toString());
+                    //判断以，结尾的情况
                     escapeStringBuilder.setLength(0);
-                    if(i + 1 == chars.length){//判断以，结尾的情况
+                    if(i + 1 == chars.length){
                         list.add("");
                     }
                 } else {
                     escapeStringBuilder.append(chars[i]);
-                    if(i == chars.length - 1){//如果是最后一个字母
+                    //如果是最后一个字母
+                    if(i == chars.length - 1){
                         list.add(escapeStringBuilder.toString());
                         escapeStringBuilder.setLength(0);
                     }
@@ -203,8 +207,14 @@ public class TokenHelper {
         T t = null;
         if(null != checkParseContent) {
             String[] strArray = tokenBaseParseAndCheck(token);
-            String sign = strArray[1];//数据校验
-            String content = Base64Utils.deCodeToString(strArray[0]);
+            //数据校验
+            String sign = strArray[1];
+            String content = "";
+            try {
+                content = Base64Utils.deCodeToString(strArray[0]);
+            }catch (IllegalArgumentException e){
+                throw new InfoException("token格式 错误！");
+            }
             List<String> contentList = parseContent(content);
             if (null != securityKey) {
                 byte[] expectSignBytes = this.encryptAction.apply(content + securityKey.apply(contentList));
@@ -229,8 +239,13 @@ public class TokenHelper {
      */
     public List<String> parseTokenWithNoSignatureCheck(String token){
         String[] strArray = tokenBaseParseAndCheck(token);
-        String sign = strArray[1];//数据校验
-        String content = Base64Utils.deCodeToString(strArray[0]);
+        //数据校验
+        String content = "";
+        try {
+            content = Base64Utils.deCodeToString(strArray[0]);
+        }catch (IllegalArgumentException e){
+            throw new InfoException("token格式 错误！");
+        }
         return parseContent(content);
     }
 
@@ -242,8 +257,14 @@ public class TokenHelper {
      */
     public String checkSignature(String token,String  securityKey){
         String[] strArray = tokenBaseParseAndCheck(token);
-        String sign = strArray[1];//数据校验
-        String content = Base64Utils.deCodeToString(strArray[0]);
+        //数据校验
+        String sign = strArray[1];
+        String content = "";
+        try {
+            content = Base64Utils.deCodeToString(strArray[0]);
+        }catch (IllegalArgumentException e){
+            throw new InfoException("token格式 错误！");
+        }
         byte[] expectSignBytes = this.encryptAction.apply(content + securityKey);
         String expectSign = Base64Utils.enCode(expectSignBytes);
         if (!expectSign.equals(sign)) {
