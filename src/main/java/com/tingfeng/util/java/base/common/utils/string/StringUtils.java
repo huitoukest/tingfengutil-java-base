@@ -34,11 +34,12 @@ public class StringUtils {
      * 默认的StringBuilder的数量
      */
     private static final int DEFAULT_MAX_SB_SIZE = 16;
-    private static final int DEFAULT_MAX_SB_LENGTH = 32;
+    private static final int DEFAULT_INIT_SB_LENGTH = 128;
+    private static final int DEFAULT_MAX_SB_LENGTH = 512;
     /**
      * 公共的StringBuilder的资源，用于多线程时复用对象提高效率
      */
-    private static final FixedPoolHelper<StringBuilder> stringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE, () -> new StringBuilder(), (sb) -> {
+    private static final FixedPoolHelper<StringBuilder> stringBuilderPool = new FixedPoolHelper<>(DEFAULT_MAX_SB_SIZE, () -> new StringBuilder(DEFAULT_INIT_SB_LENGTH), (sb) -> {
         int len = sb.length();
         if (len > DEFAULT_MAX_SB_LENGTH) {
             sb.delete(DEFAULT_MAX_SB_LENGTH, len);
