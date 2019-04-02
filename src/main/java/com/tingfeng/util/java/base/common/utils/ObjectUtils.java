@@ -10,9 +10,8 @@ import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import java.beans.XMLDecoder;
 import java.io.*;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Map;
+import java.lang.reflect.Type;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 /**
@@ -20,6 +19,9 @@ import java.util.concurrent.Callable;
  */
 public class ObjectUtils {
 
+    private ObjectUtils() {
+
+    }
     /**
      * 通过class获取对象的类型
      *
@@ -370,7 +372,7 @@ public class ObjectUtils {
 
     /**
      * 检查一个对象是否为空，如果是数组、Collection、Map结构则检查size或length是否大于0
-     *
+     * 有时间就修改为责任链模式
      * @param obj
      * @param recursive 是否递归检查容器中的元素是否为空
      * @param isTrim    是否trim
@@ -631,4 +633,76 @@ public class ObjectUtils {
         }
         return false;
     }
+
+    /**
+     * jdk8 objects.equals
+     * @param a
+     * @param b
+     * @return
+     */
+    public static boolean equals(Object a,Object b){
+        return Objects.equals(a,b);
+    }
+
+    /**
+     * jdk8 objects.deepEquals
+     * @param a an object
+     * @param b an object to be compared with {@code a} for deep equality
+     * @return {@code true} if the arguments are deeply equal to each other
+     * and {@code false} otherwise
+     * @see Arrays#deepEquals(Object[], Object[])
+     * @see Objects#equals(Object, Object)
+     * @return
+     */
+    public static boolean deepEquals(Object a,Object b){
+        return Objects.deepEquals(a,b);
+    }
+
+    /**
+     * 会判断两个数值的内容是否相同(包括字符串与数字)，其余的对象会转为String之后比较值是否相等
+     * @param a
+     * @param b
+     * @return
+     */
+    public static boolean valueEquals(Object a,Object b){
+        if(a != null && b != null){
+            if(isInteger(a) && isInteger(b)){
+                return ((Number) a).longValue() - ((Number) b).longValue() == 0;
+            }else if(isFloat(a) && isFloat(b)){
+               return ((Number) a).doubleValue() - ((Number) b).doubleValue() == 0;
+            }else{
+                String aStr = String.valueOf(a);
+                String bStr = String.valueOf(b);
+                return aStr.equals(bStr);
+            }
+        }
+        return equals(a,b);
+    }
+
+    /**
+     * 是否是一个整数
+     * @param a
+     * @return
+     */
+    public static boolean isInteger(Object a){
+        if(a instanceof Byte || a instanceof Short || a instanceof Integer || a instanceof Long){
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 是否是一个小数
+     * @param a
+     * @return
+     */
+    public static boolean isFloat(Object a){
+        if(a instanceof Float || a instanceof Double){
+            return true;
+        }
+        return false;
+    }
+
+
+
 }

@@ -2,9 +2,12 @@ package com.tingfeng.util.java.base.common.utils;
 
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 /**
@@ -148,5 +151,20 @@ public class CollectionUtils {
      */
     public static boolean isContain(Collection<?> objects, Object obj) {
         return objects.contains(obj);
+    }
+
+    /**
+     * objectsA 中 是否 存在 objectsB 中指定条件的一个数据(可以理解为有某一个自动的交集);
+     * 最终比较targetValue 是否有相同的
+     * @param objectsA
+     * @param objectsB
+     * @param aToTarget function to from A to targetValue
+     * @param bToTarget function to from B to targetValue
+     * @return
+     */
+    public static <A,B,T> boolean isContainAny(Collection<A> objectsA, Collection<B> objectsB, Function<A,T> aToTarget,Function<B,T> bToTarget) {
+        List<T> listA = objectsA.stream().map(aToTarget).collect(Collectors.toList());
+        Set<T> setB = objectsB.stream().map(bToTarget).collect(Collectors.toSet());
+        return null != listA.stream().filter(it -> setB.contains(it)).findFirst().orElse(null);
     }
 }
