@@ -1002,7 +1002,7 @@ public class StringUtils {
      * @param objects
      * @return
      */
-    public static String append(Objects... objects) {
+    public static String append(Object... objects) {
         return appendValue(false, objects);
     }
 
