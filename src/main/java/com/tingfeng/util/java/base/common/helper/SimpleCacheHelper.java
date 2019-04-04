@@ -30,10 +30,10 @@ public class SimpleCacheHelper<K,V> {
      * @return
      */
     public synchronized V get(K key){
-        SimpleCacheMember<V> member = map.get(key);
-        if(null == member){
+        if(!containsKey(key)){
             return null;
         }
+        SimpleCacheMember<V> member = map.get(key);
         member.setWeight(member.getWeight() + 1);
         return member.getValue();
     }
@@ -50,9 +50,9 @@ public class SimpleCacheHelper<K,V> {
             member.setWeight(member.getWeight() + 2);
             currentSize ++ ;
         }else{
-            member.setValue(value);
             member.setWeight(member.getWeight() + 1);
         }
+        member.setValue(value);
         map.put(key,member);
     }
 
