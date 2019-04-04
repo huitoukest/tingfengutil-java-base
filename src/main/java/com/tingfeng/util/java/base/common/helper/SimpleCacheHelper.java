@@ -57,6 +57,24 @@ public class SimpleCacheHelper<K,V> {
     }
 
     /**
+     * 是否包含key
+     * @param key
+     * @return
+     */
+    public synchronized  boolean containsKey(K key){
+        return this.map.containsKey(key);
+    }
+
+    /**
+     * 是否包含value
+     * @param value
+     * @return
+     */
+    public synchronized  boolean containsValue(V value){
+        return this.map.containsValue(value);
+    }
+
+    /**
      * 将溢出的成员移出，移出权重值最低的成员
      */
     private void removeOverMember(){
