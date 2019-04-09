@@ -4,6 +4,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
+import com.tingfeng.util.java.base.common.utils.TestUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -46,5 +48,28 @@ public class RegExTest {
 		}
 	}
 
+	@Test
+	public void isMathTest(){
+		String str = "HTTP/1.1 200 OK";
+		boolean result = RegExpUtils.isMatch(str,"^HTTP.*");
+		System.out.println(result);
+	}
 
+	@Test
+	public void speedTest(){
+		TestUtils.printTime(10,5000000,index -> {
+			String str = "HTTP/1.1 200 OK";
+			Pattern pattern = Pattern.compile("^HTTP.[\\d\\.].{1,20}");
+			boolean result = pattern.matcher(str).find();
+			Assert.assertTrue(result);
+		});
+
+		TestUtils.printTime(10,5000000,index -> {
+			String str = "HTTP/1.1 200 OK";
+			boolean result = RegExpUtils.isMatch(str,"^HTTP.[\\d\\.].{1,20}");
+			Assert.assertTrue(result);
+		});
+
+
+	}
 }

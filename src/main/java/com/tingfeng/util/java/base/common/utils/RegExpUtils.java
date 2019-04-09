@@ -1,7 +1,6 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
-import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -13,9 +12,14 @@ public class RegExpUtils {
     /**
      * 用来缓存用到的正则表达式提高效率；这里k是String，value是Pattern
      * 注意Matcher 是一个非线程安全，所以调用matcher.find()是线程不安全的
+     * 这里只缓存最常用的Pattern compile 的flag是0的情况，即只缓存默认的情况.
+     * 经过实际测试，当编译的正则表达式长度大于10位时，或者复杂度变高时，采用此缓存的性能会更具优势。
      */
-    private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(50);
-
+    private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(150);
+    /**
+     * 默认的Pattern compile 的flag
+     */
+    private static final int DEFAULT_PATTERN_FLAG = 0;
     /**
      * 用来存储各种Pattern
      */
@@ -42,18 +46,13 @@ public class RegExpUtils {
          String httpStatus = "HTTPS?/[\\d\\.]+\\s(\\d+)\\s\\S+";
     }
 
-
-    private static String getPatternKey(String regex,int flags){
-        return StringUtils.appendValue(false,new Object[]{flags,"_",regex});
-    }
-
     /* 先从缓存中取Pattern，没有则新建并写入缓存中
      * 默认Pattern.CASE_INSENSITIVE
      * @param regex 正则表达式
      * @return
      */
     public static Pattern getPattern(String regex){
-        return getPattern(regex,Pattern.CASE_INSENSITIVE);
+        return getPattern(regex,DEFAULT_PATTERN_FLAG);
     }
 
     /**
@@ -66,13 +65,20 @@ public class RegExpUtils {
         if(null == regex){
            return null;
         }
-        String patternKey =  getPatternKey(regex,flags);
-        Pattern pattern = patternCache.get(patternKey);
-        if(pattern == null){
-            pattern = Pattern.compile(regex,flags);
-            patternCache.set(patternKey,pattern);
+        if(DEFAULT_PATTERN_FLAG == flags){
+            Pattern pattern = patternCache.get(regex);
+            if(pattern == null){
+                synchronized (patternCache){
+                    pattern = patternCache.get(regex);
+                    if(pattern == null){
+                        pattern = Pattern.compile(regex);
+                        patternCache.set(regex, pattern);
+                    }
+                }
+            }
+            return pattern;
         }
-        return pattern;
+        return Pattern.compile(regex,flags);
     }
 
     /**

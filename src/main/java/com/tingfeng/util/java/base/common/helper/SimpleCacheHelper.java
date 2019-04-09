@@ -5,6 +5,10 @@ import com.tingfeng.util.java.base.common.bean.SimpleCacheMember;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Supplier;
 
 /**
  * 实现一个简单的缓存,默认使用访问频率作为控制;
@@ -19,6 +23,10 @@ public class SimpleCacheHelper<K,V> {
      */
     private Map<K,SimpleCacheMember<V>> map;
 
+    private static  final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+    private static  final Lock  readLock = readWriteLock.readLock();
+    private static  final Lock  writeLock = readWriteLock.writeLock();
+
     public SimpleCacheHelper(int maxSize){
         map = new HashMap<>();
         this.maxSize = maxSize;
@@ -29,31 +37,50 @@ public class SimpleCacheHelper<K,V> {
      * @param key
      * @return
      */
-    public synchronized V get(K key){
-        if(!containsKey(key)){
-            return null;
+    public V get(K key){
+        SimpleCacheMember<V> member = null;
+        try{
+            readLock.lock();
+            member = map.get(key);
+            if(member != null) {
+                member.setWeight(member.getWeight() + 1);
+                return member.getValue();
+            }
+        }finally {
+            readLock.unlock();
         }
-        SimpleCacheMember<V> member = map.get(key);
-        member.setWeight(member.getWeight() + 1);
-        return member.getValue();
+        return null;
     }
 
+   private <T> T doInReadLock(Supplier<T> supplier){
+       try{
+           readLock.lock();
+           return supplier.get();
+       }finally {
+           readLock.unlock();
+       }
+   }
     /**
      * 设置一个缓存值，如果是新set的成员，weight值+2
      * @param key
      * @param value
      */
-    public synchronized void set(K key,V value){
-        SimpleCacheMember<V> member = map.get(key);
-        if(member == null){
-            member = new SimpleCacheMember<>();
-            member.setWeight(member.getWeight() + 2);
-            currentSize ++ ;
-        }else{
-            member.setWeight(member.getWeight() + 1);
+    public void set(K key,V value){
+        try{
+            writeLock.lock();
+            SimpleCacheMember<V> member = map.get(key);
+            if(member == null){
+                member = new SimpleCacheMember<>();
+                member.setWeight(member.getWeight() + 2);
+                currentSize ++ ;
+            }else{
+                member.setWeight(member.getWeight() + 1);
+            }
+            member.setValue(value);
+            map.put(key,member);
+        }finally {
+            writeLock.unlock();
         }
-        member.setValue(value);
-        map.put(key,member);
     }
 
     /**
@@ -61,8 +88,8 @@ public class SimpleCacheHelper<K,V> {
      * @param key
      * @return
      */
-    public synchronized  boolean containsKey(K key){
-        return this.map.containsKey(key);
+    public  boolean containsKey(K key){
+        return doInReadLock(() -> this.map.containsKey(key));
     }
 
     /**
@@ -70,8 +97,8 @@ public class SimpleCacheHelper<K,V> {
      * @param value
      * @return
      */
-    public synchronized  boolean containsValue(V value){
-        return this.map.containsValue(value);
+    public  boolean containsValue(V value){
+        return doInReadLock(() -> this.map.containsValue(value));
     }
 
     /**
