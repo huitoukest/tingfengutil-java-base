@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
  * 固定大小的简单的池对象，效率较高
  */
 public class FixedPoolHelper<T> {
-    public static final int DEFAULT_MAX_THREAD_SIZE = 4;
+    public  static final int DEFAULT_MAX_THREAD_SIZE = 4;
     private int poolSize = 4;
     private int currentThread = 0;
     private List<T> dataList = null;

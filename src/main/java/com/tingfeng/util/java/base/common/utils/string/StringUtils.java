@@ -977,8 +977,8 @@ public class StringUtils {
                     sb.append(it);
                 }
             });
-            if (freeMemoryThen && sb.capacity() > 64) {
-                sb.delete(0, sb.capacity() - 64);
+            if (freeMemoryThen && sb.capacity() > DEFAULT_MAX_SB_LENGTH) {
+                sb.delete(0, sb.capacity() - DEFAULT_MAX_SB_LENGTH);
             }
             return sb.toString();
         });
