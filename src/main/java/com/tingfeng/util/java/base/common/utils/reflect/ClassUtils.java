@@ -1,8 +1,9 @@
 package com.tingfeng.util.java.base.common.utils.reflect;
 
+import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,7 +23,7 @@ import java.util.jar.JarFile;
  */
 public class ClassUtils {
 
-    private static final Logger logger = LoggerFactory.getLogger(ClassUtils.class);
+    private static final Log logger = LogFactory.getLog(ClassUtils.class);
 
     /**
      * 取得某个类的所有子类或者实现类类

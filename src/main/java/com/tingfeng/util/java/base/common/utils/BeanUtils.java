@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @author huitoukest
@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * @version 20180917
 **/
 public class BeanUtils{
-	private final static Logger logger = LoggerFactory.getLogger(BeanUtils.class);
+	private static final Log logger = LogFactory.getLog(BeanUtils.class);
 
 	/** 注意：不copy类型是final或者static的属性
 	 *  返回一个拷贝之后的新的数组,通过方法和属性赋值新建对象来达到赋值的目的,是浅复制;

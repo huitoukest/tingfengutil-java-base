@@ -3,9 +3,11 @@ package com.tingfeng.util.java.base.web.http;
 import com.tingfeng.util.java.base.common.bean.HttpResponseInfo;
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -22,9 +24,8 @@ import java.util.regex.Pattern;
  * @author huitoukest
  *
  */
-@Slf4j
 public class HttpUtils {
-
+    private static final Log log = LogFactory.getLog(HttpUtils.class);
     /**
      * 向指定URL发送GET方法的请求
      * @param url

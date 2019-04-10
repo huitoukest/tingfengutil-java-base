@@ -6,7 +6,6 @@ import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.utils.RandomUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import com.tingfeng.util.java.base.file.FileUtils;
-import lombok.extern.slf4j.Slf4j;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -18,7 +17,6 @@ import java.util.Set;
 /**
  * WebService的工具类
  */
-@Slf4j
 public class WebServiceUtils {
     public static int http_connection_timeout = 60 * 1000;
     /**

@@ -136,11 +136,11 @@ public class CollectionUtils {
     /**
      * 默认返回以,分隔的字符串
      *
-     * @param list
+     * @param collection
      * @return
      */
-    public static <T> String join(Collection<T> list) {
-        return join(list, ",");
+    public static <T> String join(Collection<T> collection) {
+        return join(collection, ",");
     }
 
     /**

@@ -4,10 +4,11 @@ import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -28,7 +29,7 @@ import java.util.stream.Stream;
  */
 public class StringUtils {
     private final static Field STRING_VALUE_FIELD = ReflectUtils.getField(String.class,"value",true);
-    private final static Logger logger = LoggerFactory.getLogger(StringUtils.class);
+    private static final Log logger = LogFactory.getLog(StringUtils.class);
     private final static int BUFFER_SIZE = 4096;
     /**
      * 默认的StringBuilder的数量
