@@ -5,7 +5,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
@@ -26,13 +24,14 @@ import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.inter.RateCallBackI;
 import com.tingfeng.util.java.base.common.utils.Base64Utils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * 文件相关工具类
  */
-@Slf4j
 public class FileUtils {
+	private static final Log log = LogFactory.getLog(FileUtils.class);
 	public static final int BUFFER_SIZE = 4096;
 	public static  final String BASE64_IMG_HEADER_START = "data:image/";
 	public static  final String BASE64_IMG_HEADER_END = ";base64";

@@ -2,10 +2,11 @@ package com.tingfeng.util.java.base.common.helper;
 
 import com.tingfeng.util.java.base.common.exception.InfoException;
 import com.tingfeng.util.java.base.common.utils.Base64Utils;
+import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.MessageDigestUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -18,7 +19,7 @@ import java.util.function.Function;
  * 工具的内容数据用,分隔；内容和签名用.分隔，如果内容中包含,号，则会自动转义。
  * 内容按照顺序保存和解析*/
 public class TokenHelper {
-    private static final Logger logger = LoggerFactory.getLogger(TokenHelper.class);
+    private static final Log logger = LogFactory.getLog(TokenHelper.class);
     private static final char CHAR_COMMA = ',';
     private static final String STR_DOT = ".";
     private static final String STR_SPLIT_DOT = "\\.";

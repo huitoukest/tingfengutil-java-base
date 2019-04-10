@@ -8,9 +8,10 @@ import java.util.stream.Collectors;
 
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
+import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * 关于时间和日期的工具类，包含一些常用处理时间的函数
@@ -18,7 +19,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 public class DateUtils {
-	private static final Logger logger = LoggerFactory.getLogger(DateUtils.class);
+	private static final Log logger = LogFactory.getLog(DateUtils.class);
 	/** DateFormat:yyyyMMddHHmmssSSS */
 	public static final String FORMATE_YYYYMMDDHHMMSSSSS = "yyyyMMddHHmmssSSS";
 

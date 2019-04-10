@@ -1,12 +1,10 @@
 package com.tingfeng.util.java.base.common.bean;
-import lombok.Data;
 
 import java.io.Serializable;
 
 /**
  * 微信服务号返回的信息
  */
-@Data
 public class UserWechatServiceFansInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -71,5 +69,167 @@ public class UserWechatServiceFansInfo implements Serializable {
 
     public UserWechatServiceFansInfo() {
 
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public UserWechatServiceFansInfo setId(Long id) {
+        this.id = id;
+        return this;
+    }
+
+    public Integer getSubscribe() {
+        return subscribe;
+    }
+
+    public UserWechatServiceFansInfo setSubscribe(Integer subscribe) {
+        this.subscribe = subscribe;
+        return this;
+    }
+
+    public String getOpenid() {
+        return openid;
+    }
+
+    public UserWechatServiceFansInfo setOpenid(String openid) {
+        this.openid = openid;
+        return this;
+    }
+
+    public String getNickName() {
+        return nickName;
+    }
+
+    public UserWechatServiceFansInfo setNickName(String nickName) {
+        this.nickName = nickName;
+        return this;
+    }
+
+    public String getUnionid() {
+        return unionid;
+    }
+
+    public UserWechatServiceFansInfo setUnionid(String unionid) {
+        this.unionid = unionid;
+        return this;
+    }
+
+    public Byte getSex() {
+        return sex;
+    }
+
+    public UserWechatServiceFansInfo setSex(Byte sex) {
+        this.sex = sex;
+        return this;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public UserWechatServiceFansInfo setLanguage(String language) {
+        this.language = language;
+        return this;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public UserWechatServiceFansInfo setCity(String city) {
+        this.city = city;
+        return this;
+    }
+
+    public String getProvince() {
+        return province;
+    }
+
+    public UserWechatServiceFansInfo setProvince(String province) {
+        this.province = province;
+        return this;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public UserWechatServiceFansInfo setCountry(String country) {
+        this.country = country;
+        return this;
+    }
+
+    public String getHeadImgurl() {
+        return headImgurl;
+    }
+
+    public UserWechatServiceFansInfo setHeadImgurl(String headImgurl) {
+        this.headImgurl = headImgurl;
+        return this;
+    }
+
+    public Long getSubscribeTime() {
+        return subscribeTime;
+    }
+
+    public UserWechatServiceFansInfo setSubscribeTime(Long subscribeTime) {
+        this.subscribeTime = subscribeTime;
+        return this;
+    }
+
+    public String getRemark() {
+        return remark;
+    }
+
+    public UserWechatServiceFansInfo setRemark(String remark) {
+        this.remark = remark;
+        return this;
+    }
+
+    public Integer getGroupId() {
+        return groupId;
+    }
+
+    public UserWechatServiceFansInfo setGroupId(Integer groupId) {
+        this.groupId = groupId;
+        return this;
+    }
+
+    public String getTagidList() {
+        return tagidList;
+    }
+
+    public UserWechatServiceFansInfo setTagidList(String tagidList) {
+        this.tagidList = tagidList;
+        return this;
+    }
+
+    public String getSubscribeScene() {
+        return subscribeScene;
+    }
+
+    public UserWechatServiceFansInfo setSubscribeScene(String subscribeScene) {
+        this.subscribeScene = subscribeScene;
+        return this;
+    }
+
+    public String getQrScene() {
+        return qrScene;
+    }
+
+    public UserWechatServiceFansInfo setQrScene(String qrScene) {
+        this.qrScene = qrScene;
+        return this;
+    }
+
+    public String getQrSceneStr() {
+        return qrSceneStr;
+    }
+
+    public UserWechatServiceFansInfo setQrSceneStr(String qrSceneStr) {
+        this.qrSceneStr = qrSceneStr;
+        return this;
     }
 }
