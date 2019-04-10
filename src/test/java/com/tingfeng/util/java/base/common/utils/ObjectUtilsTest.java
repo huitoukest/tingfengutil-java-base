@@ -21,4 +21,10 @@ public class ObjectUtilsTest {
         Assert.assertFalse(ObjectUtils.valueEquals(2.0,"2.00"));
     }
 
+
+    @Test
+    public void isAllEmptyTest(){
+        Assert.assertFalse(ObjectUtils.isAllEmpty(false,null,new String[]{}," "));
+        Assert.assertTrue(ObjectUtils.isAllEmpty(true,null,new String[]{}," "));
+    }
 }
