@@ -32,7 +32,7 @@ public class ThrowableUtils {
      * @param <T>
      * @return
      */
-    public <T extends Throwable> T getThrowable(Throwable throwable,Class<T> exception){
+    public static <T extends Throwable> T getThrowable(Throwable throwable,Class<T> exception){
         Throwable tmp = throwable;
         while (tmp != null){
             if(tmp.getClass().getName().equals(exception.getName())){
