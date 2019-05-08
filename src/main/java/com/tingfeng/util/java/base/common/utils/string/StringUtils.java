@@ -1128,4 +1128,18 @@ public class StringUtils {
             throw new RuntimeException(e);
         }
     }
+
+    public static String leftPad(String value, int length, char c) {
+        if(value.length() > length){
+            return value;
+        }
+        int len = length - value.length();
+        return stringBuilderPool.run(sb -> {
+            for(int i = 0 ; i < len ; i ++ ){
+                sb.append(c);
+            }
+            sb.append(value);
+            return sb.toString();
+        });
+    }
 }
