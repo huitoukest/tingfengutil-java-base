@@ -4,6 +4,7 @@ import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.common.utils.ArrayUtils;
 import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
@@ -1141,5 +1142,11 @@ public class StringUtils {
             sb.append(value);
             return sb.toString();
         });
+    }
+
+    public static String reverse(String str) {
+        char[] chars = str.toCharArray();
+        ArrayUtils.reverse(chars);
+        return new String(chars);
     }
 }
