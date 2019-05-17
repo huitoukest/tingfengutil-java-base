@@ -1,10 +1,11 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import java.util.Map;
-import java.util.stream.Collectors;
+import java.math.BigInteger;
 import java.util.stream.IntStream;
 
 /**
+ * 第一版，通过与十进制之间的互转实现各个任意进制之间的互转
+ * 第二版，先实现任意指定进制的大数的计算工具，然后直接实现任意进制的互转
  * @Author wangGang
  * @Description //TODO
  * @Date 2019-05-08 17:09
@@ -12,68 +13,202 @@ import java.util.stream.IntStream;
 public class MathUtils {
     private static final int MAX_RADIX = 256;
     /**
-     * 其余进制转为十进制的时候，进位的临界值
-     */
-    private static final int CARRY_VALUE = MAX_RADIX * MAX_RADIX * MAX_RADIX;
-    /**
      * 初始化 62 进制数据，索引位置代表字符的数值，比如 A代表10，z代表61等
      */
-    private static final String chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    private static int scale = 62;
+    private static final char[] chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+    private static int DEFAULT_MAX_RADIX = 62;
 
     /**
-     * 将数字转为62进制
-     *
-     * @param num    Long 型数字
-     * @return 62进制字符串
+     * 两个指定进制数的相加
+     * @param valueA
+     * @param valueB
+     * @param radixValues  进制采用的基数数组
      */
-    public static String encode(long num) {
-        StringBuilder sb = new StringBuilder();
-        int remainder = 0;
-        while (num > scale - 1) {
-            /**
-             * 对 scale 进行求余，然后将余数追加至 sb 中，由于是从末位开始追加的，因此最后需要反转（reverse）字符串
-             */
-            remainder = Long.valueOf(num % scale).intValue();
-            sb.append(chars.charAt(remainder));
-
-            num = num / scale;
-        }
-        sb.append(chars.charAt(Long.valueOf(num).intValue()));
-        return sb.reverse().toString();
+    public static char[] addPositiveInteger(char[] valueA,char[] valueB,char[] radixValues) {
+        int[] valueCharMaps = getValueCharMaps(radixValues);
+        return addPositiveInteger(valueA,valueB,radixValues,valueCharMaps);
     }
 
     /**
+     * 两个指定进制数的相加
+     * @param valueA
+     * @param valueB
+     * @param radixValues   进制采用的基数数组,索引映射为char字符
+     * @param valueCharMaps 字符到值得映射，使用字符的ascii码的值作为索引，值就是其真实代表的值
+     */
+    public static char[] addPositiveInteger(char[] valueA,char[] valueB,char[] radixValues,int[] valueCharMaps){
+        int radix = radixValues.length;
+        char[] minChars = valueA;
+        char[] maxChars = valueB;
+        /**
+         * 保证maxChars更长
+         */
+        if(valueA.length > valueB.length){
+            maxChars = valueA;
+            minChars = valueB;
+        }
+        int[] result = new int[maxChars.length];
+        /**
+         * 逐个相加
+         */
+        int tmpIndex = maxChars.length - minChars.length;
+        for(int i = 0,j = 0 ; i < maxChars.length  ; i++){
+            if(i < tmpIndex){
+                result[i] = valueCharMaps[maxChars[i]];
+            }else{
+                result[i] = valueCharMaps[minChars[j]] + valueCharMaps[maxChars[i]];
+                j ++;
+            }
+        }
+        /**
+         * 处理进位
+         */
+        int upper = 0;
+        for(int i = maxChars.length - 1; i >= 0 ; i --){
+            upper += result[i];
+            if(upper >= radix){
+                int modValue = upper % radix;
+                upper = upper / radix;
+                result[i] = modValue;
+            }else{
+                result[i] = upper;
+                upper = 0;
+            }
+        }
+        int resultIndex = result.length + 1;
+        char[] resultChars = new char[resultIndex];
+        for(int i = 1; i < resultIndex ; i++){
+            resultChars[i] = radixValues[result[i - 1]];
+        }
+        resultChars[0] = radixValues[upper];
+        /**
+         * 除去首位的0
+         */
+        int startIndex = IntStream.range(0,resultIndex -1).filter(it -> resultChars[it] != radixValues[0] ).findFirst().orElse(-1);
+        if(startIndex < 0){
+            return new char[]{};
+        }else if(startIndex == 0){
+            return resultChars;
+        }else{
+            char[]  re = new char[resultIndex - startIndex];
+            System.arraycopy(resultChars,startIndex,re,0,re.length);
+            return re;
+        }
+    }
+
+    /**
+     * @param radixValues
+     * @return
+     */
+    public static int[] getValueCharMaps(char[] radixValues) {
+           int[] valueCharMaps = new int[256];
+           for(int i = 0 ; i < radixValues.length ; i ++){
+               valueCharMaps[radixValues[i]] = i;
+           }
+           return valueCharMaps;
+    }
+
+    /**
+     * @param str
+     * @param srcRadix
+     * @param toRadix
+     * @return
+     */
+    public static String toRadix(String str,int srcRadix,int toRadix) {
+        if(toRadix > DEFAULT_MAX_RADIX){
+            throw new RuntimeException("default max radix is " + DEFAULT_MAX_RADIX);
+        }
+        return toRadix(str,chars,srcRadix,toRadix);
+    }
+
+
+    /**
+     * 默认十进制转为其余进制
+     * @param str
+     * @param toRadix
+     * @return
+     */
+    public static String toRadix(String str,int toRadix) {
+        return toRadix(str,10,toRadix);
+    }
+
+    /**
+     * 默认十进制转为其余进制
+     * @param str
+     * @param radixValues
+     * @return
+     */
+    public static String toRadix(String str,char[] radixValues) {
+        return toRadix(str,radixValues,10,radixValues.length);
+    }
+
+    /**
+     * 十进制的数据转为其它指定进制,指定进制计数的值
+     * @param str
+     * @param radixValues 目标进制基数
+     * @param srcRadix 来源数据的进制数
+     * @param toRadix 目标进制
+     * @return
+     */
+    public static String toRadix(String str,char[] radixValues,int srcRadix,int toRadix) {
+        toRadix = Math.min(radixValues.length,toRadix);
+        if(srcRadix == toRadix){
+            return str;
+        }
+        if(toRadix == 10){
+            return toDecimal(str,radixValues).toString();
+        }
+        if(toRadix > MAX_RADIX){
+            throw new RuntimeException("max radix is " + MAX_RADIX);
+        }
+        BigInteger number = null;
+        if(srcRadix != 10){
+            number = toDecimal(str,radixValues);
+        }else {
+            number = new BigInteger(str);
+        }
+        StringBuilder sb = new StringBuilder(32);
+        BigInteger radixInt = new BigInteger(String.valueOf(toRadix));
+        /**
+         * 余数
+         */
+        int remainder = 0;
+        while (number.compareTo(BigInteger.ZERO) > 0) {
+            /**
+             * 用求余数的方法来实现
+             */
+            remainder = number.mod(radixInt).intValue();
+            sb.append(radixValues[remainder]);
+            number = number.divide(radixInt);
+        }
+        return sb.reverse().toString();
+
+    }
+
+    /**
+     *
      * @param  str  数字的内容,其进制值等同于baseChars的长度
-     * @param  baseChars
      * @return 默认解码为10进制数据
      */
-    public static String toNumber(String str,char[] baseChars) {
+    public static BigInteger toDecimal(String str,char[] radixValues) {
+        int[] valueCharMaps = getValueCharMaps(radixValues);
+        int radix = radixValues.length;
         /**
          * 将 0 开头的字符串进行替换
          */
         str = str.replace("^0*", "");
-        int radix = baseChars.length;
+
         if(radix > MAX_RADIX){
             throw new RuntimeException("max radix is " + MAX_RADIX);
         }
-        /**
-         * 字符以及对应所代表的值,从0开始
-         */
-        Map<Character,Integer> valueRadixMap = IntStream.range(0,radix).mapToObj(it -> Integer.valueOf(it))
-                .collect(Collectors.toMap(it -> baseChars[it],it -> it));
-        StringBuilder sb = new StringBuilder(str.length() * 2);
-        int tmpValue = 0;
-        for (int i = 0; i < str.length(); i++) {
-            int positionValue = valueRadixMap.get(str.charAt(i));
-            tmpValue = tmpValue * radix;
-            tmpValue = tmpValue + positionValue;
-
-            while(tmpValue > CARRY_VALUE){
-                sb.append(tmpValue);
-            }
+        BigInteger result = new BigInteger("0");
+        BigInteger baseValue = new BigInteger("1");
+        BigInteger radixInt = new BigInteger(String.valueOf(radix));
+        for (int i = str.length() - 1; i >= 0 ; i--) {
+            int positionValue = valueCharMaps[str.charAt(i)];
+            result = result.add(baseValue.multiply(new BigInteger(String.valueOf(positionValue))));
+            baseValue = baseValue.multiply(radixInt);
         }
-
-        return sb.toString();
+        return result;
     }
 }

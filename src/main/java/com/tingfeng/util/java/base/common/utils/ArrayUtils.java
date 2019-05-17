@@ -108,4 +108,82 @@ public class ArrayUtils {
 			startPosition += srcArray.get(i).length;
 		}
 	}
+
+    public static void reverse(Object[] arrays) {
+    	if(arrays != null && arrays.length > 1){
+    		int flag = arrays.length / 2;
+    		int maxIndex = arrays.length -  1;
+    		for(int i = 0 ; i <  flag; i ++){
+    			Object arr = arrays[i];
+    			int tmpIndex = maxIndex - i;
+				arrays[i] = arrays[tmpIndex];
+				arrays[tmpIndex] = arr;
+			}
+		}
+    }
+
+	public static void reverse(char[] arrays) {
+		if(arrays != null && arrays.length > 1){
+			int flag = arrays.length / 2;
+			int maxIndex = arrays.length -  1;
+			for(int i = 0 ; i <  flag; i ++){
+				char arr = arrays[i];
+				int tmpIndex = maxIndex - i;
+				arrays[i] = arrays[tmpIndex];
+				arrays[tmpIndex] = arr;
+			}
+		}
+	}
+
+    public static void reverse(int[] arrays) {
+		if(arrays != null && arrays.length > 1){
+			int flag = arrays.length / 2;
+			int maxIndex = arrays.length -  1;
+			for(int i = 0 ; i <  flag; i ++){
+				int arr = arrays[i];
+				int tmpIndex = maxIndex - i;
+				arrays[i] = arrays[tmpIndex];
+				arrays[tmpIndex] = arr;
+			}
+		}
+	}
+
+	public static void reverse(long[] arrays) {
+		if(arrays != null && arrays.length > 1){
+			int flag = arrays.length / 2;
+			int maxIndex = arrays.length -  1;
+			for(int i = 0 ; i <  flag; i ++){
+				long arr = arrays[i];
+				int tmpIndex = maxIndex - i;
+				arrays[i] = arrays[tmpIndex];
+				arrays[tmpIndex] = arr;
+			}
+		}
+	}
+
+	public static void reverse(float[] arrays) {
+		if(arrays != null && arrays.length > 1){
+			int flag = arrays.length / 2;
+			int maxIndex = arrays.length -  1;
+			for(int i = 0 ; i <  flag; i ++){
+				float arr = arrays[i];
+				int tmpIndex = maxIndex - i;
+				arrays[i] = arrays[tmpIndex];
+				arrays[tmpIndex] = arr;
+			}
+		}
+	}
+
+	public static void reverse(double[] arrays) {
+		if(arrays != null && arrays.length > 1){
+			int flag = arrays.length / 2;
+			int maxIndex = arrays.length -  1;
+			for(int i = 0 ; i <  flag; i ++){
+				double arr = arrays[i];
+				int tmpIndex = maxIndex - i;
+				arrays[i] = arrays[tmpIndex];
+				arrays[tmpIndex] = arr;
+			}
+		}
+	}
 }
