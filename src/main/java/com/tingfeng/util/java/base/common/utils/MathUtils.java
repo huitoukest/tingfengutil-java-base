@@ -156,14 +156,14 @@ public class MathUtils {
             return str;
         }
         if(toRadix == 10){
-            return toDecimal(str,radixValues).toString();
+            return toDecimal(str,radixValues,srcRadix).toString();
         }
         if(toRadix > MAX_RADIX){
             throw new RuntimeException("max radix is " + MAX_RADIX);
         }
         BigInteger number = null;
         if(srcRadix != 10){
-            number = toDecimal(str,radixValues);
+            number = toDecimal(str,radixValues,srcRadix);
         }else {
             number = new BigInteger(str);
         }
@@ -191,8 +191,17 @@ public class MathUtils {
      * @return 默认解码为10进制数据
      */
     public static BigInteger toDecimal(String str,char[] radixValues) {
+        return toDecimal(str,radixValues,radixValues.length);
+    }
+
+    /**
+     *
+     * @param  str  数字的内容,其进制值等同于baseChars的长度
+     * @return 默认解码为10进制数据
+     */
+    public static BigInteger toDecimal(String str,char[] radixValues,int srcRadix) {
         int[] valueCharMaps = getValueCharMaps(radixValues);
-        int radix = radixValues.length;
+        int radix = Math.min(radixValues.length,srcRadix);
         /**
          * 将 0 开头的字符串进行替换
          */

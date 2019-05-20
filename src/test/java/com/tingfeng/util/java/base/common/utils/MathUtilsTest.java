@@ -1,7 +1,9 @@
 package com.tingfeng.util.java.base.common.utils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.math.BigInteger;
+import java.nio.charset.Charset;
 
 /**
  * @Author wangGang
@@ -14,6 +16,10 @@ public class MathUtilsTest {
     public void encodeTest(){
         System.out.println('a' > 'A');
         System.out.println(MathUtils.toDecimal("0fff0215","0123456789abcdef".toCharArray()));
+        System.out.println(MathUtils.toRadix("0fff02156s9d5gm3m48u",16,62));
+        String binaryStr = new BigInteger("0fff02156s9d5gm3m48u".getBytes(Charset.forName("iso-8859-1"))).toString(16);
+        System.out.println(MathUtils.toRadix(binaryStr,16,62));
+        System.out.println(Base64Utils.enCode("0fff02156s9d5gm3m48u"));
     }
 
     @Test
@@ -27,6 +33,7 @@ public class MathUtilsTest {
             if(!re.equals(new BigInteger(String.valueOf(numA)).toString(radix.length()))){
                 System.out.println(numA + "," + radix);
             }
+            Assert.assertTrue(re.equals(new BigInteger(String.valueOf(numA)).toString(radix.length())));
         });
     }
 
