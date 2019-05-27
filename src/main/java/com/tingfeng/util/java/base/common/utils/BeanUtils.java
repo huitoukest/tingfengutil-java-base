@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -90,16 +89,6 @@ public class BeanUtils{
 	public static void copyProperties(Object target,Object source){
 		String[] args = null;
 		copyProperties(target,source,args);
-	}
-
-	public static String firstLetterToLower(String srcString) {
-		return StringUtils.doAppend(sb->{
-			sb.append(Character.toLowerCase(srcString.charAt(0)));
-			if(srcString.length() > 1) {
-				sb.append(srcString.substring(1));
-			}
-			return sb.toString();
-		});
 	}
 
 	/**
