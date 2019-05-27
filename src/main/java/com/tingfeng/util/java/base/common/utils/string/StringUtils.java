@@ -1131,15 +1131,36 @@ public class StringUtils {
     }
 
     public static String leftPad(String value, int length, char c) {
+        return padString(value,length,c,0);
+    }
+
+    public static String rightPad(String value, int length, char c) {
+        return padString(value,length,c,1);
+    }
+
+    /**
+     *
+     * @param value
+     * @param length
+     * @param c
+     * @param direction 0 = left,1 = right
+     * @return
+     */
+    private static String padString(String value, int length, char c,int direction) {
         if(value.length() > length){
             return value;
         }
         int len = length - value.length();
         return stringBuilderPool.run(sb -> {
+            if(1 == direction){
+                sb.append(value);
+            }
             for(int i = 0 ; i < len ; i ++ ){
                 sb.append(c);
             }
-            sb.append(value);
+            if(direction == 0) {
+                sb.append(value);
+            }
             return sb.toString();
         });
     }
@@ -1148,5 +1169,15 @@ public class StringUtils {
         char[] chars = str.toCharArray();
         ArrayUtils.reverse(chars);
         return new String(chars);
+    }
+
+    public static String firstLetterToLower(String srcString) {
+        return StringUtils.doAppend(sb->{
+            sb.append(Character.toLowerCase(srcString.charAt(0)));
+            if(srcString.length() > 1) {
+                sb.append(srcString.substring(1));
+            }
+            return sb.toString();
+        });
     }
 }
