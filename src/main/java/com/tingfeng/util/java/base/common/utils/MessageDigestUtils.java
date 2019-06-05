@@ -47,14 +47,17 @@ public class MessageDigestUtils {
      * @return
      */
     private static FixedPoolHelper<MessageDigest> getMessageDigest(String type){
-        synchronized (type.intern()) {
-            FixedPoolHelper<MessageDigest> simplePoolHelper = messageDigestMap.get(type);
-            if (null == simplePoolHelper) {
-                simplePoolHelper = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE, () -> MessageDigest.getInstance(type));
-                messageDigestMap.put(type, simplePoolHelper);
+        FixedPoolHelper<MessageDigest> simplePoolHelper = messageDigestMap.get(type);
+        if(simplePoolHelper == null) {
+            synchronized (type.intern()) {
+                simplePoolHelper = messageDigestMap.get(type);
+                if (null == simplePoolHelper) {
+                    simplePoolHelper = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE, () -> MessageDigest.getInstance(type));
+                    messageDigestMap.put(type, simplePoolHelper);
+                }
             }
-            return simplePoolHelper;
         }
+        return simplePoolHelper;
     }
 
     /**

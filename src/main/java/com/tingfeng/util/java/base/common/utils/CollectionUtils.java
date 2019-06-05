@@ -167,4 +167,43 @@ public class CollectionUtils {
         Set<T> setB = objectsB.stream().map(bToTarget).collect(Collectors.toSet());
         return null != listA.stream().filter(it -> setB.contains(it)).findFirst().orElse(null);
     }
+
+    /**
+     * 获取容器的一个值，如果没有则返回null
+     * @param set
+     * @param <T>
+     * @return
+     */
+    public static <T> T getOne(Set<T> set){
+        if(set == null || set.isEmpty()){
+            return null;
+        }
+        return set.stream().findAny().orElse(null);
+    }
+
+    /**
+     * 获取容器的第一个值（如果有序），如果没有则返回null
+     * @param list
+     * @param <T>
+     * @return
+     */
+    public static <T> T getFirst(List<T> list){
+        if(list == null || list.isEmpty()){
+            return null;
+        }
+        return list.stream().findFirst().orElse(null);
+    }
+
+    /**
+     * 获取容器的最后一个值（如果有序），如果没有则返回null
+     * @param list
+     * @param <T>
+     * @return
+     */
+    public static <T> T getLast(List<T> list){
+        if(list == null || list.isEmpty()){
+            return null;
+        }
+        return list.stream().skip(list.size() - 1).findFirst().orElse(null);
+    }
 }
