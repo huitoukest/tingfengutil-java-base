@@ -2,7 +2,6 @@ package com.tingfeng.util.java.base.common.helper;
 
 import com.tingfeng.util.java.base.common.exception.InfoException;
 import com.tingfeng.util.java.base.common.utils.Base64Utils;
-import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.MessageDigestUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
@@ -87,8 +86,8 @@ public class TokenHelper {
                 tokenStringBuilder.append(escapeContent(contentList.get(i)));
             }
             byte[] sign = this.encryptAction.apply(tokenStringBuilder.toString() + securityKey);
-            String signStr = Base64Utils.enCode(sign);
-            String content = Base64Utils.enCode(tokenStringBuilder.toString());
+            String signStr = Base64Utils.enCodeBase64UrlSafeString(sign);
+            String content = Base64Utils.enCodeBase64UrlSafeString(tokenStringBuilder.toString());
 
             tokenStringBuilder.setLength(0);
             tokenStringBuilder.append(content);
@@ -212,14 +211,14 @@ public class TokenHelper {
             String sign = strArray[1];
             String content = "";
             try {
-                content = Base64Utils.deCodeToString(strArray[0]);
+                content = Base64Utils.deCodeBase64UrlSafeString(strArray[0]);
             }catch (IllegalArgumentException e){
                 throw new InfoException("token格式 错误！");
             }
             List<String> contentList = parseContent(content);
             if (null != securityKey) {
                 byte[] expectSignBytes = this.encryptAction.apply(content + securityKey.apply(contentList));
-                String expectSign = Base64Utils.enCode(expectSignBytes);
+                String expectSign = Base64Utils.enCodeBase64UrlSafeString(expectSignBytes);
                 if (!expectSign.equals(sign)) {
                     if(null != signErrorException){
                         throw signErrorException;
@@ -243,7 +242,7 @@ public class TokenHelper {
         //数据校验
         String content = "";
         try {
-            content = Base64Utils.deCodeToString(strArray[0]);
+            content = Base64Utils.deCodeBase64UrlSafeString(strArray[0]);
         }catch (IllegalArgumentException e){
             throw new InfoException("token格式 错误！");
         }
@@ -262,12 +261,12 @@ public class TokenHelper {
         String sign = strArray[1];
         String content = "";
         try {
-            content = Base64Utils.deCodeToString(strArray[0]);
+            content = Base64Utils.deCodeBase64UrlSafeString(strArray[0]);
         }catch (IllegalArgumentException e){
             throw new InfoException("token格式 错误！");
         }
         byte[] expectSignBytes = this.encryptAction.apply(content + securityKey);
-        String expectSign = Base64Utils.enCode(expectSignBytes);
+        String expectSign = Base64Utils.enCodeBase64UrlSafeString(Base64Utils.enCode(expectSignBytes));
         if (!expectSign.equals(sign)) {
             if(null != signErrorException){
                 throw signErrorException;

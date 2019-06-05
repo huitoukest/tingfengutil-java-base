@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.common.helper;
 
 import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.utils.CollectionUtils;
+import com.tingfeng.util.java.base.common.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -15,23 +16,24 @@ public class TokenHelperTest {
 
     @Test
     public void test(){
+        test(true);
+    }
 
+    private void test(boolean  isPrint){
         ArrayList<String> list = new ArrayList<>();
 
         list.add("\\,");
         list.add("\\");
         list.add("123456");
         list.add("\\,");
-        test(true,list);
-        System.out.println();
+        test(isPrint,list);
         list.clear();
 
         list.add("\\");
         list.add("\\");
         list.add("123456");
         list.add("\\");
-        test(true,list);
-        System.out.println();
+        test(isPrint,list);
         list.clear();
 
         list.add("");
@@ -41,8 +43,7 @@ public class TokenHelperTest {
         list.add("");
         list.add("");
         list.add("");
-        test(true,list);
-        System.out.println();
+        test(isPrint,list);
         list.clear();
         //分别存入空串，用户id，过期时间，token类型，空串
         list.add("");
@@ -57,53 +58,60 @@ public class TokenHelperTest {
         list.add("\\");
         list.add("");
 
-        test(true,list);
+        test(isPrint,list);
+
+        if(isPrint){
+            System.out.println();
+        }
     }
 
     public void test(boolean isPrint,ArrayList<String> list) {
-
-
         String token  = tokenHelper.getToken(list,"123456");
-
-        List<String> obj = tokenHelper.parseToken(token,(contents)->contents.get(2),(contents)->contents);
+        List<String> obj = tokenHelper.parseToken(token, (contents) -> contents.get(2) ,(contents) -> contents);
         if(isPrint) {
             System.out.println(JSON.toJSONString(obj));
         }
         Assert.assertEquals(JSON.toJSONString(obj),JSON.toJSONString(list));
     }
 
+    /**
+     * 100w 8s，每秒12w 个
+     */
     @Test
     public void testSpeed(){
+        ArrayList<String> list = new ArrayList<>();
+        list.add("\\,");
+        list.add("\\");
+        list.add("123456");
+        list.add("\\,");
         long startTime = System.currentTimeMillis();
-        for(int i = 0;i < 10000000;i++){
-            if(i % 10000 == 0) {
-                test();
+        for(int i = 0;i < 1000000 ;i++){
+            if(i % 100000 == 0) {
+                test(true,list);
             }else {
-                test();
+                test(false,list);
             }
         }
         System.out.println("use time:" + (System.currentTimeMillis() - startTime));
     }
 
+    /**
+     *  100w 数据 3s ，30w/s
+     * @throws InterruptedException
+     */
     @Test
     public void testSpeed2() throws InterruptedException {
-        long startTime = System.currentTimeMillis();
-        AtomicInteger value = new AtomicInteger(0);
-        for(int i = 0 ; i < 20 ;i++) {
-         new Thread(()->{
-             for (int j = 0; j < 500000; j++) {
-                 if (value.get() % 100000 == 0) {
-                     test();
-                 } else {
-                     test();
-                 }
-                 value.incrementAndGet();
-             }
-         }).start();
-        }
-        while (value.get() < 20 * 500000){
-            Thread.sleep(5);
-        }
-        System.out.println("use time:" + (System.currentTimeMillis() - startTime));
+        ArrayList<String> list = new ArrayList<>();
+        list.add("\\,");
+        list.add("\\");
+        list.add("123456");
+        list.add("\\,");
+        TestUtils.printTime(5,200000,integer -> {
+            if (integer % 100000 == 0) {
+                test(true,list);
+            } else {
+                test(false,list);
+            }
+        });
     }
 }

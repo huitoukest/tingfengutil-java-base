@@ -92,6 +92,11 @@ public class ArrayUtils {
 		}
 	}
 
+	/**
+	 * 数组a中的内容 用英语逗号分隔连接为字符串
+	 * @param a
+	 * @return
+	 */
 	public static String join(Object[] a) {
 		return join(a, Constants.Symbol.comma);
 	}
@@ -185,5 +190,31 @@ public class ArrayUtils {
 				arrays[tmpIndex] = arr;
 			}
 		}
+	}
+
+	/**
+	 * 获取数组的第一个值，如果没有则返回null
+	 * @param array
+	 * @param <T>
+	 * @return
+	 */
+	public static <T> T getFirst(T[] array){
+    	if(array == null || array.length < 1){
+    		return null;
+		}
+		return array[0];
+	}
+
+	/**
+	 * 获取数组的最后一个个值，如果没有则返回null
+	 * @param array
+	 * @param <T>
+	 * @return
+	 */
+	public static <T> T getLast(T[] array){
+		if(array == null || array.length < 1){
+			return null;
+		}
+		return array[array.length - 1];
 	}
 }
