@@ -1,14 +1,6 @@
 package com.tingfeng.util.java.base.file;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -19,6 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.exception.io.StreamCloseException;
 import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
 import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 import com.tingfeng.util.java.base.common.inter.RateCallBackI;
@@ -29,25 +22,41 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * 文件相关工具类
+ * 1. 0.3 版本将文件和stream分离，提供单独的流拷贝
+ * 2. 提供url到流的转换
+ * 3. 提供文件和刘的转换
+ * 4. 通过1、2、3形成流、url、文件三种的互相转换
+ * @author huitoukest
  */
 public class FileUtils {
-	private static final Log log = LogFactory.getLog(FileUtils.class);
+	private static final Log logger = LogFactory.getLog(FileUtils.class);
+	/**
+	 * 默认的文件缓存字节数量
+	 */
 	public static final int BUFFER_SIZE = 4096;
+	/**
+	 * 分片和进度的文件大小缓存字节数
+	 */
+	public static final int BUFFER_SIZE_MIN = 1024;
+	/**
+	 * base64相关的文件信息。
+	 */
 	public static  final String BASE64_IMG_HEADER_START = "data:image/";
 	public static  final String BASE64_IMG_HEADER_END = ";base64";
+
 	/**
 	 * @param url
-	 *            上传的url
+	 *            上传的url，支持HTTP
 	 * @param path
 	 *            文件的路径
+	 * @param connTimeout 连接超时时间，毫米
 	 * @param params
 	 *            参数
 	 * @param callBack
 	 *            回调 PercentActionCallBackI ，在文件操作完成之后回调成功或者失败的操作,以及上传文件过程中的百分比回调
 	 */
-	public static void uploadFile(final String url, final String path, final Map<String, String> params,
+	public static void uploadFile(final String url, final String path,int connTimeout, final Map<String, String> params,
 			final PercentActionCallBackI<File> callBack) {
-		Thread thread = new Thread(()->{
 				final String end = "/r/n";
 				final String Hyphens = "--";
 				final String boundary = "*****";
@@ -63,7 +72,7 @@ public class FileUtils {
 					/* 允许Input、Output，不使用Cache */
 					conn.setDoInput(true);
 					conn.setDoOutput(true);
-					conn.setConnectTimeout(10000);
+					conn.setConnectTimeout(connTimeout);
 					conn.setUseCaches(false);
 					/* 设定传送的method=POST */
 					conn.setRequestMethod("POST");
@@ -85,8 +94,8 @@ public class FileUtils {
 					ds.writeBytes(end);
 					/* 取得文件的FileInputStream */
 					fStream = new FileInputStream(uploadFile);
-					/* 设定每次写入2048bytes */
-					int bufferSize = 2048;
+					/* 设定每次写入BUFFER_SIZE_MIN bytes */
+					int bufferSize = BUFFER_SIZE_MIN;
 					byte[] buffer = new byte[bufferSize];
 					int lengthPerTime = 0;// 循环读写中,每一次读取的字节
 					int lengthReadSum = 0;// 循环读写中,读取的字节的总数量
@@ -100,12 +109,14 @@ public class FileUtils {
 					while ((lengthPerTime = fStream.read(buffer)) != -1) {
 						/* 将数据写入DataOutputStream中 */
 						ds.write(buffer, 0, lengthPerTime);
-						lengthReadSum += lengthPerTime;
-						if (countOfNowCycle >= countOfUpdate) {
-							countOfNowCycle = 0;
-							callBack.updateRate(lengthReadSum / fileSize);
+						if(callBack != null) {
+							lengthReadSum += lengthPerTime;
+							if (countOfNowCycle >= countOfUpdate) {
+								countOfNowCycle = 0;
+								callBack.updateRate(lengthReadSum / fileSize);
+							}
+							countOfNowCycle++;
 						}
-						countOfNowCycle++;
 					}
 					ds.writeBytes(end);
 					ds.writeBytes(Hyphens + boundary + Hyphens + end);
@@ -117,9 +128,15 @@ public class FileUtils {
 					while ((ch = is.read()) != -1) {
 						b.append((char) ch);
 					}
-					callBack.actionSuccess(uploadFile);
+					if(callBack != null) {
+						callBack.actionSuccess(uploadFile);
+					}
 				} catch (Exception e) {
-					callBack.actionFailed(e);
+					if(callBack != null) {
+						callBack.actionFailed(e);
+					}else{
+						throw new BaseException(e);
+					}
 				}finally {
 					try {
 						if(conn != null){
@@ -135,15 +152,13 @@ public class FileUtils {
 							ds.close();
 						}
 					}catch (Throwable e){
-						log.error("close stream error",e);
+						throw new StreamCloseException(e);
 					}
 				}
-		});
-		thread.start();
 	}
 
 	/**
-	 * 从网络上下载一个文件,会自动开一个新的线程来下载
+	 * 从网络上下载一个文件
 	 * 
 	 * @param url
 	 *            指定下载的url
@@ -158,9 +173,8 @@ public class FileUtils {
 	 */
 	public static void downFile(final String url, final String path, final Map<String, String> params,
 			final PercentActionCallBackI<File> callBack,int connectTimeout) {
-		Thread thread = new Thread(()-> {
-				URL myFileUrl = null;
-				File file = null;
+			URL myFileUrl = null;
+			File file = null;
 			HttpURLConnection conn = null;
 			FileOutputStream fStream = null;
 			InputStream is = null;
@@ -195,16 +209,24 @@ public class FileUtils {
 					int countOfNowCycle = 0;// 当前循环的次数
 					while ((lengthPerTime = (is.read(b))) != -1) {
 						fStream.write(b);
-						lengthReadSum += lengthPerTime;
-						if (countOfNowCycle >= countOfUpdate) {
-							countOfNowCycle = 0;
-							callBack.updateRate(lengthReadSum / fileSize);
+						if(callBack != null) {
+							lengthReadSum += lengthPerTime;
+							if (countOfNowCycle >= countOfUpdate) {
+								countOfNowCycle = 0;
+								callBack.updateRate(lengthReadSum / fileSize);
+							}
+							countOfNowCycle++;
 						}
-						countOfNowCycle++;
 					}
-					callBack.actionSuccess(file);
+					if(callBack != null) {
+						callBack.actionSuccess(file);
+					}
 				} catch (Throwable e) {
-					callBack.actionFailed(e);
+					if(callBack != null) {
+						callBack.actionFailed(e);
+					}else{
+						throw new BaseException(e);
+					}
 				} finally {
 					try {
 						if(conn != null){
@@ -217,11 +239,9 @@ public class FileUtils {
 							is.close();
 						}
 					}catch (Throwable e){
-						log.error("close stream error",e);
+						throw new StreamCloseException(e);
 					}
 				}
-		});// end Thread
-		thread.start();
 	}
 
 	/**
@@ -232,10 +252,7 @@ public class FileUtils {
 	 */
 	public static boolean deleteFile(String path) {
 		File file = new File(path);
-		if (file.exists()) {
-			return file.delete();
-		}
-		return true;
+		return deleteFile(file);
 	}
 
 	/**
@@ -245,14 +262,18 @@ public class FileUtils {
 	 * @param tryCount 大于0
 	 * @param intervalMillsSecond 单位毫秒
 	 */
-	public static void deleteFile(String path,int tryCount,int intervalMillsSecond) throws InterruptedException {
+	public static void deleteFile(String path,int tryCount,int intervalMillsSecond){
 		do{
 			File file =  new File(path);
 			if(!file.exists()){
 				break;
 			}
 			if(!file.canWrite()){
-				Thread.sleep(intervalMillsSecond);
+				try {
+					Thread.sleep(intervalMillsSecond);
+				} catch (InterruptedException e) {
+					throw new BaseException(e);
+				}
 			}else{
 				if(file.delete()) {
 					break;
@@ -271,13 +292,13 @@ public class FileUtils {
 	 * @return
 	 * @throws Exception
 	 */
-	public static boolean deleteFolder(File file, boolean isDeleteChild, boolean isDeleteSelf) throws Exception {
+	public static boolean deleteFolder(File file, boolean isDeleteChild, boolean isDeleteSelf){
 		if (file == null || !file.exists()) {
 			return false;
 		}
 		File[] childs = file.listFiles();// 列出当前目录中所有子目录
 		if (!isDeleteChild && childs.length > 0) {
-			throw new Exception("Folder is not empty!");
+			throw new com.tingfeng.util.java.base.common.exception.io.IOException("Folder is not empty!");
 		}
 		if (childs != null) {
 			for (int i = 0; i < childs.length; i++) {
@@ -296,10 +317,23 @@ public class FileUtils {
 		return true;
 	}
 
-	public static boolean deleteFolder(String path, boolean isDeleteChild, boolean isDeleteSelf) throws Exception {
+	/**
+	 * 删除文件夹
+	 * @param path 路径
+	 * @param isDeleteChild 是否删除子文件/子文件夹
+	 * @param isDeleteSelf 是否删除自身
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean deleteFolder(String path, boolean isDeleteChild, boolean isDeleteSelf){
 		return deleteFolder(new File(path), isDeleteChild, isDeleteSelf);
 	}
 
+	/**
+	 * 删除文件
+	 * @param file
+	 * @return
+	 */
 	public static boolean deleteFile(File file) {
 		if (file != null && file.exists()) {
 			file.delete();
@@ -355,7 +389,7 @@ public class FileUtils {
 		File(1), Folder(2), FileAndFolder(3);
 		public int type = 1;
 
-		private FileAddType(int addType) {
+		FileAddType(int addType) {
 			type = addType;
 		}
 
@@ -452,47 +486,62 @@ public class FileUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static String transFileToString(File file, Base64ConvertToStringI base64ConvertToStringI)
-			throws IOException {
+	public static String transFileToString(File file, Base64ConvertToStringI base64ConvertToStringI){
 		if (file == null || !file.exists()) {
 			return null;
 		}
 		String content = "";
 		byte[] bs = new byte[BUFFER_SIZE];
-		InputStream is = new FileInputStream(file);
-		BufferedInputStream br = new BufferedInputStream(is);
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		InputStream is = null;
+		BufferedInputStream br = null;
+		ByteArrayOutputStream bos = null;
 		try{
+			is = new FileInputStream(file);
+			br = new BufferedInputStream(is);
+			bos = new ByteArrayOutputStream();
 			int readLength = 0;
 			while ((readLength = is.read(bs)) != -1) {
 				bos.write(bs, 0, readLength);
 
 			}
 			content = base64ConvertToStringI.convertToString(bos.toByteArray(), 0);
+		}catch (IOException e){
+			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 		}finally {
-			bos.close();
-			br.close();
-			is.close();
+			try {
+				if(bos != null){
+					bos.close();
+				}
+				if(br != null){
+					br.close();
+				}
+				if(is != null){
+					is.close();
+				}
+			}catch (Exception e){
+				throw new StreamCloseException(e);
+			}
 		}
 		return content;
 	}
 
+
+
+
 	/**
 	 * 用指定的写出文件流来写出文件;
-	 * 
 	 * @param file
 	 * @param os
 	 * @param callBack callBack 回调 PercentActionCallBackI ，在文件操作完成之后回调成功或者失败的操作,以及上传文件过程中的百分比回调
 	 * @throws
 	 */
 	public static void writeFile(File file, OutputStream os, PercentActionCallBackI<File> callBack){
-		new Thread(()->{
 			FileInputStream fStream = null;
 			try {
 				/* 取得文件的FileInputStream */
 				fStream = new FileInputStream(file);
 				/* 设定每次写入4096bytes */
-				int bufferSize = 4096;
+				int bufferSize = BUFFER_SIZE;
 				byte[] buffer = new byte[bufferSize];
 				int lengthPerTime = 0;// 循环读写中,每一次读取的字节
 				int lengthReadSum = 0;// 循环读写中,读取的字节的总数量
@@ -506,17 +555,25 @@ public class FileUtils {
 				while ((lengthPerTime = fStream.read(buffer)) != -1) {
 					/* 将数据写入DataOutputStream中 */
 					os.write(buffer, 0, lengthPerTime);
-					lengthReadSum += lengthPerTime;
-					if (countOfNowCycle >= countOfUpdate) {
-						countOfNowCycle = 0;
-						if (callBack != null)
-							callBack.updateRate(lengthReadSum / fileSize);
+					if(null != callBack) {
+						lengthReadSum += lengthPerTime;
+						if (countOfNowCycle >= countOfUpdate) {
+							countOfNowCycle = 0;
+							if (callBack != null)
+								callBack.updateRate(lengthReadSum / fileSize);
+						}
+						countOfNowCycle++;
 					}
-					countOfNowCycle++;
 				}
-				callBack.actionSuccess(file);
+				if(null != callBack) {
+					callBack.actionSuccess(file);
+				}
 			}catch (Throwable e){
-				callBack.actionFailed(e);
+				if(null != callBack) {
+					callBack.actionFailed(e);
+				}else{
+					throw new BaseException(e);
+				}
 			}finally {
 				try {
 					if (fStream != null) {
@@ -527,10 +584,9 @@ public class FileUtils {
 						os.close();
 					}
 				}catch (Throwable e){
-					log.error("close stream error",e);
+					throw new StreamCloseException(e);
 				}
 			}
-		}).start();
 	}
 
 	/**
@@ -540,7 +596,7 @@ public class FileUtils {
 	public static String transInputStreamToStringByEncode(InputStream inputStream, String encode) {
 		// 内存流
 		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-		byte[] data = new byte[4096];
+		byte[] data = new byte[BUFFER_SIZE];
 		int len = 0;
 		String result = null;
 		if (inputStream != null) {
@@ -550,13 +606,13 @@ public class FileUtils {
 				}
 				result = new String(byteArrayOutputStream.toByteArray(), encode);
 			} catch (IOException e) {
-				throw new BaseException(e);
+				throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 			}finally {
 				try {
 					inputStream.close();
 					byteArrayOutputStream.close();
 				}catch (Throwable e){
-					log.error("close stream error",e);
+					throw new StreamCloseException(e);
 				}
 			}
 		}
@@ -570,7 +626,7 @@ public class FileUtils {
 	 * @param destPath
 	 * @throws IOException
 	 */
-	public static void copyFile(String srcPath,String destPath ) throws IOException {
+	public static void copyFile(String srcPath,String destPath ){
 		copyFileByFileChannel(new File(srcPath),new File(destPath),null);
 	}
 
@@ -583,7 +639,7 @@ public class FileUtils {
 	 *            当fileCopyActionCallBack为null的时候,将不会更新进度;
 	 * @throws IOException
 	 */
-	public static void copyFile(String srcPath,String destPath, RateCallBackI fileCopyActionCallBack) throws IOException {
+	public static void copyFile(String srcPath,String destPath, RateCallBackI fileCopyActionCallBack){
 		copyFileByFileChannel(new File(srcPath),new File(destPath),fileCopyActionCallBack);
 	}
 
@@ -649,7 +705,7 @@ public class FileUtils {
 					out.close();
 				}
 			}catch (Throwable e){
-				log.error("close stream error",e);
+				throw new StreamCloseException(e);
 			}
 		}
 	}
@@ -685,11 +741,14 @@ public class FileUtils {
 		// 判断源文件是否存在
 		if (!srcFile.exists()) {
 			msg = "源文件：" + srcFileName + "不存在！";
+			if(logger.isInfoEnabled()) {
+				logger.info(msg);
+			}
 			return false;
 		} else if (!srcFile.isFile()) {
 			msg = "复制文件失败，源文件：" + srcFileName + "不是一个文件！";
-			if(log.isInfoEnabled()) {
-				log.info(msg);
+			if(logger.isInfoEnabled()) {
+				logger.info(msg);
 			}
 			return false;
 		}
@@ -711,20 +770,21 @@ public class FileUtils {
 				}
 			}
 		}
-		// 复制文件
-		int byteread = 0; // 读取的字节数
+		// 复制文件 读取的字节数
+		int byteRead = 0;
 		InputStream in = null;
 		OutputStream out = null;
 		try {
 			in = new FileInputStream(srcFile);
 			out = new FileOutputStream(destFile);
-			byte[] buffer = new byte[4096];
+			byte[] buffer = new byte[BUFFER_SIZE];
 
-			while ((byteread = in.read(buffer)) != -1) {
-				out.write(buffer, 0, byteread);
+			while ((byteRead = in.read(buffer)) != -1) {
+				out.write(buffer, 0, byteRead);
 			}
 			return true;
 		} catch (Throwable e) {
+			logger.error(e);
 			return false;
 		}finally {
 			try {
@@ -735,7 +795,7 @@ public class FileUtils {
 					in.close();
 				}
 			} catch (Throwable e) {
-				log.error("close stream error",e);
+				logger.error(e);
 			}
 		}
 	}
@@ -757,11 +817,11 @@ public class FileUtils {
 		File srcDir = new File(srcDirName);
 		if (!srcDir.exists()) {
 			msg = "复制目录失败：源目录" + srcDirName + "不存在！";
-			log.info(msg);
+			logger.info(msg);
 			return false;
 		} else if (!srcDir.isDirectory()) {
 			msg = "复制目录失败：" + srcDirName + "不是目录！";
-			log.info(msg);
+			logger.info(msg);
 			return false;
 		}
 
@@ -777,16 +837,16 @@ public class FileUtils {
 				new File(destDirName).delete();
 			} else {
 				msg = "复制目录失败：目的目录" + destDirName + "已存在！";
-				if(log.isInfoEnabled()) {
-					log.info(msg);
+				if(logger.isInfoEnabled()) {
+					logger.info(msg);
 				}
 				return false;
 			}
 		} else {
 			// 创建目的目录
 			if (!destDir.mkdirs()) {
-				if(log.isInfoEnabled()){
-					log.info("复制目录失败：创建目的目录失败！");
+				if(logger.isInfoEnabled()){
+					logger.info("复制目录失败：创建目的目录失败！");
 				}
 				return false;
 			}
@@ -809,8 +869,8 @@ public class FileUtils {
 		}
 		if (!flag) {
 			msg = "复制目录" + srcDirName + "至" + destDirName + "失败！";
-			if(log.isInfoEnabled()) {
-				log.info(msg);
+			if(logger.isInfoEnabled()) {
+				logger.info(msg);
 			}
 			return false;
 		} else {
@@ -826,8 +886,12 @@ public class FileUtils {
 	 * @param destFileName
 	 * @throws IOException
 	 */
-	public static void copyFile(File file, String destPath, String destFileName) throws IOException {
-		copyFile(new FileInputStream(file),destPath,destFileName);
+	public static void copyFile(File file, String destPath, String destFileName){
+		try {
+			copyFile(new FileInputStream(file),destPath,destFileName);
+		} catch (FileNotFoundException e) {
+			throw new com.tingfeng.util.java.base.common.exception.io.FileNotFoundException(e);
+		}
 	}
 
 	/**
@@ -836,23 +900,23 @@ public class FileUtils {
 	 * @param destPath 保存路径
 	 * @param destFileName 文件名
 	 */
-	public static void copyFile(InputStream inputStream, String destPath, String destFileName) throws IOException {
-		int bytesum = 0;
-		int byteread;
+	public static void copyFile(InputStream inputStream, String destPath, String destFileName){
+		int byteRead;
 		FileOutputStream fs = null;
 		try {
 			fs = new FileOutputStream(destPath + destFileName);
-			byte[] buffer = new byte[1444];
-			while ((byteread = inputStream.read(buffer)) != -1) {
-				bytesum += byteread;
-				fs.write(buffer, 0, byteread);
+			byte[] buffer = new byte[BUFFER_SIZE];
+			while ((byteRead = inputStream.read(buffer)) != -1) {
+				fs.write(buffer, 0, byteRead);
 			}
+		}catch (IOException e){
+			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 		}finally {
 			if (fs != null){
 				try {
 					fs.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					throw new StreamCloseException(e);
 				}
 			}
 		}
@@ -883,7 +947,7 @@ public class FileUtils {
 	 * @param out
 	 * @return
 	 */
-	public static void saveBase64File(String fileStr,OutputStream out) throws IOException {
+	public static void saveBase64File(String fileStr,OutputStream out){
 		//对字节数组字符串进行Base64解码并生成图片
 		if (fileStr == null) {
 			//图像数据为空
@@ -901,9 +965,15 @@ public class FileUtils {
 			//生成jpeg图片
 			out.write(content);
 			out.flush();
+		}catch (IOException e){
+			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 		}finally {
 			if(out!=null){
-				out.close();
+				try {
+					out.close();
+				} catch (IOException e) {
+					throw new StreamCloseException(e);
+				}
 			}
 		}
 	}
