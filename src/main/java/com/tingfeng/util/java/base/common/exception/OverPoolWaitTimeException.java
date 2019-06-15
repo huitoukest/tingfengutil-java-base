@@ -14,4 +14,18 @@ public class OverPoolWaitTimeException  extends BaseException{
     public OverPoolWaitTimeException(String msg){
         super(msg);
     }
+
+    public OverPoolWaitTimeException() {
+    }
+    public OverPoolWaitTimeException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
+    public OverPoolWaitTimeException(Throwable cause) {
+        super(cause);
+    }
+
+    public OverPoolWaitTimeException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
+        super(message, cause, enableSuppression, writableStackTrace);
+    }
 }

@@ -1,14 +1,11 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.exception.io.StreamCloseException;
+import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import java.io.*;
+import java.util.function.Consumer;
 
 public class StreamUtils {
 
@@ -106,4 +103,61 @@ public class StreamUtils {
 		return new ByteArrayOutputStream();
 	}
 
+	/**
+	 * 将输出流中的内容outputStream拷贝到inputStream中，分批拷贝，默认每次4096 字节
+	 * @param outputStream
+	 * @param inputStream
+	 */
+	public static void copy(OutputStream outputStream, InputStream inputStream){
+		copy(outputStream,inputStream,BUFFER_SIZE,true,null);
+	}
+
+	/**
+	 * 将输出流中的内容outputStream拷贝到inputStream中，分批拷贝，缓存的size是
+	 * @param outputStream
+	 * @param inputStream
+	 * @param bufferSize
+	 */
+	public static void copy(OutputStream outputStream, InputStream inputStream, int bufferSize){
+		copy(outputStream,inputStream,bufferSize,true,null);
+	}
+	/**
+	 * 将输出流中的内容outputStream拷贝到inputStream中，分批拷贝，缓存的size是
+	 * @param outputStream
+	 * @param inputStream
+	 * @param bufferSize
+	 * @param closeStream 使用完毕之后是否关闭流
+	 * @param readSizeCallBack 回调，并传入当前已经读取的字节数
+	 */
+	public static void copy(OutputStream outputStream, InputStream inputStream, int bufferSize,boolean closeStream, Consumer<Integer> readSizeCallBack){
+		try{
+			int perReadLength = 0;
+			byte[] buffer = new byte[bufferSize];
+			// 循环读写中,读取的字节的总数量
+			int sumReadSize = 0;
+			/* 从文件读取数据到缓冲区 */
+			while ((perReadLength = inputStream.read(buffer)) != -1) {
+				/* 将数据写入DataOutputStream中 */
+				outputStream.write(buffer, 0, perReadLength);
+				if(null != readSizeCallBack) {
+					sumReadSize += perReadLength;
+					readSizeCallBack.accept(sumReadSize);
+				}
+			}
+		}catch (IOException e){
+			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
+		}finally {
+			try {
+				if (closeStream && inputStream != null) {
+					inputStream.close();
+				}
+				if (closeStream && outputStream != null) {
+					outputStream.flush();
+					outputStream.close();
+				}
+			}catch (Throwable e){
+				throw new StreamCloseException("close stream error",e);
+			}
+		}
+	}
 }
