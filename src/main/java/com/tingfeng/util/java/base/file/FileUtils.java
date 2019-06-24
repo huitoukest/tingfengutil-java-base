@@ -37,7 +37,7 @@ public class FileUtils {
 	/**
 	 * 分片和进度的文件大小缓存字节数
 	 */
-	public static final int BUFFER_SIZE_MIN = 1024;
+	public static final int BUFFER_SIZE_MIN = 4096;
 	/**
 	 * base64相关的文件信息。
 	 */
@@ -128,6 +128,7 @@ public class FileUtils {
 					while ((ch = is.read()) != -1) {
 						b.append((char) ch);
 					}
+					System.gc();
 					if(callBack != null) {
 						callBack.actionSuccess(uploadFile);
 					}
@@ -218,6 +219,7 @@ public class FileUtils {
 							countOfNowCycle++;
 						}
 					}
+					System.gc();
 					if(callBack != null) {
 						callBack.actionSuccess(file);
 					}
@@ -505,6 +507,7 @@ public class FileUtils {
 
 			}
 			content = base64ConvertToStringI.convertToString(bos.toByteArray(), 0);
+			System.gc();
 		}catch (IOException e){
 			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 		}finally {
@@ -565,6 +568,7 @@ public class FileUtils {
 						countOfNowCycle++;
 					}
 				}
+				System.gc();
 				if(null != callBack) {
 					callBack.actionSuccess(file);
 				}
@@ -687,6 +691,7 @@ public class FileUtils {
 					countOfNowCycle++;
 				}
 			}
+			System.gc();
 		} catch (Throwable e) {
 			throw new BaseException(e);
 		} finally {
@@ -782,6 +787,7 @@ public class FileUtils {
 			while ((byteRead = in.read(buffer)) != -1) {
 				out.write(buffer, 0, byteRead);
 			}
+			System.gc();
 			return true;
 		} catch (Throwable e) {
 			logger.error(e);
@@ -909,15 +915,19 @@ public class FileUtils {
 			while ((byteRead = inputStream.read(buffer)) != -1) {
 				fs.write(buffer, 0, byteRead);
 			}
+			System.gc();
 		}catch (IOException e){
 			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 		}finally {
-			if (fs != null){
-				try {
+			try {
+				if (fs != null) {
 					fs.close();
-				} catch (IOException e) {
-					throw new StreamCloseException(e);
 				}
+				if(inputStream != null){
+					inputStream.close();
+				}
+			} catch (IOException e) {
+				throw new StreamCloseException(e);
 			}
 		}
 	}
