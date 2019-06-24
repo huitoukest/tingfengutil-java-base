@@ -128,7 +128,6 @@ public class FileUtils {
 					while ((ch = is.read()) != -1) {
 						b.append((char) ch);
 					}
-					System.gc();
 					if(callBack != null) {
 						callBack.actionSuccess(uploadFile);
 					}
@@ -219,7 +218,6 @@ public class FileUtils {
 							countOfNowCycle++;
 						}
 					}
-					System.gc();
 					if(callBack != null) {
 						callBack.actionSuccess(file);
 					}
@@ -507,7 +505,6 @@ public class FileUtils {
 
 			}
 			content = base64ConvertToStringI.convertToString(bos.toByteArray(), 0);
-			System.gc();
 		}catch (IOException e){
 			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
 		}finally {
@@ -568,7 +565,6 @@ public class FileUtils {
 						countOfNowCycle++;
 					}
 				}
-				System.gc();
 				if(null != callBack) {
 					callBack.actionSuccess(file);
 				}
@@ -691,7 +687,6 @@ public class FileUtils {
 					countOfNowCycle++;
 				}
 			}
-			System.gc();
 		} catch (Throwable e) {
 			throw new BaseException(e);
 		} finally {
