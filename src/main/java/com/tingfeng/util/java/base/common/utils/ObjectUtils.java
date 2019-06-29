@@ -703,6 +703,41 @@ public class ObjectUtils {
         return false;
     }
 
+    /**
+     * 判断两个数组的值是否相等；判断数组中 内容的值、索引、大小。
+     * @param arrayA
+     * @param arrayB
+     * @return
+     */
+    public static boolean arrayEquals(Object[] arrayA,Object[] arrayB){
+        return arrayEquals(arrayA,arrayB,false);
+    }
 
+    /**
+     * 判断两个数组的值是否相等；判断数组中 内容的值、索引、大小。
+     * @param arrayA
+     * @param arrayB
+     * @param valueEq 是否启动值相等判断，启用后会调用valueEquals作为判断依据 {@link ObjectUtils#valueEquals(java.lang.Object, java.lang.Object)}
+     * @return
+     */
+    public static boolean arrayEquals(Object[] arrayA,Object[] arrayB,boolean valueEq){
+        if(arrayA == null && arrayB == null){
+            return true;
+        }
+        if(arrayA == null || arrayB == null){
+            return false;
+        }
+        if(arrayA.length != arrayB.length){
+            return false;
+        }
+        for(int  i = 0 ; i < arrayA.length ; i++){
+            if(valueEq && !valueEquals(arrayA[i],arrayB[i])){
+                return false;
+            }else if (!Objects.equals(arrayA[i],arrayB[i])){
+                return false;
+            }
+        }
+        return true;
+    }
 
 }
