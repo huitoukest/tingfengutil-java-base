@@ -4,6 +4,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import com.tingfeng.util.java.base.common.inter.ConvertI;
@@ -58,8 +59,12 @@ public class DateUtils {
 	/** yyyy/MM/dd HH:mm:ss.SSS */
 	public static final String FORMATE_YYYYMMDDHHMMSSSSS_OBLINE = "yyyy/MM/dd HH:mm:ss.SSS";
 
-	private static final Map<String,SimpleDateFormat> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25); 
-	
+	private static final Map<String,SimpleDateFormat> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25);
+	/**
+	 * 最大的MapSize，通过此可以控制缓存的SimpleDateFormat的数量,非线程安全，从性能角度考虑
+	 */
+	public static int maxFormatMapSize = 40;
+
 	//初始化,对常用的格式进行缓存
 	static {
 	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS));
@@ -83,11 +88,28 @@ public class DateUtils {
 	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_OBLINE));
 	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE));
 	}
-	
+
+	/**
+	 * 保存当前缓存map的一个大小，非线程安全，从性能角度考虑
+	 */
+	private static int currentMapSize = DATE_FORMAT_MAP.size();
+
+	/**
+	 * 获取一个指定格式的SimpleDateFormat对象
+	 * @param formateString
+	 * @return
+	 */
 	private static SimpleDateFormat getSimpleDateFormat(String formateString) {
 	    SimpleDateFormat simpleDateFormat = DATE_FORMAT_MAP.get(formateString);
 	    if( simpleDateFormat == null) {
-	        return new SimpleDateFormat(formateString);
+			simpleDateFormat = new SimpleDateFormat(formateString);
+			/**
+			 * 从性能角度考虑，不加锁。最多创建一些多余的对象，资源开销不大
+			 */
+	    	if(currentMapSize < maxFormatMapSize){
+				DATE_FORMAT_MAP.put(formateString, simpleDateFormat);
+				currentMapSize++;
+	    	}
 	    }
 	    return simpleDateFormat;
 	}
@@ -115,18 +137,9 @@ public class DateUtils {
 	 */
 	public static String format(Date date,String format){
 		SimpleDateFormat sdf = getSimpleDateFormat(format);
-		if(null != sdf) {
-			synchronized (sdf) {
-				return sdf.format(date);
-			}
-		}else{
-			sdf = new SimpleDateFormat(format);
+		synchronized (sdf) {
 			return sdf.format(date);
 		}
-	}
-
-	private static Date parse(SimpleDateFormat sdf,String date) throws ParseException {
-		return sdf.parse(date);
 	}
 
 	/**
@@ -137,14 +150,9 @@ public class DateUtils {
 	 */
 	public static Date parse(String date,String format) throws ParseException {
 		SimpleDateFormat sdf = getSimpleDateFormat(format);
-		if(null != sdf) {
-			synchronized (sdf) {
-				sdf = new SimpleDateFormat(format);
-				return parse(sdf,date);
-			}
-		}else{
+		synchronized (sdf) {
 			sdf = new SimpleDateFormat(format);
-			return parse(sdf,date);
+			return sdf.parse(date);
 		}
 	}
 
@@ -322,18 +330,33 @@ public class DateUtils {
 		return count;
 	}
 
+	/**
+	 * 获取此日期带包的年份，如 1991
+	 * @param date
+	 * @return
+	 */
 	public static int getYear(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		return calendar.get(Calendar.YEAR);
 	}
 
+	/**
+	 * 返回此日期在当前年的月份，从1开始，值为1 - 12
+	 * @param date
+	 * @return
+	 */
 	public static int getMonth(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		return calendar.get(Calendar.MONTH) + 1;
 	}
 
+	/**
+	 * 获取此日期在当前月份是第多少天，从1开始
+	 * @param date
+	 * @return
+	 */
 	public static int getDayOfMonth(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
@@ -343,9 +366,10 @@ public class DateUtils {
 	/**
 	 * @param date
 	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
+	 * @param handleDate 对每个日期做初始化的一些处理
 	 * @throws ParseException
 	 */
-	public static Date[] getRecentlyWeekDate(Date date) {
+	public static Date[] getRecentlyWeekDate(Date date, Consumer<Date> handleDate) {
 		Date[] weekDates = new Date[7];
 		int week = getDayOfWeek(date);// 获取周几,1表示星期天、2表示星期一、7表示星期六
 		int maxWeek = 7;
@@ -358,16 +382,40 @@ public class DateUtils {
 		} else {
 			position = week - 1;
 		}
+		Date tmp = null;
 		// 计算从周一到当前的日期
 		for (int i = 1; i < position; i++) {
-			weekDates[position - i - 1] = getDateAdd(date, -i);
+			tmp =  getDateAdd(date, -i);
+			weekDates[position - i - 1] = tmp;
+			handleDate.accept(tmp);
 		}
 		// 计算当前到周日的日期
 		for (int i = 0; i <= maxWeek - position; i++) {
-			weekDates[position + i - 1] = getDateAdd(date, i);
+			tmp = getDateAdd(date, -i);
+			weekDates[position + i - 1] = tmp;
+			handleDate.accept(tmp);
 		}
 
 		return weekDates;
+	}
+
+	/**
+	 * @param date
+	 * @param setDateBeginTime 对每个日期初始化为当日的开始时间
+	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
+	 * @throws ParseException
+	 */
+	public static Date[] getRecentlyWeekDate(Date date, boolean setDateBeginTime) {
+		return getRecentlyWeekDate(date,it -> it = getDayBegin(it));
+	}
+
+	/**
+	 * @param date
+	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
+	 * @throws ParseException
+	 */
+	public static Date[] getRecentlyWeekDate(Date date) {
+		return getRecentlyWeekDate(date,true);
 	}
 
 	/**
@@ -486,18 +534,18 @@ public class DateUtils {
 	/**
 	 * 
 	 * @param value
-	 * @param formateString
+	 * @param formatString
 	 *            "yyyy-MM-dd HH:mm:ss"等支持的格式
 	 * @param defaultValue
 	 *            异常或者value是null时返回默认值
 	 * @return 默认先用Long来获取毫秒数,失败后再用时间格式来获取相应的时间;
 	 */
-	public static Date getDate(String value, String formateString, Date defaultValue) {
+	public static Date getDate(String value, String formatString, Date defaultValue) {
 		if (value == null)
 			return defaultValue;
 		Date date = null;
 		try {
-			date = parse(value,formateString);
+			date = parse(value,formatString);
 		} catch (Exception e) {
 			date = defaultValue;
 		}
