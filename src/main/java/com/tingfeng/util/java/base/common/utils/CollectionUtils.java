@@ -1,22 +1,25 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import java.lang.reflect.Field;
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.tingfeng.util.java.base.common.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.ConvertI;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
-import com.tingfeng.util.java.base.common.utils.string.StringUtils;
-
 /**
  *
+ * @author huitoukest
  */
 public class CollectionUtils {
 
     public static <T> List<T> getList(T[] array) {
-        if (array == null) return null;
+        if (array == null) {
+            return null;
+        }
         return Arrays.asList(array);
     }
 
@@ -31,7 +34,9 @@ public class CollectionUtils {
     public static <T> List<T> getList(String sourceString, String regex, ConvertI<String,T> convert) {
         List<T> list = new ArrayList<T>();
         sourceString = sourceString.trim();
-        if (sourceString.length() < 1) return list;
+        if (sourceString.length() < 1) {
+            return list;
+        }
         try {
             String[] ss = sourceString.split(regex);
             for (String s : ss) {
@@ -205,5 +210,53 @@ public class CollectionUtils {
             return null;
         }
         return list.stream().skip(list.size() - 1).findFirst().orElse(null);
+    }
+
+    /**
+     * 判断两个List的内容是否相同；大小和内容;
+     * @param listA
+     * @param listB
+     * @param <T>
+     * @return
+     */
+    public static <T> boolean eq(List<T> listA, List<T> listB){
+        return eq(listA,listA,(a,b) -> a.equals(b));
+    }
+
+    /**
+     * 判断两个List的内容是否相同；大小和内容;
+     * @param listA
+     * @param listB
+     * @param eqFunc 判断相等的方法
+     * @param <T>
+     * @return
+     */
+    public static <T> boolean eq(List<T> listA, List<T> listB, BiFunction<T,T,Boolean> eqFunc){
+        int size = listA.size();
+        if( size != listB.size()){
+            return false;
+        }
+        for(int i = 0;i < size ; i ++){
+            if(!eqFunc.apply(listA.get(i),listB.get(i))){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 判断两个Set的内容是否相同；大小和内容;
+     * @param a
+     * @param b
+     * @param <T>
+     * @return
+     */
+    public static <T> boolean eq(Set<T> a,Set<T> b){
+        int size = a.size();
+        if( size != b.size()){
+            return false;
+        }
+        return !a.stream().filter(it -> !b.contains(it))
+                .findAny().isPresent();
     }
 }
