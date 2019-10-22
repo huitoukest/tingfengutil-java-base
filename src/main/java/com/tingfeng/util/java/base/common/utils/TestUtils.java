@@ -5,14 +5,17 @@ import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVTwo;
 
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 专用于测试的工具类
+ * @author huitoukest
  */
 public class TestUtils {
 
     /**
-     *
+     * 线程中的异常会自动捕获，并在执行完毕后抛出；
+     * 发生异常后，无法保证所有的任务都执行
      * @param thread 启动的线程数量
      * @param cycleCountInThread 线程内的循环次数
      * @param functionVTwo  参数(当前线程的索引，线程内的循环索引)
@@ -20,28 +23,34 @@ public class TestUtils {
     public static void printTime(int thread, int cycleCountInThread, FunctionVTwo<Integer,Integer> functionVTwo) {
         long startTime = System.currentTimeMillis();
         AtomicInteger value = new AtomicInteger(0);
+        AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
         for(int i = 0 ; i < thread ;i++) {
             int threadNo = i;
             new Thread(()->{
-                try{
+                if(throwableAtomicReference.get() != null) {
                     try {
-                        for(int  j = 0;j < cycleCountInThread ; j++) {
-                            functionVTwo.run(threadNo,j);
+                        try {
+                            for (int j = 0; j < cycleCountInThread; j++) {
+                                    functionVTwo.run(threadNo, j);
+                            }
+                        } catch (Throwable e) {
+                            throwableAtomicReference.set(e);
                         }
-                    } catch (Exception e) {
-                        throw new BaseException(e);
+                    } finally {
+                        value.incrementAndGet();
                     }
-                }finally {
-                    value.incrementAndGet();
                 }
             }).start();
         }
-        while (value.get() < thread){
+        while (value.get() < thread && throwableAtomicReference.get() == null){
             try {
                 Thread.sleep(2);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+        if(throwableAtomicReference.get() != null){
+            throw new RuntimeException(throwableAtomicReference.get());
         }
         System.out.println("use time:" + (System.currentTimeMillis() - startTime));
     }
