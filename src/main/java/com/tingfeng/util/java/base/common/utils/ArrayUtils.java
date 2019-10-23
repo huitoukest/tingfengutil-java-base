@@ -20,7 +20,9 @@ public class ArrayUtils {
 	final static int BUFFER_SIZE = 1024;
 	
 	public static <T> boolean isContain(T[] array, T t) {
-		if(array==null) return false;
+		if(array==null) {
+			return false;
+		}
 		// 转换为list
 		List<T> tempList = Arrays.asList(array);
 		// 利用list的包含方法,进行判断
