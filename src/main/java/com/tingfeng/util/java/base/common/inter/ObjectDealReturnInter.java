@@ -1,49 +1,59 @@
 package com.tingfeng.util.java.base.common.inter;
 
+import java.util.Collection;
+import java.util.Date;
+import java.util.Map;
+
 /**
- * 处理一个对象并且发挥其值
- * @param <S> Source
- * @param <T> Target
+ *  即调用者需要区分对象可能的类型；实现者则处理具体的逻辑
+ * 处理一个对象并且返回其值；
+ * 依次处理并判断容器或者对象的值；符合条件则返回其值；
+ * 否则根据条件继续
+ * @author wanggang
+ * T 返回的类型
  */
-public interface ObjectDealReturnInter<S,T> {
+public interface ObjectDealReturnInter<T>{
 
     /**
-     * 处理一个Collection
+     * 判断Collection是否符合条件
      * @param source
-     * @param recursive 是否递归处理
      * @return
      */
-    public abstract T dealCollection(S source,boolean recursive);
+    T dealCollection(Collection<?> source);
 
     /**
      * 处理一个Map
      * @param source
-     * @param recursive 是否递归处理
      * @return
      */
-    public abstract T dealMap(S source,boolean recursive);
+    T dealMap(Map<?,?> source);
 
     /**
      * 处理一个Array
      * @param source
-     * @param recursive 是否递归处理
      * @return
      */
-    public abstract T dealArray(S source,boolean recursive);
-    /**
-     * 处理一个字符串
-     * @param source
-     * @param isTrim 表示是否去掉字符串两边的空白字符
-     * @return
-     */
-    public abstract T dealString(S source,boolean isTrim);
+    T dealArray(Object[] source);
 
     /**
-     * 处理普通的对象
+     * 处理一个字符序列 CharSequence
      * @param source
      * @return
      */
-    public abstract T dealCommonObject(S source);
-    
+    T dealCharSequence(CharSequence source);
+
+    /**
+     * 处理一个字符序列 CharSequence
+     * @param source
+     * @return
+     */
+    T dealDate(Date source);
+
+    /**
+     * 处理普通的对象;非Collection、Map、Array、CharSequence、Date；
+     * @param source
+     * @return
+     */
+    T dealCommonObject(Object source);
     
 }
