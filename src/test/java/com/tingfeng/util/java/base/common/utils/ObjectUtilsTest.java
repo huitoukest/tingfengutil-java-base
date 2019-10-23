@@ -3,6 +3,9 @@ package com.tingfeng.util.java.base.common.utils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 /**
  * @Author wangGang
  * @Description //TODO
@@ -26,5 +29,16 @@ public class ObjectUtilsTest {
     public void isAllEmptyTest(){
         Assert.assertFalse(ObjectUtils.isAllEmpty(false,null,new String[]{}," "));
         Assert.assertTrue(ObjectUtils.isAllEmpty(true,null,new String[]{}," "));
+    }
+
+    @Test
+    public void isEmptyTest(){
+        Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{1}),true,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{Collections.EMPTY_LIST}),true,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{Collections.EMPTY_LIST,"  "}),true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{Collections.EMPTY_LIST,"  "}),true,false));
+        Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{Collections.EMPTY_LIST,"  "}),false,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList(""),false,true));
+        Assert.assertTrue(ObjectUtils.isEmpty("  ",true,true));
     }
 }

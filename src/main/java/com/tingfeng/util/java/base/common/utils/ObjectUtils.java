@@ -2,8 +2,8 @@ package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.constant.ObjectType;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
+import com.tingfeng.util.java.base.common.helper.JudgeEmptyHelper;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
-import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
@@ -119,36 +119,6 @@ public class ObjectUtils {
      */
     public static boolean isBaseTypeObject(Class<?> cls) {
         return isBaseTypeObject(cls.getName());
-    }
-
-    /**
-     * 处理一个对象，并返回想要的结果
-     *
-     * @param source    来源对象
-     * @param recursive 是否递归处理
-     * @param isTrim    是否trim
-     * @param deal      处理的方式
-     * @param <S>       对象类型
-     * @param <T>       返回的结果类型
-     * @return
-     */
-    public static <S, T> T dealObject(S source, boolean recursive, boolean isTrim, ObjectDealReturnInter<S, T> deal) {
-        if (null == source) {
-            return deal.dealCommonObject(source);
-        }
-        if (source instanceof Map) {
-            return deal.dealMap(source, recursive);
-        }
-        if (source instanceof Collection) {
-            return deal.dealCollection(source, recursive);
-        }
-        if (source instanceof String) {
-            return deal.dealString(source, isTrim);
-        }
-        if (source.getClass().isArray()) {
-            return deal.dealArray(source, recursive);
-        }
-        return deal.dealCommonObject(source);
     }
 
     /**
@@ -382,82 +352,23 @@ public class ObjectUtils {
      * @return
      */
     public static boolean isEmpty(Object obj, boolean recursive, final boolean isTrim) {
-        return dealObject(obj, recursive, isTrim, new ObjectDealReturnInter<Object, Boolean>() {
-
-            @Override
-            public Boolean dealCollection(Object obj, boolean recursive) {
-                @SuppressWarnings("unchecked")
-                Collection<Object> data = (Collection<Object>) obj;
-                if (data.isEmpty()) {
-                    return true;
-                }
-                if (recursive) {
-                    for (Object key : data) {
-                        if (!isEmpty(key, recursive, isTrim)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-
-            @Override
-            public Boolean dealMap(Object obj, boolean recursive) {
-                @SuppressWarnings("unchecked")
-                Map<Object, Object> map = ((Map<Object, Object>) obj);
-                if (map.isEmpty()) {
-                    return true;
-                }
-                if (recursive) {
-                    for (Object key : map.keySet()) {
-                        if (!isEmpty(key, recursive, isTrim)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-
-            @Override
-            public Boolean dealArray(Object obj, boolean recursive) {
-                Object[] data = (Object[]) obj;
-                if (data.length <= 0) {
-                    return true;
-                }
-                if (recursive) {
-                    for (Object key : data) {
-                        if (!isEmpty(key, recursive, isTrim)) {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-                return false;
-            }
-
-            @Override
-            public Boolean dealString(Object obj, boolean isTrim) {
-                String str = obj.toString();
-                if (isTrim) {
-                    str = str.trim();
-                }
-                if ("".equals(str)) {
-                    return true;
-                }
-                return false;
-            }
-
-            @Override
-            public Boolean dealCommonObject(Object obj) {
-                if (null == obj) {
-                    return true;
-                }
-                return false;
-            }
-
-        });
+        JudgeEmptyHelper judgeEmptyHelper = JudgeEmptyHelper.newInstance(recursive,isTrim);
+        if (null == obj) {
+            return true;
+        }
+        if (obj instanceof Map) {
+            return judgeEmptyHelper.dealMap((Map<?, ?>) obj);
+        }
+        if (obj instanceof Collection) {
+            return judgeEmptyHelper.dealCollection((Collection<?>) obj);
+        }
+        if (obj instanceof CharSequence) {
+            return judgeEmptyHelper.dealCharSequence((CharSequence) obj);
+        }
+        if (obj.getClass().isArray()) {
+            return judgeEmptyHelper.dealArray((Object[]) obj);
+        }
+        return judgeEmptyHelper.dealCommonObject(obj);
     }
 
     /**
