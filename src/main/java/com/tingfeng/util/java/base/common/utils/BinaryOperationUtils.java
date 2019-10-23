@@ -6,6 +6,7 @@ import java.util.List;
 
 /**
  * 二进制数相关操作工具
+ * @author wanggang
  */
 public class BinaryOperationUtils {
     private static final int MAX_POW_VALUE = 64;
@@ -38,6 +39,25 @@ public class BinaryOperationUtils {
                 }
             }else{
                 break;
+            }
+        }
+        return numbers;
+    }
+
+    /**
+     *  用从containsValue到maxValue的的值A与containsValue执行按位与运行，
+     *  如果等于计算结果等于containsValue,则将A加入到结果列表中
+     * 比如输入:
+     *  bitwiseValue = 8;  containsValue = 3 ；则结果返回 [3,7];
+     *  bitwiseValue = 7;  containsValue = 1 ；则结果返回 [1,3,5,7];
+     * @param maxValue 最大值； null时 返回空List
+     * @return containsValue 需要包含的值
+     */
+    public static List<Integer> getContainBinaryNumbers(int maxValue, Integer containsValue){
+        List<Integer> numbers = new ArrayList<>();
+        for(int i = containsValue; i <= maxValue ; i ++){
+            if((i & containsValue) == containsValue){
+                numbers.add(i);
             }
         }
         return numbers;
