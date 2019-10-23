@@ -10,7 +10,6 @@ import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import java.beans.XMLDecoder;
 import java.io.*;
 import java.lang.reflect.Field;
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.Callable;
 
@@ -192,8 +191,12 @@ public class ObjectUtils {
      * @return <T></>
      */
     public static <T> T getObject(Class<T> cls, Object obj) {
-        if (cls == null) return (T) obj;
-        if (obj == null) return null;
+        if (cls == null) {
+            return (T) obj;
+        }
+        if (obj == null) {
+            return null;
+        }
         if (cls.getName().equals(obj.getClass().getName())) {
             return (T) obj;
         }
