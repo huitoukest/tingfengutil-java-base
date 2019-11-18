@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- *
+ * @author huitoukest
  */
 public class RuntimeUtils {
 	/**
@@ -44,7 +44,7 @@ public class RuntimeUtils {
 		List<InetAddress> addresses = getLocalAddress();
 		return addresses.stream()
 				.map(it -> it.getHostAddress())
-				.filter(it -> !exceptPhysicalAddress || RegExpUtils.isMatch(RegExpUtils.PatternStr.ipV4,it,true)).distinct().collect(Collectors.toList());
+				.filter(it -> !exceptPhysicalAddress || RegExpUtils.isMatch(it,RegExpUtils.PatternStr.ipV4,true)).distinct().collect(Collectors.toList());
 	}
 
 	/**
