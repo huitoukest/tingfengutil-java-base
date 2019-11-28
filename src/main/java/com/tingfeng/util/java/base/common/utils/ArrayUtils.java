@@ -80,16 +80,19 @@ public class ArrayUtils {
 	 * @serialData 2008-01-08
 	 */
 	public static String join(Object[] a, String symbol) {
-		if (a == null)
+		if (a == null) {
 			return "";
+		}
 		int iMax = a.length - 1;
-		if (iMax == -1)
+		if (iMax == -1) {
 			return "";
+		}
 		StringBuilder b = new StringBuilder();
 		for (int i = 0; ; i++) {
 			b.append(a[i]);
-			if (i == iMax)
+			if (i == iMax) {
 				return b.toString();
+			}
 			b.append(symbol);
 		}
 	}
