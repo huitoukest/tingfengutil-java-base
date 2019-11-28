@@ -5,7 +5,6 @@ import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -258,5 +257,15 @@ public class CollectionUtils {
         }
         return !a.stream().filter(it -> !b.contains(it))
                 .findAny().isPresent();
+    }
+
+    /**
+     * 通过数组创建Set
+     * @param data
+     * @param <T>
+     * @return
+     */
+    public static <T> Set<T> createSet(T... data){
+        return Arrays.asList(data).stream().collect(Collectors.toSet());
     }
 }

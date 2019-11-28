@@ -3,9 +3,10 @@ package com.tingfeng.util.java.base.common.utils.string;
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
+import com.tingfeng.util.java.base.common.helper.StringTemplateHelper;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
-import com.tingfeng.util.java.base.common.utils.BeanUtils;
+import com.tingfeng.util.java.base.common.utils.CollectionUtils;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
 import org.apache.commons.logging.Log;
@@ -121,7 +122,9 @@ public class StringUtils {
      */
     public static String trimSymbol(String souceString, String symbol) {
         souceString = souceString.trim();
-        if (souceString.length() < 1) return souceString;
+        if (souceString.length() < 1) {
+            return souceString;
+        }
         if (souceString.indexOf(symbol) == 0) {
             souceString = souceString.substring(symbol.length());
         }
@@ -274,17 +277,19 @@ public class StringUtils {
      * @date
      */
     public static String toSbcCaseByDbcCase(String str) {
-        if (str == null || "".equals(str))
+        if (str == null || "".equals(str)) {
             return "";
+        }
         StringBuffer sb = new StringBuffer();
 
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
 
-            if (c >= 65281 && c < 65373)
+            if (c >= 65281 && c < 65373) {
                 sb.append((char) (c - 65248));
-            else
+            } else {
                 sb.append(str.charAt(i));
+            }
         }
 
         return sb.toString();
@@ -1180,4 +1185,32 @@ public class StringUtils {
             return sb.toString();
         });
     }
+
+    /**
+     * 一次性的模板替换，重复且多次的替换，请使用@See com.tingfeng.util.java.base.common.helper.StringTemplateHelper
+     * @param startFlag 替换开始的标记,empty String = 使用默认值${
+     * @param endFlag 替换结束的标记,empty String = 使用默认值}
+     * @param content 模板内容
+     * @param params  模板中的参数有哪些，参数无需包含开始结束标记
+     * @param paramsData 模板参数对应的值
+     * @return
+     */
+    public static String replaceByTemplate(String startFlag, String endFlag,String content,Set<String> params,Map<String,String> paramsData){
+        StringTemplateHelper helper = new StringTemplateHelper(startFlag,endFlag,content,params);
+        return helper.generate(paramsData);
+    }
+
+    /**
+     * 一次性的模板替换，重复且多次的替换，请使用@See com.tingfeng.util.java.base.common.helper.StringTemplateHelper
+     * 默认替换${A}中A的值，默认paramsData中的keySet作为可用的模板参数
+     * @param content 模板内容
+     * @param paramsData 模板参数对应的值
+     * @return
+     */
+    public static String replaceByTemplate(String content,Map<String,String> paramsData){
+        Set<String> params = paramsData.keySet();
+        StringTemplateHelper helper = new StringTemplateHelper(null,null,content,params);
+        return helper.generate(paramsData);
+    }
+
 }
