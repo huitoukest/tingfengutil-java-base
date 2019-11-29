@@ -230,7 +230,7 @@ public class CollectionUtils {
      * @param <T>
      * @return
      */
-    public static <T> boolean eq(List<T> listA, List<T> listB, BiFunction<T,T,Boolean> eqFunc){
+    public static <T,E> boolean eq(List<T> listA, List<E> listB, BiFunction<T,E,Boolean> eqFunc){
         int size = listA.size();
         if( size != listB.size()){
             return false;
