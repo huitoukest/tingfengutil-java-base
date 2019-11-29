@@ -1096,7 +1096,8 @@ public class StringUtils {
                 ++k;
                 //较之前next数组求法，改动在下面4行
                 if (pArray[j] != pArray[k]) {
-                    next[j] = k;   //之前只有这一行
+                    //之前只有这一行
+                    next[j] = k;
                 } else {
                     //因为不能出现p[j] = p[ next[j ]]，所以当出现时需要继续递归，k = next[k] = next[next[k]]
                     //优化之前这里是next[j] = k; 但是因为当前 pArray[j] = pArray[k]的时候，由于前后缀相等，
@@ -1212,5 +1213,179 @@ public class StringUtils {
         StringTemplateHelper helper = new StringTemplateHelper(null,null,content,params);
         return helper.generate(paramsData);
     }
+
+
+    /**
+     * 从jdk拷贝出来的工具
+     * Code shared by String and StringBuffer to do searches. The
+     * source is the character array being searched, and the target
+     * is the string being searched for.
+     *
+     * @param   source       the characters being searched.
+     * @param   sourceOffset offset of the source string.
+     * @param   sourceCount  count of the source string.
+     * @param   target       the characters being searched for.
+     * @param   targetOffset offset of the target string.
+     * @param   targetCount  count of the target string.
+     * @param   fromIndex    the index to begin searching from.
+     */
+    public static int indexOf(char[] source, int sourceOffset, int sourceCount,
+                       char[] target, int targetOffset, int targetCount,
+                       int fromIndex) {
+        if (fromIndex >= sourceCount) {
+            return (targetCount == 0 ? sourceCount : -1);
+        }
+        if (fromIndex < 0) {
+            fromIndex = 0;
+        }
+        if (targetCount == 0) {
+            return fromIndex;
+        }
+
+        char first = target[targetOffset];
+        int max = sourceOffset + (sourceCount - targetCount);
+
+        for (int i = sourceOffset + fromIndex; i <= max; i++) {
+            /* Look for first character. */
+            if (source[i] != first) {
+                while (++i <= max && source[i] != first) {
+                    ;
+                }
+            }
+
+            /* Found first character, now look at the rest of v2 */
+            if (i <= max) {
+                int j = i + 1;
+                int end = j + targetCount - 1;
+                for (int k = targetOffset + 1; j < end && source[j]
+                        == target[k]; j++, k++) {
+                    ;
+                }
+
+                if (j == end) {
+                    /* Found whole string. */
+                    return i - sourceOffset;
+                }
+            }
+        }
+        return -1;
+    }
+
+
+    /**
+     * 在source的指定区间查找source
+     * @param source
+     * @param target
+     * @param fromIndex
+     * @param endIndex
+     * @return
+     */
+    public static int indexOf(String source,String target, int fromIndex, int endIndex) {
+        char[] sourceValue = StringUtils.getCharArray(source);
+        char[] targetValue = StringUtils.getCharArray(target);
+        return indexOf(sourceValue, 0, endIndex + 1,
+                targetValue, 0, targetValue.length, fromIndex);
+    }
+
+    /**
+     * 从jdk中拷贝出来的工具；
+     * Code shared by String and StringBuffer to do searches. The
+     * source is the character array being searched, and the target
+     * is the string being searched for.
+     *
+     * @param   source       the characters being searched.
+     * @param   sourceOffset offset of the source string.
+     * @param   sourceCount  count of the source string.
+     * @param   target       the characters being searched for.
+     * @param   targetOffset offset of the target string.
+     * @param   targetCount  count of the target string.
+     * @param   fromIndex    the index to begin searching from. 从fromIndex往前查找
+     */
+    public static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
+                           char[] target, int targetOffset, int targetCount,
+                           int fromIndex) {
+        /*
+         * Check arguments; return immediately where possible. For
+         * consistency, don't check for null str.
+         */
+        int rightIndex = sourceCount - targetCount;
+        if (fromIndex < 0) {
+            return -1;
+        }
+        if (fromIndex > rightIndex) {
+            fromIndex = rightIndex;
+        }
+        /* Empty string always matches. */
+        if (targetCount == 0) {
+            return fromIndex;
+        }
+
+        int strLastIndex = targetOffset + targetCount - 1;
+        char strLastChar = target[strLastIndex];
+        int min = sourceOffset + targetCount - 1;
+        int i = min + fromIndex;
+
+        startSearchForLastChar:
+        while (true) {
+            while (i >= min && source[i] != strLastChar) {
+                i--;
+            }
+            if (i < min) {
+                return -1;
+            }
+            int j = i - 1;
+            int start = j - (targetCount - 1);
+            int k = strLastIndex - 1;
+
+            while (j > start) {
+                if (source[j--] != target[k--]) {
+                    i--;
+                    continue startSearchForLastChar;
+                }
+            }
+            return start - sourceOffset + 1;
+        }
+    }
+
+
+    /**
+     * 从jdk中拷贝出来的工具，做了点调整;
+     * Code shared by String and AbstractStringBuilder to do searches. The
+     * source is the character array being searched, and the target
+     * is the string being searched for.
+     *
+     * @param   source       the characters being searched.
+     * @param   sourceOffset offset of the source string.
+     * @param   sourceCount  count of the source string.
+     * @param   target       the characters being searched for.
+     * @param   fromIndex    the index to begin searching from. 从fromIndex往前查找
+     */
+    public static int lastIndexOf(char[] source, int sourceOffset, int sourceCount,
+                           String target, int fromIndex) {
+        char[] targetValue = StringUtils.getCharArray(target);
+        return lastIndexOf(source, sourceOffset, sourceCount,
+                targetValue, 0,targetValue.length,fromIndex);
+    }
+
+    /**
+     * 从指定区间查询最后一个匹配的索引；
+     * 从jdk中拷贝出来的工具，做了点调整；包含搜索的开始和结束索引
+     * Code shared by String and AbstractStringBuilder to do searches. The
+     * source is the character array being searched, and the target
+     * is the string being searched for.
+     *
+     * @param   source     the characters being searched.
+     * @param   target       the characters being searched for.
+     * @param   startIndex    搜索区间的开始索引
+     * @param   endIndex   搜索区间的结束索引
+     */
+    public static int lastIndexOf(String source,String target, int startIndex,int endIndex) {
+        char[] sourceValue = StringUtils.getCharArray(source);
+        int offsetIndex =  lastIndexOf(sourceValue, startIndex, endIndex - startIndex + 1,
+                target, endIndex - startIndex);
+        //默认返回的索引是相对于偏移量的，所以这里需要通过偏移量来恢复索引值
+        return offsetIndex >= 0 ?  offsetIndex + startIndex : offsetIndex;
+    }
+
 
 }

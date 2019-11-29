@@ -21,28 +21,28 @@ public class TestUtils {
      * @param functionVTwo  参数(当前线程的索引，线程内的循环索引)
      */
     public static void printTime(int thread, int cycleCountInThread, FunctionVTwo<Integer,Integer> functionVTwo) {
+        assert thread > 0;
+        assert cycleCountInThread > 0;
         long startTime = System.currentTimeMillis();
-        AtomicInteger value = new AtomicInteger(0);
+        AtomicInteger threadCount = new AtomicInteger(0);
         AtomicReference<Throwable> throwableAtomicReference = new AtomicReference<>();
         for(int i = 0 ; i < thread ;i++) {
             int threadNo = i;
             new Thread(()->{
-                if(throwableAtomicReference.get() != null) {
+                if(throwableAtomicReference.get() == null) {
                     try {
-                        try {
-                            for (int j = 0; j < cycleCountInThread; j++) {
-                                    functionVTwo.run(threadNo, j);
-                            }
-                        } catch (Throwable e) {
-                            throwableAtomicReference.set(e);
+                        for (int j = 0; j < cycleCountInThread; j++) {
+                                functionVTwo.run(threadNo, j);
                         }
-                    } finally {
-                        value.incrementAndGet();
+                    } catch (Throwable e) {
+                        throwableAtomicReference.set(e);
+                    }finally {
+                        threadCount.incrementAndGet();
                     }
                 }
             }).start();
         }
-        while (value.get() < thread && throwableAtomicReference.get() == null){
+        while (threadCount.get() < thread && throwableAtomicReference.get() == null){
             try {
                 Thread.sleep(2);
             } catch (InterruptedException e) {
