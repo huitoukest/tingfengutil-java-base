@@ -1,6 +1,7 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
@@ -48,5 +49,26 @@ public class StringUtilsTest {
                 System.out.println(position);
             }
         });
+    }
+
+    @Test
+    public void indexOfTest(){
+        String a = "abbccddeeff";
+        String target = "cc";
+        Assert.assertEquals(-1,StringUtils.indexOf(a,target,1,3));
+        Assert.assertEquals(3,StringUtils.indexOf(a,target,1,4));
+        Assert.assertEquals(3,StringUtils.indexOf(a,target,1,5));
+    }
+
+    @Test
+    public void lastIndexOfTest(){
+        String a = "abbccaccddeeff";
+        String target = "cc";
+        Assert.assertEquals(-1,StringUtils.lastIndexOf(a,target,1,3));
+        Assert.assertEquals(3,StringUtils.lastIndexOf(a,target,1,6));
+        Assert.assertEquals(6,StringUtils.lastIndexOf(a,target,1,7));
+        Assert.assertEquals(6,StringUtils.lastIndexOf(a,target,6,7));
+        Assert.assertEquals(6,StringUtils.lastIndexOf(a,target,4,9));
+        Assert.assertEquals(-1,StringUtils.lastIndexOf(a,target,7,10));
     }
 }

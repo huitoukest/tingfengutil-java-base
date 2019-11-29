@@ -78,14 +78,21 @@ public class StringTemplateHelper {
         this.paramsMeta = new ArrayList<>(this.params.size() + 1);
         //从前往后搜索，提供效率
         while(true) {
-            startIndex = this.content.indexOf(this.startFlag,endIndex);
-            if(startIndex < 0){
-                break;
+            //处理上一次（continue）的内容;未找到匹配前缀的情况下，直接加入内容，并开始下次查找
+            if(endIndex > lastIndex) {
+                this.paramsMeta.add(new Tuple2<>(false, this.content.substring(lastIndex, endIndex + endFlag.length())));
+                lastIndex = endIndex + this.endFlag.length();
             }
-            endIndex = this.content.indexOf(this.endFlag,startIndex + startFlagLength);
+            //先搜索endIndex，避免startFlag 如${${的嵌套情况。
+            endIndex = this.content.indexOf(this.endFlag,lastIndex + startFlagLength);
             if(endIndex < 0){
                 break;
             }
+            startIndex = StringUtils.lastIndexOf(this.content,this.startFlag,lastIndex,endIndex);
+            if(startIndex < 0){
+                continue;
+            }
+
             String param = this.content.substring(startIndex + startFlagLength, endIndex);
             if(param.length() == 0){
                 continue;
