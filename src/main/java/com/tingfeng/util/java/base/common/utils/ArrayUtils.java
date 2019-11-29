@@ -41,7 +41,7 @@ public class ArrayUtils {
 	 * @param <T>
 	 * @return
 	 */
-	public static <T> T[] getArray(Object[] array,Class<T> cls,ConvertI<Object,T> convertI){
+	public static <T,S> T[] getArray(S[] array,Class<T> cls,ConvertI<S,T> convertI){
 		T[] objs = (T[]) Array.newInstance(cls, array.length);
 		for(int i = 0 ; i < array.length ; i++){
 			objs[i] = convertI.apply(array[i]);
