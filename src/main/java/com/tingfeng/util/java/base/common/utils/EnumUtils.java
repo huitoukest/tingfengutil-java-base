@@ -4,68 +4,83 @@ import com.tingfeng.util.java.base.common.inter.IEnum;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+/**
+ * @author huitoukest
+ */
 public class EnumUtils {
     /**
-     *  实现了IEnum接口的枚举的值的工具
+     *  枚举的值的缓存
      */
     private static final Map<Class<? extends Enum>,Map<?,? extends  Enum>> ENUM_VALUE_CACHE_MAP = new java.util.HashMap<>();
-    /**
-     * 普通的枚举的values方法
-     */
-    private static final Map<Class<? extends Enum>,Map<?,? extends  Enum>> ENUM__CACHE_MAP = new java.util.HashMap<>();
 
     /**
      * 等同于枚举的valueOf方法
-     * @param e
-     * @param item
-     * @param useCache
-     * @param <E>
+     * @param enumClass 枚举类
+     * @param value 值
+     * @param supplyValue  通过枚举查找key值
+     * @param <V> 值类型
+     * @param <E> 枚举类型
      * @return
      */
-    /*public static <E extends Enum<?>> E valuesOf(Enum e,String item,boolean useCache) {
-       if(useCache){
-
-       }else{
-           e.
-       }
-    }*/
+    public static <V,E extends Enum<?>> E getEnum(Class<E> enumClass, V value, Function<E,V> supplyValue){
+        return getEnum(enumClass,value,supplyValue,true);
+    }
 
     /**
-     * <p>
-     * 值映射为枚举
-     * </p>
-     *
+     * 等同于枚举的valueOf方法
      * @param enumClass 枚举类
-     * @param value     枚举值
-     * @param <E>       对应枚举
-     * @param useCache     是否使用缓存
+     * @param value 值
+     * @param supplyValue  通过枚举查找key值
+     * @param useCache 使用缓存,使用缓存时（第一次仍会全量缓存，之后则一直使用缓存）
+     * @param <V> 值类型
+     * @param <E> 枚举类型
      * @return
      */
-    public static <T,E extends Enum<?> & IEnum<T>> E getEnumByValue(Class<E> enumClass, T value,boolean useCache) {
+    public static <V,E extends Enum<?>> E getEnum(Class<E> enumClass, V value, Function<E,V> supplyValue, boolean useCache) {
         E[] es = enumClass.getEnumConstants();
         if(!useCache){
-            for (E e : es) {
-                if ((value instanceof String && e.getValue().equals(value))
-                        || e.getValue() == value) {
-                    return e;
-                }
-            }
+            return Arrays.asList(es).stream().filter(it -> value.equals(supplyValue.apply(it))).findAny().orElse(null);
         }else {
             Map<?,E> cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(enumClass);
             if(cacheData == null){
                 synchronized (ENUM_VALUE_CACHE_MAP){
                     cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(enumClass);
                     if(cacheData == null){
-                        cacheData = Arrays.asList(es).stream().collect(Collectors.toMap(it -> it.getValue(),it -> it));
+                        cacheData = Arrays.asList(es).stream().collect(Collectors.toMap(it -> supplyValue.apply(it),it -> it));
                         ENUM_VALUE_CACHE_MAP.put(enumClass,cacheData);
-                    }else{
-                        return cacheData.get(value);
                     }
                 }
             }
+            return cacheData.get(value);
         }
-        return null;
+    }
+
+    /**
+     *
+     * @param enumClass 枚举类
+     * @param value 值
+     * @param <V> 值类型
+     * @param <E> 枚举类型
+     * @return
+     */
+    public static <V,E extends Enum<?> & IEnum<V>> E getEnumByValue(Class<E> enumClass, V value){
+        return getEnumByValue(enumClass,value,true);
+    }
+
+    /**
+     *
+     * @param enumClass 枚举类
+     * @param value 值
+     * @param useCache 是否使用缓存,使用缓存时（第一次仍会全量缓存，之后则一直使用缓存）
+     * @param <V> 值类型
+     * @param <E> 枚举类型
+     * @return
+     */
+    public static <V,E extends Enum<?> & IEnum<V>> E getEnumByValue(Class<E> enumClass, V value,boolean useCache) {
+        return getEnum(enumClass,value,it -> it.getValue(),useCache);
     }
 }
