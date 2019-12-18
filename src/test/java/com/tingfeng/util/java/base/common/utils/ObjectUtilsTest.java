@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import com.tingfeng.util.java.base.common.bean.User;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -40,5 +41,10 @@ public class ObjectUtilsTest {
         Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{Collections.EMPTY_LIST,"  "}),false,true));
         Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList(""),false,true));
         Assert.assertTrue(ObjectUtils.isEmpty("  ",true,true));
+    }
+
+    @Test
+    public void getValueTest(){
+        Assert.assertTrue(null == ObjectUtils.getValue(null,() -> new User().getMap().get(RandomUtils.randomString(12).concat("123"))));
     }
 }
