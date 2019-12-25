@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * 用于测试使用的User类
  */
-public class User {
+public class User extends BaseUser{
 
     private  final String a = "a";
     private static String b = "b";

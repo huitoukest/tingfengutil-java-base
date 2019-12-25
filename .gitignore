@@ -40,3 +40,4 @@ captures/
 *.iml
 /export-api-pom.xml
 /export-build.sh
+.idea
