@@ -1,5 +1,8 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.function.Function;
@@ -70,8 +73,8 @@ public class BeanUtils{
 		Class<?> sourceClz = source.getClass();
 		Class<?> targetClz = target.getClass();
 		// 得到Class对象所表征的类的所有属性(包括私有属性)
-		List<Field> fieldsS = ReflectUtils.getFields(sourceClz);
-		List<Field> fieldsT = ReflectUtils.getFields(targetClz);
+		List<Field> fieldsS = ReflectUtils.getFields(sourceClz,false,false,true,true);
+		List<Field> fieldsT = ReflectUtils.getFields(targetClz,false,false,true,true);
 		List<Field> fieldsSourceUse = fieldsS.stream()
 				.filter(field-> !ArrayUtils.isContain(exceptFields,field.getName()))
 				.collect(Collectors.toList());
@@ -156,5 +159,15 @@ public class BeanUtils{
 			}
 		}
 		return t;
+	}
+
+	/**
+	 * 封装系统的Introspector#getBeanInfo，默认带有缓存
+	 * @param cls
+	 * @param <T>
+	 * @return
+	 */
+	public static <T> BeanInfo getBeanInfo(Class<T> cls) {
+		return ObjectUtils.getValue(null,() -> Introspector.getBeanInfo(cls));
 	}
 }

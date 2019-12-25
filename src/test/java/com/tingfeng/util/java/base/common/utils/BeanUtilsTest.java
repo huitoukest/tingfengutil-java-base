@@ -21,8 +21,10 @@ public class BeanUtilsTest {
         user.updateDateTime = new Date();
         user.setMap(new HashMap<>());
 
+
         b.user = user;
         b.setAge(50);
+        b.setParentFiled("parent");
 
         User target = new User();
 
