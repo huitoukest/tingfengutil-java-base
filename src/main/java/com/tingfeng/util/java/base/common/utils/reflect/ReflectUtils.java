@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.common.utils.reflect;
 
+import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
@@ -9,9 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,20 @@ public class ReflectUtils {
      * 判断一个属性名称的首字母是否需要被转换
      */
     private static Pattern needConvertFiled = Pattern.compile("^[_a-z][^A-Z]|[_a-z]$");
-    private static SimpleCacheHelper<String,List<Field>> DATA_FILED_CACHE = new SimpleCacheHelper<>(100);
+    /**
+     * 数量固定的属性资源缓存
+     */
+    private static SimpleCacheHelper<String,List<Field>> DATA_FILED_LIST_CACHE = new SimpleCacheHelper<>(100);
+
+    /**
+     * 缓存类的单个自动获取
+     */
+    private static SimpleCacheHelper<String,Field> DATA_FILED_CACHE = new SimpleCacheHelper<>(1024);
+
+    /**
+     * 数量固定的方法缓存
+     */
+    private static SimpleCacheHelper<String, Method> DATA_METHOD_CACHE = new SimpleCacheHelper<>(1024);
 
     /**
      * 是否是静态方法
@@ -187,26 +199,24 @@ public class ReflectUtils {
         }
         List<Field> fieldList = null;
         String key = cls.getCanonicalName() + isContainsStatic + isFinal + containsParentPrivateField;
-        boolean cacheChange = false;
         if(isUseCache){
-            fieldList = DATA_FILED_CACHE.get(key);
-        }
-        if(null == fieldList) {
-            cacheChange = true;
-            fieldList = new ArrayList<>();
-            Collections.addAll(fieldList, cls.getDeclaredFields());
-            if (!isContainsStatic) {
-                fieldList = fieldList.stream().filter(f -> !isStatic(f)).collect(Collectors.toList());
+            fieldList = DATA_FILED_LIST_CACHE.get(key);
+            if(null == fieldList) {
+                fieldList = new ArrayList<>();
+                Collections.addAll(fieldList, cls.getDeclaredFields());
+                if (!isContainsStatic) {
+                    fieldList = fieldList.stream().filter(f -> !isStatic(f)).collect(Collectors.toList());
+                }
+                if (!isFinal) {
+                    fieldList = fieldList.stream().filter(f -> !isFinal(f)).collect(Collectors.toList());
+                }
+                if(containsParentPrivateField){
+                    fieldList.addAll(getFields(cls.getSuperclass(),isContainsStatic,isFinal,isUseCache,containsParentPrivateField));
+                }
+                DATA_FILED_LIST_CACHE.set(key, fieldList);
             }
-            if (!isFinal) {
-                fieldList = fieldList.stream().filter(f -> !isFinal(f)).collect(Collectors.toList());
-            }
-            if(containsParentPrivateField){
-                fieldList.addAll(getFields(cls.getSuperclass(),isContainsStatic,isFinal,isUseCache,containsParentPrivateField));
-            }
-        }
-        if(isUseCache && cacheChange) {
-            DATA_FILED_CACHE.set(key, fieldList);
+        }else {
+            Arrays.asList(cls.getDeclaredFields());
         }
         return fieldList;
     }
@@ -235,19 +245,41 @@ public class ReflectUtils {
 
     /**
      * 在此类,和其超类中寻找此属性
-     *
+     * @param cls
+     * @param fieldName
+     * @param useCache 是否使用缓存
+     * @return
+     */
+    public static Field getField(Class<?> cls, String fieldName, boolean setAccessible,boolean useCache) {
+        try {
+            String key = cls.getName() + Constants.Symbol.semicolon + fieldName;
+            Field field = null;
+            if(useCache){
+                field = DATA_FILED_CACHE.get(key);
+                if(field == null && !DATA_FILED_CACHE.containsKey(key)){
+                    field = cls.getDeclaredField(fieldName);
+                    DATA_FILED_CACHE.set(key,field);
+                }
+            }else{
+                field = DATA_FILED_CACHE.get(key);
+            }
+            if(null != field) {
+                field.setAccessible(setAccessible);
+            }
+            return field;
+        } catch (Exception e) {
+            throw new BaseException(e);
+        }
+    }
+    /**
+     * 此类,和其超类中寻找此属性
+     *  默认使用缓存
      * @param cls
      * @param fieldName
      * @return
      */
     public static Field getField(Class<?> cls, String fieldName, boolean setAccessible) {
-        try {
-            Field field = cls.getDeclaredField(fieldName);
-            field.setAccessible(setAccessible);
-            return field;
-        } catch (Exception e) {
-            throw new BaseException(e);
-        }
+        return getField(cls,fieldName,setAccessible,true);
     }
 
     /**
@@ -285,7 +317,7 @@ public class ReflectUtils {
             Class<?> clsTemp = null;
             if (objTemp == null) {
                 try {
-                    Field field = obj.getClass().getDeclaredField(fieldNameStrings[0]);
+                    Field field = getField(obj.getClass(),fieldNameStrings[0]);
                     if (field != null) {
                         clsTemp = Class.forName(field.getType().getCanonicalName());
                         objTemp = clsTemp.newInstance();
@@ -299,16 +331,16 @@ public class ReflectUtils {
         } else {
             Field field = null;
             try {
-                try {
-                    Method method = obj.getClass().getMethod(getSetterName(filedName), parameterTypes);
-                    method.invoke(obj, values);
-                } catch (NoSuchMethodException e) {
-                    field = obj.getClass().getDeclaredField(filedName);
-                    if (isReadNotPublicField) {
-                        field.setAccessible(true);
-                    }
-                    field.set(obj, values[0]);
-                }
+              Method method = getMethod(obj.getClass(),getSetterName(filedName),parameterTypes);
+              if(method != null) {
+                  method.invoke(obj, values);
+              }else {
+                  field = getField(obj.getClass(),filedName);
+                  if (isReadNotPublicField) {
+                      field.setAccessible(true);
+                  }
+                  field.set(obj, values[0]);
+              }
             }catch (Exception e){
                 throw  new BaseException(e);
             }
@@ -386,21 +418,13 @@ public class ReflectUtils {
         } else {
             Field field = null;
             try {
-                try{
-                    // 此方法不需要参数，如：getName(),getAge()
-                    Method method = obj.getClass().getMethod(getGetterName(filedName), parameterTypes);
-                    if (method != null) {
-                        return method.invoke(obj);
-                    }else{
-                        if (isReadNotPublicField) {
-                            field.setAccessible(true);
-                        }
-                        return field.get(obj);
-                    }
-                }catch (NoSuchMethodException e){
-                    try {
-                        field = obj.getClass().getDeclaredField(filedName);
-                    } catch (java.lang.NoSuchFieldException noSuchFieldException) {
+                // 此方法不需要参数，如：getName(),getAge()
+                Method method = getMethod(obj.getClass(),getGetterName(filedName), parameterTypes);;
+                if (method != null) {
+                    return method.invoke(obj);
+                }else{
+                    field = getField(obj.getClass(),filedName);
+                    if(field == null){
                         return null;
                     }
                     if (isReadNotPublicField) {
@@ -437,7 +461,7 @@ public class ReflectUtils {
      * @return
      */
     public static Object invokeMethod(Object obj, String methodName, Object[] params, Class<?>... parameterTypes) throws NoSuchMethodException {
-        Method method = obj.getClass().getMethod(methodName, parameterTypes);
+        Method method = getMethod(obj.getClass(),methodName,parameterTypes);
         try {
             method.setAccessible(true);
             return method.invoke(obj, params);
@@ -459,7 +483,7 @@ public class ReflectUtils {
         try {
             String methodName = getSetterName(attr);
             // 第一个参数表示方法名称，setAge、setName,第二个参数表示类型，如int.class,String.class
-            Method method = obj.getClass().getMethod(methodName, type);
+            Method method = getMethod(obj.getClass(),methodName,type);
             if (method == null) {
                 return false;
             }
@@ -469,6 +493,76 @@ public class ReflectUtils {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /**
+     * 通过类、方法名称、参数类型来获取方法,默认使用缓存
+     * @param cls
+     * @param methodName
+     * @param paramsTypes
+     * @return
+     */
+    public static Method getMethod(Class<?> cls,String methodName,Class<?>... paramsTypes){
+        return getMethod(cls,methodName,true,paramsTypes);
+    }
+
+    /**
+     * 通过类、方法名称、参数类型来获取方法
+     * @param cls
+     * @param methodName
+     * @param useCache
+     * @param paramsTypes
+     * @return
+     */
+    public static Method getMethod(Class<?> cls,String methodName,boolean useCache, Class<?>... paramsTypes){
+        Method method = null;
+        if(useCache){
+            String key = getMethodKey(cls,methodName,paramsTypes);
+            method = DATA_METHOD_CACHE.get(key);
+            if(method == null && !DATA_METHOD_CACHE.containsKey(key)){
+                method = getMethodByNative(cls,methodName, paramsTypes);
+                DATA_METHOD_CACHE.set(key,method);
+            }
+        }else{
+            method = getMethodByNative(cls,methodName, paramsTypes);
+        }
+        return method;
+    }
+
+    /**
+     * 封装原始的反射获取方法，没有方法时不会抛出NoSuchMethodException异常，而是返回null
+     * @param cls
+     * @param methodName
+     * @param paramsTypes
+     * @return
+     */
+    public static Method getMethodByNative(Class<?> cls,String methodName, Class<?>... paramsTypes){
+        try {
+            return cls.getMethod(methodName, paramsTypes);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 根据方法的名称和参数获取其缓存的key值
+     * @param methodName
+     * @param paramsTypes
+     * @return
+     */
+    private static String getMethodKey(Class<?> cls,String methodName,Class<?>... paramsTypes){
+        return StringUtils.doAppend(sb -> {
+            sb.append(cls.getName());
+            sb.append(Constants.Symbol.semicolon);
+            sb.append(methodName);
+            sb.append(Constants.Symbol.semicolon);
+            if(paramsTypes != null) {
+                for(Class<?> it : paramsTypes) {
+                    sb.append(it.getName());
+                }
+            }
+            return sb.toString();
+        });
     }
 
     /**
@@ -493,7 +587,8 @@ public class ReflectUtils {
      */
     public static Object getter(Object obj, String attr) {// 调用getter方法
         try {
-            Method method = obj.getClass().getMethod(getGetterName(attr));// 此方法不需要参数，如：getName(),getAge()
+            // 此方法不需要参数，如：getName(),getAge()
+            Method method = getMethod(obj.getClass(),getGetterName(attr));
             if (method != null) {
                 return method.invoke(obj);
             }
@@ -583,21 +678,18 @@ public class ReflectUtils {
     public static String[] getFieldNames(String objClass) throws ClassNotFoundException {
         String[] wageStrArray = null;
         if (objClass != null) {
-            Class<?> class1 = Class.forName(objClass);
-            Field[] field = class1.getDeclaredFields();// 这里便是获得实体Bean中所有属性的方法
+            Class<?> cls = Class.forName(objClass);
+            // 这里便是获得实体Bean中所有属性的方法
+            List<Field> fields = getFields(cls,true,true,true,false);
             StringBuffer sb = new StringBuffer();
-            for (int i = 0; i < field.length; i++) {// 这里不多说了
-
-                sb.append(field[i].getName());
-
+            // 这里不多说了
+            for (int i = 0; i < fields.size(); i++) {
+                sb.append(fields.get(i).getName());
                 // 这是分割符 是为了去掉最后那个逗号
-
                 // 比如 如果不去最后那个逗号 最后打印出来的结果是 "id,name,"
-
                 // 去了以后打印出来的是 "id,name"
-                if (i < field.length - 1) {
+                if (i < fields.size() - 1) {
                     sb.append(",");
-
                 }
             }
             // split(",");这是根据逗号来切割字符串使字符串变成一个数组
@@ -675,12 +767,8 @@ public class ReflectUtils {
     private static List<String> getBeanColumnNameList(Class<?> cls) {
         List<String> list = new ArrayList<String>();
         Class<?> clazz = cls;
-        Field[] fs = clazz.getDeclaredFields();
+        List<Field> fs = getFields(cls,false,true,true,false);
         for (Field field : fs) {
-            boolean isStatic = Modifier.isStatic(field.getModifiers());
-            if (isStatic) {
-                continue;
-            }
             field.setAccessible(true);
             list.add(field.getName());
         }

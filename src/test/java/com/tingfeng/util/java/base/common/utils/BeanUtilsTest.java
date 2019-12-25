@@ -27,8 +27,10 @@ public class BeanUtilsTest {
         b.setParentFiled("parent");
 
         User target = new User();
-
-        BeanUtils.copyProperties(target,b,"age");
+        //10w次的时间应该在300ms左右，主流的BeanUtils性能；getFields需要优化；
+        TestUtils.printTime(1,5000,i -> {
+            BeanUtils.copyProperties(target,b,"age");
+        });
         System.out.println(JSON.toJSONString(target));
     }
 
