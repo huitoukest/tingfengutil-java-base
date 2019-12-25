@@ -194,11 +194,18 @@ public class ReflectUtils {
      * @returnC
      */
     public static List<Field> getFields(Class<?> cls, boolean isContainsStatic, boolean isFinal,boolean isUseCache,boolean containsParentPrivateField){
-        if(cls == null){
+        if(cls == null || cls.getName().equals(Object.class.getName())){
             return Collections.EMPTY_LIST;
         }
         List<Field> fieldList = null;
-        String key = cls.getCanonicalName() + isContainsStatic + isFinal + containsParentPrivateField;
+        String key = StringUtils.doAppend(sb -> {
+            sb.append(cls.getName());
+            sb.append(Constants.Symbol.semicolon);
+            sb.append(isContainsStatic);
+            sb.append(isFinal);
+            sb.append(containsParentPrivateField);
+            return sb.toString();
+        });
         if(isUseCache){
             fieldList = DATA_FILED_LIST_CACHE.get(key);
             if(null == fieldList) {
@@ -211,12 +218,12 @@ public class ReflectUtils {
                     fieldList = fieldList.stream().filter(f -> !isFinal(f)).collect(Collectors.toList());
                 }
                 if(containsParentPrivateField){
-                    fieldList.addAll(getFields(cls.getSuperclass(),isContainsStatic,isFinal,isUseCache,containsParentPrivateField));
+                    fieldList.addAll(getFields(cls.getSuperclass(),isContainsStatic,isFinal,false,containsParentPrivateField));
                 }
                 DATA_FILED_LIST_CACHE.set(key, fieldList);
             }
         }else {
-            Arrays.asList(cls.getDeclaredFields());
+            fieldList = Arrays.asList(cls.getDeclaredFields());
         }
         return fieldList;
     }
