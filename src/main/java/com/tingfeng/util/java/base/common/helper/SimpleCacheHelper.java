@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 /**
  * 实现一个简单的缓存,默认使用访问频率作为控制;
  * 每次访问weight + 1;每次set且成员数量溢出时，所有weight -1;
- * 所以此缓存适用于maxSize大于需要缓存的数量时
+ * 所以此缓存适用于maxSize大于需要缓存的数量时，且读多写少的情况
  * @author huitoukest
  */
 public class SimpleCacheHelper<K,V> {
@@ -75,6 +75,7 @@ public class SimpleCacheHelper<K,V> {
                 currentSize ++ ;
             }else{
                 member.setWeight(member.getWeight() + 1);
+                removeOverMember();
             }
             member.setValue(value);
             map.put(key,member);
@@ -102,7 +103,8 @@ public class SimpleCacheHelper<K,V> {
     }
 
     /**
-     * 将溢出的成员移出，移出权重值最低的成员
+     * 将溢出的成员移出，移出权重值最低的成员;
+     * 此中计算方法因为一直递增，有溢出的风险，溢出后自动清除
      */
     private void removeOverMember(){
         while(currentSize > maxSize){
