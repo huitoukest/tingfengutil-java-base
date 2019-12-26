@@ -3,15 +3,22 @@ package com.tingfeng.util.java.base.common.utils;
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -22,6 +29,12 @@ import org.apache.commons.logging.LogFactory;
 **/
 public class BeanUtils{
 	private static final Log logger = LogFactory.getLog(BeanUtils.class);
+
+	/**
+	 * 数量固定的属性资源缓存,K = 拷贝的两个类名称，值分别对应的源与模板的bean的PropertyDescriptor
+	 */
+	private static SimpleCacheHelper<String,Map<String,Tuple2<PropertyDescriptor,PropertyDescriptor>>> BEAN_COPY_METHOD_CACHE = new SimpleCacheHelper<>(512);
+
 
 	/** 注意：不copy类型是final或者static的属性
 	 *  返回一个拷贝之后的新的数组,通过方法和属性赋值新建对象来达到赋值的目的,是浅复制;
@@ -47,19 +60,39 @@ public class BeanUtils{
 	}	
 	
 	/** 注意：不copy类型是final或者static的属性
-	 * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
-	 * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
+	 *  默认copy符合java bean标准的属性
 	 * @param target
 	 * @param source
 	 * @param exceptFields 对于来源对象中的某些属性不进行拷贝
 	 */
 	public static void copyProperties(Object target,Object source,String...exceptFields){
-		 copyProperties(target,source,null,null,exceptFields);
+		copyProperties(target,source,true,exceptFields);
+	}
+
+	/**
+	 * copy bean的属性
+	 * @param target
+	 * @param source
+	 * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
+	 *                           true = 仅仅 copy 符合bean标准的属性
+	 * @param exceptFields
+	 */
+	public static void copyProperties(Object target,Object source,boolean strictBeanCopyMode,String...exceptFields){
+		if(strictBeanCopyMode) {
+			List<String> list = null;
+			if(exceptFields != null){
+				list =  Arrays.asList(exceptFields);
+			}
+			copyProperties(target, source, null, null, list);
+		}else{
+			copyProperties(target,source,null,null,exceptFields);
+		}
 	}
 
 	/** 注意：
 	 *  1. 不copy类型是final或者static的属性
 	 *  2. 判断和过滤的优先级如下 exceptFields > predicate > mapper ;
+	 *  注意： 通过反射机制，效率较低，需要高性能请使用另一个通过PropertyDescriptor实现的copyProperties方法
 	 * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
 	 * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
 	 * @param target 目标对象
@@ -108,8 +141,7 @@ public class BeanUtils{
 	}
 
 	/** 注意：不copy类型是final或者static的属性
-	 * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
-	 * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
+	 *  默认copy符合java bean标准的属性
 	 * @param target
 	 * @param source
 	 */
@@ -169,5 +201,92 @@ public class BeanUtils{
 	 */
 	public static <T> BeanInfo getBeanInfo(Class<T> cls) {
 		return ObjectUtils.getValue(null,() -> Introspector.getBeanInfo(cls));
+	}
+
+	/**
+	 * 通过Introspector机制来实现属性的拷贝，效率更高,但是要求符合Bean规范；走getter setter拷贝值;
+	 * 浅复制普通Bean对象
+	 * @param target 目标对象
+	 * @param source 源对象
+	 * @param predicate 传入源对象的 Tuple2<字段名称,字段值> ; 返回是否进行拷贝true or false; null 时不生效
+	 * @param mapper 传入源对象的 Tuple2<字段名称,字段值> ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
+	 * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
+	 *
+	 */
+	public static <T> void copyProperties(Object target, Object source, Predicate<Tuple2<String,Object>> predicate, Function<Tuple2<String,Object>, Object> mapper, Collection<String> exceptFields){
+		Map<String,Tuple2<PropertyDescriptor,PropertyDescriptor>> map = getBeanCopyMethodMap(target,source,true);
+		try {
+			Set<String> exceptSet = null;
+			if(exceptFields != null) {
+				exceptSet = exceptFields.stream().collect(Collectors.toSet());
+			}
+			for (Map.Entry<String, Tuple2<PropertyDescriptor, PropertyDescriptor>> entry : map.entrySet()) {
+				if(exceptSet != null && exceptSet.contains(entry.getKey())){
+					continue;
+				}
+				PropertyDescriptor srcPropDes = entry.getValue().get_1();
+				PropertyDescriptor tarPropDes = entry.getValue().get_2();
+				Method srcMethod = srcPropDes.getReadMethod();
+				Object value = srcMethod.invoke(source, null);
+
+
+				Tuple2<String,Object> tuple2 = null;
+				if(predicate == null || predicate.test(tuple2 = new Tuple2<>(entry.getKey(),value))) {
+					if (mapper != null) {
+						value = mapper.apply(tuple2);
+					}
+					tarPropDes.getWriteMethod().invoke(target,value);
+				}
+			}
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			throw new BaseException(e);
+		}
+	}
+
+	/**
+	 * 返回拷贝属性时，可用户的PropertyDescriptor成对描述
+	 * @param target
+	 * @param source
+	 * @return
+	 */
+	public static Map<String,Tuple2<PropertyDescriptor,PropertyDescriptor>> getBeanCopyMethodMap(Object target, Object source ,boolean useCache){
+		Map<String,Tuple2<PropertyDescriptor,PropertyDescriptor>> map = null;
+		Supplier<Map<String,Tuple2<PropertyDescriptor,PropertyDescriptor>>> supplier = () -> {
+			try {
+				BeanInfo sourceBeanInfo = Introspector.getBeanInfo(source.getClass());
+				BeanInfo targetBeanInfo = Introspector.getBeanInfo(target.getClass());
+
+				Map<String, PropertyDescriptor> sMap = Arrays.asList(sourceBeanInfo.getPropertyDescriptors()).stream()
+						.filter(it -> it.getReadMethod() != null)
+						.collect(Collectors.toMap(it -> it.getName(), it -> it));
+				Map<String, PropertyDescriptor> tMap = Arrays.asList(targetBeanInfo.getPropertyDescriptors()).stream()
+						.filter(it -> it.getWriteMethod() != null)
+						.collect(Collectors.toMap(it -> it.getName(), it -> it));
+				//source的读方法和target的写方法做一个映射，并缓存
+				Map<String, Tuple2<PropertyDescriptor, PropertyDescriptor>> sToTMap = sMap.keySet().stream()
+						.filter(it -> tMap.containsKey(it))
+						.collect(Collectors.toMap(it -> it, it -> new Tuple2(sMap.get(it), tMap.get(it))));
+				return sToTMap;
+			} catch (IntrospectionException e) {
+				throw new BaseException(e);
+			}
+		};
+		if(useCache){
+			String key = StringUtils.doAppend( sb -> {
+				sb.append(target.getClass().getName());
+				sb.append(Constants.Symbol.semicolon);
+				sb.append(source.getClass().getName());
+				return sb.toString();
+			});
+
+			map = BEAN_COPY_METHOD_CACHE.get(key);
+			if(map == null && !BEAN_COPY_METHOD_CACHE.containsKey(key)){
+				map = supplier.get();
+				BEAN_COPY_METHOD_CACHE.set(key,map);
+			}
+		}else {
+			map = supplier.get();
+		}
+		return map;
 	}
 }
