@@ -11,8 +11,7 @@ import java.util.Objects;
 public class TreeUtilsTest {
 
 
-    @Test
-    public void treeUtilsTest(){
+    private List<User> getTree(){
         List<User>  userList  = new ArrayList<>();
         User user = new User();
         User user2 = new User();
@@ -38,13 +37,25 @@ public class TreeUtilsTest {
         userList.add(userChild);
         userList.add(userChild2);
 
-        List  k = TreeUtils.getTreeList(userList,(child,parent)->{
+        List<User>  k = TreeUtils.getTreeList(userList,(child,parent)->{
             if(parent.childList == null){
                 parent.childList = new ArrayList<>();
             }
             parent.childList.add(child);
         },(child,parent) -> Objects.equals(child.parentUserName,parent.userName),(u) -> u.getAge());
+        return k;
+    }
+
+    @Test
+    public void treeUtilsTest(){
+        List<User>  k = getTree();
         System.out.println(JSON.toJSONString(k));
+    }
+
+    @Test
+    public void flatListTest(){
+        List<User> users = TreeUtils.flatList(getTree(),it -> it.childList,it -> it);
+        System.out.println(JSON.toJSONString(users));
     }
 
 }

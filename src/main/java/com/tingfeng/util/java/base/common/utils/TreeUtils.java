@@ -3,6 +3,7 @@ package com.tingfeng.util.java.base.common.utils;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
+import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVTwo;
 
 import java.util.ArrayList;
@@ -125,5 +126,29 @@ public class TreeUtils {
             }
         });
         return list;
+    }
+
+    /**
+     * T = 目标类型，S = 来源类型； 建议执行convertAction后，手动处理(设置为null)节点的Children关联；
+     * @param treeList 原始tree结构的list
+     * @param flatAction 获取子节点的action
+     * @param convertAction 转换类型
+     * @param <T>
+     * @param <S>
+     * @return
+     */
+    public static <T,S> List<T> flatList(List<S> treeList,FunctionROne<List<S>,S> flatAction,FunctionROne<T,S> convertAction){
+        List<T> reList = new ArrayList<>();
+        FunctionVOne<List<S>>[] adder = new FunctionVOne[1];
+        adder[0] = (tmpList) -> {
+           if(ObjectUtils.isNotEmpty(tmpList)){
+               tmpList.forEach(it -> {
+                   reList.add(convertAction.run(it));
+                   adder[0].accept(flatAction.run(it));
+               });
+           }
+        };
+        adder[0].accept(treeList);
+        return reList;
     }
 }
