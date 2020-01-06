@@ -46,7 +46,8 @@ public class RegExpUtils {
          String httpStatus = "HTTPS?/[\\d\\.]+\\s(\\d+)\\s\\S+";
     }
 
-    /* 先从缓存中取Pattern，没有则新建并写入缓存中
+    /**
+     * 先从缓存中取Pattern，没有则新建并写入缓存中
      * 默认Pattern.CASE_INSENSITIVE
      * @param regex 正则表达式
      * @return

@@ -1,7 +1,10 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import com.tingfeng.util.java.base.common.constant.Constants;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.nio.charset.Charset;
 
 /**
  * @Author wangGang
@@ -43,4 +46,10 @@ public class Base64UtilsTest {
         });
     }
 
+    @Test
+    public void urlSafeUrlUseTest(){
+        System.out.println(Base64Utils.enCodeBase64UrlSafeString(MessageDigestUtils.SHA(MessageDigestUtils.SHAType.SHA256,"1577934671000,2s5d4c1d0d3g6x91234".getBytes(Charset.forName(Constants.CharSet.UTF8)))));
+        System.out.println(Base64Utils.enCodeBase64UrlSafeString("1577934671000,2s5d4c1d0d3g6x9"));
+        System.out.println(Base64Utils.deCodeBase64UrlSafeString("MTU3NzkzNDY3MTAwMA=="));
+    }
 }

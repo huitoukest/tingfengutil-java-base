@@ -60,7 +60,7 @@ public class TreeUtils {
      * @param list 数据来源list
      * @param addChildAction 加入一个child的Action,第一个参数是child，第二个是parent
      * @param isChildAction  判断第一个参数是否是第二个参数的子节点,第一个参数是child，第二个是parent，返回true/false
-     * @param orderAction 排序操作
+     * @param orderAction 排序操作,if null won't use it
      * @param <T> 当前操作的类型
      * @return
      */
@@ -69,7 +69,9 @@ public class TreeUtils {
             return Collections.EMPTY_LIST;
         } else {
             List<T> rootList = getRootNodes(list, isChildAction);
-            rootList = sortList(rootList,orderAction);
+            if(null != orderAction) {
+                rootList = sortList(rootList, orderAction);
+            }
             List<T> remainList = new ArrayList<>();
             remainList.addAll(list);
             remainList.removeAll(rootList);
