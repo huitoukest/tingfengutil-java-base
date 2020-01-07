@@ -2,8 +2,9 @@ package com.tingfeng.util.java.base.common.helper;
 
 /**
  * 每秒的频率控制类
+ * @author wanggang
  */
-public abstract class FrequencyHelper {
+public abstract class BaseFrequencyHelper {
     /**
      * 每秒内的增量
      */
@@ -14,11 +15,11 @@ public abstract class FrequencyHelper {
      */
     private Integer secondMaxCount;
 
-    public FrequencyHelper(){
+    public BaseFrequencyHelper(){
 
     }
 
-    public FrequencyHelper(Integer secondMaxCount){
+    public BaseFrequencyHelper(Integer secondMaxCount){
         this.secondMaxCount = secondMaxCount;
     }
 
@@ -47,10 +48,10 @@ public abstract class FrequencyHelper {
     }
 
     /**
-     *
+     * 获取达到条件后的随眠时间，在每一次有访问时调用
      * @param incrementalCount 当期秒内的访问次数
      * @param secondMaxCount 每秒的最大访问次数
-     * @return
+     * @return the sleepTime ,unit  millisecond 毫秒
      */
     public abstract long getSleepTimeWhileOverMaxCount(int incrementalCount,int secondMaxCount);
 }
