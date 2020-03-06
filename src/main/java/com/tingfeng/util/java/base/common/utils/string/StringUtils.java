@@ -1136,11 +1136,11 @@ public class StringUtils {
         }
     }
 
-    public static String leftPad(String value, int length, char c) {
+    public static String leftPad(Object value, int length, Object c) {
         return padString(value,length,c,0);
     }
 
-    public static String rightPad(String value, int length, char c) {
+    public static String rightPad(Object value, int length, Object c) {
         return padString(value,length,c,1);
     }
 
@@ -1152,11 +1152,12 @@ public class StringUtils {
      * @param direction 0 = left,1 = right
      * @return
      */
-    private static String padString(String value, int length, char c,int direction) {
-        if(value.length() > length){
-            return value;
+    private static String padString(Object value, int length, Object c,int direction) {
+        String str = value.toString();
+        if(str.length() > length){
+            return str;
         }
-        int len = length - value.length();
+        int len = length - str.length();
         return stringBuilderPool.run(sb -> {
             if(1 == direction){
                 sb.append(value);
@@ -1171,8 +1172,8 @@ public class StringUtils {
         });
     }
 
-    public static String reverse(String str) {
-        char[] chars = str.toCharArray();
+    public static String reverse(Object str) {
+        char[] chars = str.toString().toCharArray();
         ArrayUtils.reverse(chars);
         return new String(chars);
     }
