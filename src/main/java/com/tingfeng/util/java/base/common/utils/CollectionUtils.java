@@ -268,4 +268,17 @@ public class CollectionUtils {
     public static <T> Set<T> createSet(T... data){
         return Arrays.asList(data).stream().collect(Collectors.toSet());
     }
+
+    public static <T> List<List<T>> split(List<T> list , int groupSize){
+        List<List<T>> reList = new ArrayList<>();
+        int listSize = list.size();
+        int i = 0;
+        while (i < listSize) {
+            int start = i;
+            i = i + groupSize;
+            int end = Math.min(listSize, i);
+            reList.add(list.subList(start,end));
+        }
+        return reList;
+    }
 }
