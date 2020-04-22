@@ -130,7 +130,7 @@ public class CurrencyUtils {
 		//处理整数单位
 		result = result.replaceAll("圆零角零分|圆零角$|圆$|^零$|圆零$|零圆$", "圆整");
 		result = result.replaceAll("^圆整$", "零圆整");
-		
+		result = result.replaceAll("零+", "零");
 		
 		return result;
 	}
