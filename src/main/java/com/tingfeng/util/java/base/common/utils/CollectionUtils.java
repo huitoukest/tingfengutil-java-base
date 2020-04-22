@@ -281,4 +281,19 @@ public class CollectionUtils {
         }
         return reList;
     }
+
+    /**
+     * 创建一个List,并加入所有集合中的元素
+     * @param <T>
+     * @return
+     */
+    public static <T> List<T> mergeToList(Collection<T> ... collections){
+        List<T> list = new ArrayList<>();
+        if(collections != null) {
+            for (Collection<T> collection : collections) {
+                list.addAll(collection);
+            }
+        }
+        return list;
+    }
 }

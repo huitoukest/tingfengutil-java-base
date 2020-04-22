@@ -31,6 +31,8 @@ public class CurrencyUtilsTest {
         	Assert.assertEquals(CurrencyUtils.toChinaUpper("2463215224635421.03"),"贰仟肆佰陆拾叁万贰仟壹佰伍拾贰亿贰仟肆佰陆拾叁万伍仟肆佰贰拾壹圆零叁分");
             Assert.assertEquals(CurrencyUtils.toChinaUpper("1"),"壹圆整");
             Assert.assertEquals(CurrencyUtils.toChinaUpper("10"),"壹拾圆整");
+            Assert.assertEquals(CurrencyUtils.toChinaUpper("10.01"),"壹拾圆零壹分");
+            Assert.assertEquals(CurrencyUtils.toChinaUpper("10000100.01"),"壹仟万零壹佰圆零壹分");
             Assert.assertEquals(CurrencyUtils.toChinaUpper("20.7"),"贰拾圆零柒角");
             Assert.assertEquals(CurrencyUtils.toChinaUpper("10.70"),"壹拾圆零柒角");
             Assert.assertEquals(CurrencyUtils.toChinaUpper("18.5"),"壹拾捌圆伍角");
