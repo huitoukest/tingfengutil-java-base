@@ -9,7 +9,7 @@ import java.util.zip.GZIPOutputStream;
 /**
  * gzip工具类
  */
-public class GZipUtil {
+public class GZipUtils {
     private static final int BUFFER_SIZE = 4096;
 
     public static byte[] compress(byte srcBytes[]) {

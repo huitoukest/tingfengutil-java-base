@@ -9,7 +9,7 @@ import java.util.zip.Inflater;
 /**
  * zip工具类
  */
-public class ZipUtil {
+public class ZipUtils {
     /**
      * 默认的压缩级别：经过测试压缩1级的压缩率和其余的级别差别不是很大，但是速度优先很多
      */

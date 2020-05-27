@@ -10,7 +10,7 @@ import com.tingfeng.util.java.base.common.constant.Constants;
  * @author huitoukest
  *
  */
-public class CharSetUtil {
+public class CharSetUtils {
 	/**
 	 * 支持iso8859-1和GBK,UTF-8自动转为UTF-8
 	 * @param content
