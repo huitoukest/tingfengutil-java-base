@@ -8,6 +8,5 @@ package com.tingfeng.util.java.base.common.inter.voidfunction;
 @FunctionalInterface
 public interface FunctionVTwo<P1,P2> {
 
-    public void run(P1 p1, P2 p2) throws InterruptedException;
-
+    void run(P1 p1, P2 p2);
 }

@@ -269,6 +269,13 @@ public class CollectionUtils {
         return Arrays.asList(data).stream().collect(Collectors.toSet());
     }
 
+    /**
+     * 将list 按照 groupSize 拆分并返回
+     * @param list 来源list
+     * @param groupSize 分组拆分后的子List中的最大长度值
+     * @param <T>
+     * @return
+     */
     public static <T> List<List<T>> split(List<T> list , int groupSize){
         List<List<T>> reList = new ArrayList<>();
         int listSize = list.size();
