@@ -45,7 +45,9 @@ public class ConditionTest {
                     //的时候池中的产品数量已经有很多了，且数量不固定（但是小于max值）
                     productPool.remove(0);
                     producerCondition.signal();
-                }finally {
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
                     lock.unlock();
                 }
             }else{
@@ -59,7 +61,9 @@ public class ConditionTest {
                     }
                     productPool.add(1);
                     consumerCondition.signal();
-                }finally {
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } finally {
                     lock.unlock();
                 }
             }
