@@ -6,7 +6,7 @@ package com.tingfeng.util.java.base.common.inter.consumer;
  * 
  */
 @FunctionalInterface
-public interface ComsumerSix<P1,P2,P3,P4,P5,P6> {
+public interface ConsumerSix<P1,P2,P3,P4,P5,P6> {
     /**
      * consumer these data
      * @param p1
