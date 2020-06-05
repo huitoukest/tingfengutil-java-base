@@ -13,6 +13,6 @@ public interface ConsumerThree<P1,P2,P3> {
      * @param p2
      * @param p3
      */
-    void run(P1 p1, P2 p2, P3 p3) ;
+    void accept(P1 p1, P2 p2, P3 p3) ;
 
 }
