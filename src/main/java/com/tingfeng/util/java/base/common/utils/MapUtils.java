@@ -5,6 +5,7 @@ import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
 import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -131,4 +132,43 @@ public class MapUtils {
         });
         return (HashMap<K_R, V_R>) map;
     }
+
+    /**
+     * 获取值
+     * @param map
+     * @param k map 的key
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K,V> V getValue(Map<K,V> map, K k){
+        return map.get(k);
+    }
+
+    /**
+     * 获取值
+     * @param map
+     * @param k map 的key
+     * @param value 默认值
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K,V> V getOrDefault(Map<K,V> map, K k, V value){
+        return map.getOrDefault(k,value);
+    }
+
+    /**
+     * 获取值
+     * @param map
+     * @param k
+     * @param supplier 默认值生产者
+     * @param <K>
+     * @param <V>
+     * @return
+     */
+    public static <K,V> V getOrDefault(Map<K,V> map, K k, Supplier<V> supplier){
+        return map.getOrDefault(k,supplier.get());
+    }
+
 }
