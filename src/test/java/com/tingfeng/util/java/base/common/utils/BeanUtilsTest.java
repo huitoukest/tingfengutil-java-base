@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.User;
 import com.tingfeng.util.java.base.common.bean.UserWechatServiceFansInfo;
 import com.tingfeng.util.java.base.common.bean.WechatServiceUserInfo;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Date;
@@ -57,5 +58,24 @@ public class BeanUtilsTest {
         BeanUtils.copyProperties(wechatServiceFansInfo,wechatServiceUserInfo);
 
         System.out.println(JSON.toJSONString(wechatServiceFansInfo));
+    }
+
+    @Test
+    public void toMapTest(){
+        User user = new User();
+        User b = new User();
+        user.setAge(100);
+        user.setC(123L);
+        user.updateDateTime = new Date();
+        user.setMap(new HashMap<>());
+
+        b.user = user;
+        b.setAge(50);
+        b.setParentFiled("parent");
+        Map<String,Object> map = BeanUtils.toMap(b);
+        String str = JSON.toJSONString(map);
+        System.out.println(str);
+        User parseB = JSON.parseObject(str,User.class);
+        Assert.assertEquals( b.getUser().getC() , parseB.user.getC());
     }
 }

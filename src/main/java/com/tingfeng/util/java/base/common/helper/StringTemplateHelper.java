@@ -117,14 +117,15 @@ public class StringTemplateHelper {
     /**
      * 生成格式化之后的字符串，支持多线程并发;
      * 对于content中存在的模板参数，但是paramsData中没有对应数据或者为null，则不会替换
+     * 对于map中value的值会自动转为String使用
      * @param paramsData
      * @return
      */
-    public String generate(Map<String,String> paramsData){
+    public <T> String generate(Map<String,T> paramsData){
         return StringUtils.doAppend(sb -> {
             paramsMeta.stream().map(it -> {
                 if(it.get_1()){
-                    String data = paramsData.getOrDefault(it.get_2(),null);
+                    Object data = paramsData.getOrDefault(it.get_2(),null);
                     if(data != null){
                         return data;
                     }else{
