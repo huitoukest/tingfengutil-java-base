@@ -1387,6 +1387,4 @@ public class StringUtils {
         //默认返回的索引是相对于偏移量的，所以这里需要通过偏移量来恢复索引值
         return offsetIndex >= 0 ?  offsetIndex + startIndex : offsetIndex;
     }
-
-
 }

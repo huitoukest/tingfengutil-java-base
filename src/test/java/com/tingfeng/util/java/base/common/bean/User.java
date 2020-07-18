@@ -13,7 +13,7 @@ public class User extends BaseUser{
 
     private  final String a = "a";
     private static String b = "b";
-
+    private Boolean isOk;
     public String userName;
     public Date updateDateTime;
     private int age;
@@ -59,6 +59,17 @@ public class User extends BaseUser{
         User.b = b;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public Boolean getIsOk() {
+        return isOk;
+    }
+
+    public void setOk(Boolean ok) {
+        isOk = ok;
+    }
 
     public String[] getOtherNames() {
         return otherNames;
