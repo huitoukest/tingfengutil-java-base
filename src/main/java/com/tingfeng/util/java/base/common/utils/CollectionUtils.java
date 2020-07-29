@@ -7,7 +7,9 @@ import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -302,5 +304,69 @@ public class CollectionUtils {
             }
         }
         return list;
+    }
+
+    /**
+     * 返回集合中的特定元素
+     * @param collection if null or empty , return defaultValue
+     * @param predicate if null , not use
+     * @param defaultValue
+     * @param function 通过stream 查找特定值
+     * @param <T>
+     * @return 集合中的第一个元素 or defaultValue
+     */
+    public static <T> T findValue(Collection<T>  collection, Predicate<? super T> predicate, T defaultValue,Function<Stream<T>,Optional<T>> function){
+        if(collection == null){
+            return defaultValue;
+        }
+        Stream<T> stream = collection.stream();
+        if(predicate != null){
+            stream = stream.filter(predicate);
+        }
+        return function.apply(stream).orElse(defaultValue);
+    }
+
+    /**
+     * 返回集合中的符合条件的第一个元素
+     * @param collection if null or empty , return defaultValue
+     * @param predicate if null , not use
+     * @param defaultValue
+     * @param <T>
+     * @return 集合中的第一个元素 or defaultValue
+     */
+    public static <T> T findFirst(Collection<T>  collection, Predicate<? super T> predicate, T defaultValue){
+        return findValue(collection, predicate , defaultValue, Stream::findFirst);
+    }
+
+    /**
+     * 返回集合中的符合条件的第一个元素
+     * @param collection if null or empty , return defaultValue
+     * @param <T>
+     * @return 集合中的第一个元素 or null
+     */
+    public static <T> T findFirst(Collection<T>  collection){
+        return findFirst(collection, null,null);
+    }
+
+    /**
+     * 返回集合中的符合条件的任意一个元素
+     * @param collection if null or empty , return defaultValue
+     * @param predicate if null , not use
+     * @param defaultValue
+     * @param <T>
+     * @return 集合中的第一个元素 or defaultValue
+     */
+    public static <T> T findAny(Collection<T>  collection, Predicate<? super T> predicate,T defaultValue){
+        return findValue(collection, predicate , defaultValue, Stream::findAny);
+    }
+
+    /**
+     * 返回集合中的符合条件的任意一个元素
+     * @param collection if null or empty , return defaultValue
+     * @param <T>
+     * @return 集合中的第一个元素 or null
+     */
+    public static <T> T findAny(Collection<T>  collection){
+        return findAny(collection, null,null);
     }
 }
