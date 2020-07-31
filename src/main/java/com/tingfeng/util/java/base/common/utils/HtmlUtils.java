@@ -9,7 +9,7 @@ import java.util.regex.Pattern;
 
 
 /**
- * <p>对HTML中的保留字符和一些特殊字符进行转�?/p>
+ * &lt;p&gt;对HTML中的保留字符和一些特殊字符进行转
  *
  * @author tw 2009-06-05
  */
@@ -84,8 +84,6 @@ public class HtmlUtils {
      *
      * @param str
      * @return
-     * @author hugh115
-     * @date 2007-06-29
      */
     public static String replaceWapStr(String str) {
         if (str != null) {
@@ -137,7 +135,7 @@ public class HtmlUtils {
 
     /**
      * 将html的省略写法替换成非省略写法
-     * <A/>替换为<A></A>
+     * &lt;A/&gt;替换为&lt;A&gt;&lt;/A&gt;
      *
      * @param str html字符串
      * @param pt  标签如table

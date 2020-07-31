@@ -28,12 +28,9 @@ public class HttpUtils {
     private static final Log log = LogFactory.getLog(HttpUtils.class);
     /**
      * 向指定URL发送GET方法的请求
-     * @param url
-     *            发送请求的URL
-     * @param param
-     *            请求参数，请求参数应该是 name1=value1&name2=value2 的形式。
+     * @param url 发送请求的URL
+     * @param param 请求参数，请求参数应该是 name1=value1&amp;name2=value2 的形式。
      * @return URL 所代表远程资源的响应结果
-     * String sr=HttpRequest.sendPost("http://localhost:6144/Home/RequestPostString", "key=123&v=456");
      */
     public static HttpResponseInfo sendGet(String url, Map<String,Object> param) {
            String getUrl = toGetUrl(url,param);
@@ -46,9 +43,8 @@ public class HttpUtils {
      * @param url
      *            发送请求的URL
      * @param param
-     *            请求参数，请求参数应该是 name1=value1&name2=value2 的形式。
+     *            请求参数，请求参数应该是 name1=value1&amp;name2=value2 的形式。
      * @return URL 所代表远程资源的响应结果
-     * String sr=HttpRequest.sendPost("http://localhost:6144/Home/RequestPostString", "key=123&v=456");
      */
     public static HttpResponseInfo sendGet(String url, String param) {
         HttpResponseInfo responseInfo = new HttpResponseInfo();
@@ -133,9 +129,8 @@ public class HttpUtils {
      * @param url
      *            发送请求的 URL
      * @param param
-     *            请求参数，请求参数应该是 name1=value1&name2=value2 的形式。
+     *            请求参数，请求参数应该是 name1=value1&amp;name2=value2 的形式。
      * @return 所代表远程资源的响应结果
-     * String sr=HttpRequest.sendPost("http://localhost:6144/Home/RequestPostString", "key=123&v=456");
      */
     public static String sendPost(String url, String param, String contentType, String reqCharset) {
         OutputStreamWriter out = null;
@@ -196,9 +191,9 @@ public class HttpUtils {
     }
 
     /**
-     * 把 名=值 参数表转换成字符串 (url + ?a=1&b=2)
+     * 把 名=值 参数表转换成字符串 (url + ?a=1&amp;b=2)
      *
-     * @param url    url可以为null，为null则返回参数组成的字符串a=1&b=2
+     * @param url    url可以为null，为null则返回参数组成的字符串a=1&amp;b=2
      * @param params url中的参数
      * @return
      */
@@ -229,7 +224,7 @@ public class HttpUtils {
     }
 
     /**
-     * 解析字符串返回 名称=值的参数表 (a=1&b=2 => a=1,b=2)
+     * 解析字符串返回 名称=值的参数表 (a=1 &amp; b=2 to a=1,b=2)
      * 通过解析Get的参数url来得到参数
      * @param str
      * @return 如果str是null或者空串，返回空的Map

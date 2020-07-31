@@ -11,7 +11,6 @@ import static com.tingfeng.util.java.base.common.utils.ObjectUtils.isEmpty;
 
 /**
  * 对象判空的Helper
- * @date 2019-10-23
  * @author wanggang
  */
 public class JudgeEmptyHelper  implements ObjectDealReturnInter<Boolean> {

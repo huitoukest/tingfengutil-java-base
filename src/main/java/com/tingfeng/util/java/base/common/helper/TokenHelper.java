@@ -198,8 +198,8 @@ public class TokenHelper {
      * 这样后端服务器接收到之后会自动转为“ + ”。
      * 解密出UserId，如果有问题会直接抛出异常
      * @param token
-     * @param securityKey 传入解析的内容List<String>，返回securityKey ，自动校验签名，如果获取securityKey为空着不见好擦
-     * @param checkParseContent 传入解析后的内容List<String>，检查内容，如果有问题直接抛出异常，否则转换为需要的类型并且返回结果
+     * @param securityKey 传入解析的内容List[String]，返回securityKey ，自动校验签名，如果获取securityKey为空着不见好擦
+     * @param checkParseContent 传入解析后的内容List[String]，检查内容，如果有问题直接抛出异常，否则转换为需要的类型并且返回结果
      * @param <T>
      * @return
      */
@@ -252,7 +252,7 @@ public class TokenHelper {
     /**
      * 检查并且做签名校验
      * @param token
-     * @pram securityKey 加密字符串
+     * @param securityKey 加密字符串
      * @return 返回token中的签名:base64字符串
      */
     public String checkSignature(String token,String  securityKey){

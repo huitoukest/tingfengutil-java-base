@@ -44,8 +44,6 @@ public class ReflectUtils {
      * @param methodName     方法名称
      * @param parameterTypes 每个参数的类型
      * @return
-     * @throws NoSuchMethodException
-     * @throws SecurityException
      */
     public static boolean isStaticMethod(Class<?> cls, String methodName, Class<?>... parameterTypes) {
         Method method = null;
@@ -191,7 +189,7 @@ public class ReflectUtils {
      * @param isFinal          是否包含final属性
      * @param isUseCache 是否将结果缓存
      * @param containsParentPrivateField 是否包含父类的私有属性
-     * @returnC
+     * @return
      */
     public static List<Field> getFields(Class<?> cls, boolean isContainsStatic, boolean isFinal,boolean isUseCache,boolean containsParentPrivateField){
         if(cls == null || cls.getName().equals(Object.class.getName())){
@@ -234,7 +232,7 @@ public class ReflectUtils {
      * @param isContainsStatic 是否包含静态属性
      * @param isFinal          是否包含final属性
      * @param isUseCache 是否将结果缓存
-     * @returnC
+     * @return
      */
     public static List<Field> getFields(Class<?> cls, boolean isContainsStatic, boolean isFinal,boolean isUseCache) {
         return getFields(cls,isContainsStatic,isFinal,isUseCache,false);
@@ -309,9 +307,6 @@ public class ReflectUtils {
      * @param filedName            属性的名称
      * @param values               参数的值
      * @param parameterTypes       参数类型
-     * @return
-     * @throws NoSuchFieldException
-     * @throws InstantiationException
      */
     public static void setFieldValue(boolean isReadNotPublicField, Object obj, String filedName, Object[] values, Class<?>... parameterTypes) {
         if (obj == null) {
@@ -362,9 +357,6 @@ public class ReflectUtils {
      * @param filedName            属性的名称
      * @param values               参数的值
      * @param parameterTypes       参数类型
-     * @return
-     * @throws NoSuchFieldException
-     * @throws InstantiationException
      */
     public static void setFieldValue(Object obj, String filedName, Object[] values, Class<?>... parameterTypes){
         setFieldValue(true,obj,filedName,values,parameterTypes);
@@ -377,9 +369,6 @@ public class ReflectUtils {
      * @param obj                  此属性的对象实例
      * @param filedName            属性的名称
      * @param value              参数的值,通过此值来推断对象类型，不支持基础数据类型
-     * @return
-     * @throws NoSuchFieldException
-     * @throws InstantiationException
      */
     public static void setFieldValue(Object obj, String filedName, Object value){
            Class<?> parameterType = null;
@@ -607,7 +596,6 @@ public class ReflectUtils {
 
     /**
      * fieldName 是当前属性的名称
-     * <br/>
      * 1、如果属性名的第二个字母大写，那么该属性名直接用作 getter/setter 方法中 get/set 的后部分，就是说大小写不变。例如属性名为uName，方法是getuName/setuName。
      * <p>
      * 2、如果属性名的前两个字母是大写（一般的专有名词和缩略词都会大写），也是属性名直接用作 getter/setter 方法中 get/set 的后部分。例如属性名为URL，方法是getURL/setURL。
@@ -633,19 +621,16 @@ public class ReflectUtils {
 
     /**
      * fieldName 是当前属性的名称
-     * <br/>
      * 1、如果属性名的第二个字母大写，那么该属性名直接用作 getter/setter 方法中 get/set 的后部分，就是说大小写不变。例如属性名为uName，方法是getuName/setuName。
-     * <p>
      * 2、如果属性名的前两个字母是大写（一般的专有名词和缩略词都会大写），也是属性名直接用作 getter/setter 方法中 get/set 的后部分。例如属性名为URL，方法是getURL/setURL。
-     * <p>
      * 3、如果属性名的首字母大写，也是属性名直接用作 getter/setter 方法中 get/set 的后部分。例如属性名为Name，方法是getName/setName，这种是最糟糕的情况，会找不到属性出错，因为默认的属性名是name。
-     * <p>
      * 4、如果属性名以"is"开头，则getter方法会省掉get，set方法会去掉is。例如属性名为isOK，方法是isOK/setOK。
      *
      * @param fieldName
      * @return
      */
-    public static String getSetterName(String fieldName) {// 单词首字母大写
+    public static String getSetterName(String fieldName) {
+        // 单词首字母大写
         boolean hasIs = fieldName.startsWith("is");
         String str = formatGetterOrSetterFieldName(fieldName);
         if (!hasIs) {

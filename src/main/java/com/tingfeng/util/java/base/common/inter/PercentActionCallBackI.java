@@ -8,7 +8,7 @@ package com.tingfeng.util.java.base.common.inter;
 public interface PercentActionCallBackI<T> extends RateCallBackI{
 	/**
 	 * 操作完毕之后的回调方法
-	 * @param t <T>
+	 * @param t T类型
 	 */
 	 void actionSuccess(T t);
 	/**

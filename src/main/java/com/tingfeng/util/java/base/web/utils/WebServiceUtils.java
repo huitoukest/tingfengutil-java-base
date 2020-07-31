@@ -138,7 +138,7 @@ public class WebServiceUtils {
     }
 
     /**
-     * 返回xml中<return>标签中的内容</return>
+     * 返回xml中&lt;return&gt;标签中的内容&lt;/return&gt;
      *
      * @return
      */

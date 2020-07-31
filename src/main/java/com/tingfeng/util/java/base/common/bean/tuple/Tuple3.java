@@ -2,9 +2,9 @@ package com.tingfeng.util.java.base.common.bean.tuple;
 
 /**
  * 长度为3的元组
- * @param <A>
- * @param <B>
- * @param <C>
+ * @param <A> 第一个元素, 对应属性 _1
+ * @param <B> 第二个元素 ,对应属性 _2
+ * @param <C> 第三个元素, 对应属性 _3
  */
 public class Tuple3<A,B,C> extends Tuple2<A,B> {
     private C _3;

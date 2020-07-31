@@ -14,7 +14,6 @@ import com.tingfeng.util.java.base.common.inter.ConvertI;
 /**
  * 操作数组的一些工具;
  * @author huitoukest
- *@version20160517
  */
 public class ArrayUtils {
 	final static int BUFFER_SIZE = 1024;
@@ -109,7 +108,7 @@ public class ArrayUtils {
 	/**
 	 * 将多个srcArray 拷贝到target中
 	 * @param target
-	 * @param srcArray List<Object[]>
+	 * @param srcArray List[Object[]]
 	 */
     public static void concatArray(Object[] target,List<Object[]> srcArray) {
 		int startPosition = 0;

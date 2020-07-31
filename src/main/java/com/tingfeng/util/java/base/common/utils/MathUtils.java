@@ -6,9 +6,7 @@ import java.util.stream.IntStream;
 /**
  * 第一版，通过与十进制之间的互转实现各个任意进制之间的互转
  * 第二版，先实现任意指定进制的大数的计算工具，然后直接实现任意进制的互转
- * @Author wangGang
- * @Description //TODO
- * @Date 2019-05-08 17:09
+ * @author huitoukest
  **/
 public class MathUtils {
     private static final int MAX_RADIX = 256;

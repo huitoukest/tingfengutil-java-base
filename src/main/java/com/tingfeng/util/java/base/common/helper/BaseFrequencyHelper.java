@@ -25,7 +25,6 @@ public abstract class BaseFrequencyHelper {
 
     /**
      * 检查频率并在超出频率后睡眠一段时间再继续
-     * @throws InterruptedException
      */
     public synchronized void checkAndLimitFrequency(){
         if(incrementalCount++ >= secondMaxCount){

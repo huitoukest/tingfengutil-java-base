@@ -144,7 +144,7 @@ public class PoolHelper<T>{
 
     /**
      *
-     * @param poolMemberAction PoolMemberActionI<T> 打开和释放资源的动作对象
+     * @param poolMemberAction PoolMemberActionI&lt;T&gt; 打开和释放资源的动作对象
      * @param poolBaseInfo PoolBaseInfo pool配置信息
      */
     public PoolHelper(PoolMemberActionI<T>  poolMemberAction,PoolBaseInfo poolBaseInfo) {
@@ -155,7 +155,7 @@ public class PoolHelper<T>{
 
     /**
      *
-     * @param poolMemberAction PoolMemberActionI<T> 打开和释放资源的动作对象
+     * @param poolMemberAction PoolMemberActionI[T] 打开和释放资源的动作对象
      */
     public PoolHelper(PoolMemberActionI<T>  poolMemberAction) {
         this.poolBaseInfo =  new PoolBaseInfo();

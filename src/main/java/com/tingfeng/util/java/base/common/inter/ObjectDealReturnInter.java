@@ -9,8 +9,8 @@ import java.util.Map;
  * 处理一个对象并且返回其值；
  * 依次处理并判断容器或者对象的值；符合条件则返回其值；
  * 否则根据条件继续
- * @author wanggang
- * T 返回的类型
+ * @author huitoukest
+ * @param <T>  返回的类型
  */
 public interface ObjectDealReturnInter<T>{
 

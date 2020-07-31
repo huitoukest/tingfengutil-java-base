@@ -13,7 +13,6 @@ public interface CSVWriter {
 	 * 默认字段之间以英文逗号分隔,字符串内容需要转移
 	 * @param bufferedWriter bufferedWriter.append(line).append("\r");
 	 * @return
-	 * @throws IOException 
 	 */
 	 boolean write(BufferedWriter bufferedWriter);
 }

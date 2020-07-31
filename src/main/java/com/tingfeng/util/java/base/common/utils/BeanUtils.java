@@ -98,15 +98,15 @@ public class BeanUtils {
     /**
      * 注意：
      * 1. 不copy类型是final或者static的属性
-     * 2. 判断和过滤的优先级如下 exceptFields > predicate > mapper ;
+     * 2. 判断和过滤的优先级如下 exceptFields &gt; predicate &gt; mapper ;
      * 注意： 通过反射机制，效率较低，需要高性能请使用另一个通过PropertyDescriptor实现的copyProperties方法
      * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
      * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
      *
      * @param target       目标对象
      * @param source       源对象
-     * @param predicate    传入源对象的 Tuple2<字段,字段值> ; 返回是否进行拷贝true or false; null 时不生效
-     * @param mapper       传入源对象的 Tuple2<字段,字段值> ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
+     * @param predicate    传入源对象的 Tuple2[字段,字段值] ; 返回是否进行拷贝true or false; null 时不生效
+     * @param mapper       传入源对象的 Tuple2[字段,字段值] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
      * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
      */
     public static <T> void copyProperties(Object target, Object source, Predicate<Tuple2<Field, Object>> predicate, Function<Tuple2<Field, Object>, Object> mapper, String... exceptFields) {
@@ -225,8 +225,8 @@ public class BeanUtils {
      *
      * @param target       目标对象
      * @param source       源对象
-     * @param predicate    传入源对象的 Tuple2<字段名称,字段值> ; 返回是否进行拷贝true or false; null 时不生效
-     * @param mapper       传入源对象的 Tuple2<字段名称,字段值> ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
+     * @param predicate    传入源对象的 Tuple2[字段名称,字段值 ] ; 返回是否进行拷贝true or false; null 时不生效
+     * @param mapper       传入源对象的 Tuple2[字段名称,字段值 ] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
      * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
      */
     public static <T> void copyProperties(Object target, Object source, Predicate<Tuple2<String, Object>> predicate, Function<Tuple2<String, Object>, Object> mapper, Collection<String> exceptFields) {

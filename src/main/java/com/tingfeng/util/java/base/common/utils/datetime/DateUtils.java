@@ -223,7 +223,7 @@ public class DateUtils {
 
 	/**
 	 * 得到当日凌晨
-	 * @addTime 返回结果的时候增加的毫秒数;
+	 * @param addTime 返回结果的时候增加的毫秒数;
 	 * @return
 	 */
 	public static Date getDayBegin(Date date, int addTime) {
@@ -235,7 +235,7 @@ public class DateUtils {
 	/**
 	 * 得到下一日的首日凌晨
 	 * 
-	 * @addTime 返回结果的时候增加的毫秒数;
+	 * @param addTime 返回结果的时候增加的毫秒数;
 	 * @return
 	 */
 	public Date getNextDayBegin(Date date, int addTime) {
@@ -297,7 +297,7 @@ public class DateUtils {
 	/**
 	 * 得到下个月的首日凌晨
 	 * 
-	 * @addTime 返回结果的时候增加的毫秒数;
+	 * @param addTime 返回结果的时候增加的毫秒数;
 	 * @return
 	 */
 	public static Date getNextMonthFirstTime(Date date, int addTime) {
@@ -380,7 +380,6 @@ public class DateUtils {
 	 * @param date
 	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
 	 * @param handleDate 对每个日期做初始化的一些处理
-	 * @throws ParseException
 	 */
 	public static Date[] getRecentlyWeekDate(Date date, Consumer<Date> handleDate) {
 		Date[] weekDates = new Date[7];
@@ -416,7 +415,6 @@ public class DateUtils {
 	 * @param date
 	 * @param setDateBeginTime 对每个日期初始化为当日的开始时间
 	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
-	 * @throws ParseException
 	 */
 	public static Date[] getRecentlyWeekDate(Date date, boolean setDateBeginTime) {
 		return getRecentlyWeekDate(date,it -> it = getDayBegin(it));
@@ -425,7 +423,6 @@ public class DateUtils {
 	/**
 	 * @param date
 	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
-	 * @throws ParseException
 	 */
 	public static Date[] getRecentlyWeekDate(Date date) {
 		return getRecentlyWeekDate(date,true);
@@ -499,7 +496,7 @@ public class DateUtils {
 	/**
 	 * 得到年月日字符串
 	 * 
-	 * @needDay 是否需要日字符串
+	 * @param needDay 是否需要日字符串
 	 * @return 如20170816
 	 */
 	public static String getDateString(Date date, boolean needDay) {

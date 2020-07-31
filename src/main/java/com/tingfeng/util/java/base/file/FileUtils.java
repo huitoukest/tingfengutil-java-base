@@ -169,7 +169,6 @@ public class FileUtils {
 	 * @param callBack
 	 *            下载完毕之后的回调,实现DownFileFromServerCallBack接口
 	 * @param connectTimeout 10000
-	 * @return void
 	 */
 	public static void downFile(final String url, final String path, final Map<String, String> params,
 			final PercentActionCallBackI<File> callBack,int connectTimeout) {
@@ -247,8 +246,8 @@ public class FileUtils {
 	/**
 	 * 直接删除一个文件/文件夹,成功返回true,失败返回false
 	 * 
-	 * @param path
-	 * @return
+	 * @param path 文件路径
+	 * @return 删除成功 = true or false
 	 */
 	public static boolean deleteFile(String path) {
 		File file = new File(path);
@@ -258,7 +257,7 @@ public class FileUtils {
 	/**
 	 * 删除文件,带有重试次数和时间参数
 	 * 文件删除至少执行一次
-	 * @param path
+	 * @param path 文件路径
 	 * @param tryCount 大于0
 	 * @param intervalMillsSecond 单位毫秒
 	 */
@@ -284,19 +283,19 @@ public class FileUtils {
 
 	/**
 	 * 删除文件夹中内容,此文件夹本身;
-	 * 
+	 * @param file 文件夹
 	 * @param isDeleteChild
 	 *            文件夹中存在内容的时候,是否删除子文件/文件夹
 	 * @param isDeleteSelf
 	 *            是否删除自身
-	 * @return
-	 * @throws Exception
+	 * @return 删除成功 = true  or false
 	 */
 	public static boolean deleteFolder(File file, boolean isDeleteChild, boolean isDeleteSelf){
 		if (file == null || !file.exists()) {
 			return false;
 		}
-		File[] childs = file.listFiles();// 列出当前目录中所有子目录
+		// 列出当前目录中所有子目录
+		File[] childs = file.listFiles();
 		if (!isDeleteChild && childs.length > 0) {
 			throw new com.tingfeng.util.java.base.common.exception.io.IOException("Folder is not empty!");
 		}
@@ -322,8 +321,7 @@ public class FileUtils {
 	 * @param path 路径
 	 * @param isDeleteChild 是否删除子文件/子文件夹
 	 * @param isDeleteSelf 是否删除自身
-	 * @return
-	 * @throws Exception
+	 * @return 删除成功 = true or false
 	 */
 	public static boolean deleteFolder(String path, boolean isDeleteChild, boolean isDeleteSelf){
 		return deleteFolder(new File(path), isDeleteChild, isDeleteSelf);
@@ -332,7 +330,7 @@ public class FileUtils {
 	/**
 	 * 删除文件
 	 * @param file
-	 * @return
+	 * @return 删除成功 = true or false
 	 */
 	public static boolean deleteFile(File file) {
 		if (file != null && file.exists()) {
@@ -345,7 +343,8 @@ public class FileUtils {
 	/**
 	 * 创建指定path的文件夹,不能创建多级文件夹 如果不存在此文件夹,那么创建 如果此名称是个文件,删除后创建
 	 * 
-	 * @param path
+	 * @param path 文件路径
+	 * @return 删除成功 = true or false
 	 */
 	public static boolean createFolder(String path) {
 		File f = new File(path);
@@ -363,8 +362,9 @@ public class FileUtils {
 	/**
 	 * 创建指定path的文件
 	 * 
-	 * @param path
-	 * @throws IOException
+	 * @param path 创建的路径
+	 * @throws IOException 创建路径错误/无权限时抛出异常
+	 * @return 创建成功=true or false
 	 */
 	public static boolean createFile(String path) throws IOException {
 		File f = new File(path);
@@ -428,8 +428,8 @@ public class FileUtils {
 	}
 
 	/**
-	 * 
-	 * @param filePath
+	 * 基于path的字符串分析截取获得无扩展名的文件名称
+	 * @param filePath 文件路径
 	 * @return 返回不带扩展名的文件名称
 	 */
 	public static String getFileNoExtensionName(String filePath) {
@@ -441,7 +441,7 @@ public class FileUtils {
 	}
 
 	/**
-	 * 
+	 * 获取文件扩展名 , 基于字符串截取方式
 	 * @param filePath
 	 * @return 返回文件的扩展名,如果扩展名不存在返回"",否则返回原值; 返回的扩展名不包含小点；
 	 */
@@ -461,8 +461,8 @@ public class FileUtils {
 	/**
 	 * 通过一个路径或者url来获得到文件名称
 	 * 
-	 * @param filePath
-	 * @return
+	 * @param filePath 文件路径
+	 * @return 文件名称
 	 */
 	public static String getFileNameByPath(String filePath) {
 		if (StringUtils.isEmpty(filePath)) {
@@ -482,9 +482,9 @@ public class FileUtils {
 
 	/**
 	 * 将一个文件的内容读取出来,并转换成为字符串的方式来返回相应的内容
-	 * 
-	 * @return
-	 * @throws IOException
+	 * @param file
+	 * @param base64ConvertToStringI
+	 * @return 文件对应的base64字符串
 	 */
 	public static String transFileToString(File file, Base64ConvertToStringI base64ConvertToStringI){
 		if (file == null || !file.exists()) {
@@ -530,10 +530,9 @@ public class FileUtils {
 
 	/**
 	 * 用指定的写出文件流来写出文件;
-	 * @param file
-	 * @param os
+	 * @param file 目标文件
+	 * @param os 输出流
 	 * @param callBack callBack 回调 PercentActionCallBackI ，在文件操作完成之后回调成功或者失败的操作,以及上传文件过程中的百分比回调
-	 * @throws
 	 */
 	public static void writeFile(File file, OutputStream os, PercentActionCallBackI<File> callBack){
 			FileInputStream fStream = null;
@@ -591,7 +590,9 @@ public class FileUtils {
 
 	/**
 	 * 将一个输入流转换成指定编码的字符串
-	 * 
+	 * @param inputStream 输入流
+	 * @param encode 编码
+	 * @return 字符串
 	 */
 	public static String transInputStreamToStringByEncode(InputStream inputStream, String encode) {
 		// 内存流
@@ -620,11 +621,9 @@ public class FileUtils {
 	}
 
 	/**
-	 * 文件拷贝
-	 *
-	 * @param srcPath
-	 * @param destPath
-	 * @throws IOException
+	 * 文件拷贝, 通过channel方式 , 高效
+	 * @param srcPath 源路径
+	 * @param destPath 目标路径
 	 */
 	public static void copyFile(String srcPath,String destPath ){
 		copyFileByFileChannel(new File(srcPath),new File(destPath),null);
@@ -633,11 +632,9 @@ public class FileUtils {
 	/**
 	 * 带进度的文件拷贝
 	 *
-	 * @param srcPath
-	 * @param destPath
-	 * @param fileCopyActionCallBack
-	 *            当fileCopyActionCallBack为null的时候,将不会更新进度;
-	 * @throws IOException
+	 * @param srcPath 源路径
+	 * @param destPath 目标路径
+	 * @param fileCopyActionCallBack 当fileCopyActionCallBack为null的时候,将不会更新进度;
 	 */
 	public static void copyFile(String srcPath,String destPath, RateCallBackI fileCopyActionCallBack){
 		copyFileByFileChannel(new File(srcPath),new File(destPath),fileCopyActionCallBack);
@@ -646,11 +643,9 @@ public class FileUtils {
 	/**
 	 * 带进度的文件拷贝,同步的
 	 * 
-	 * @param source
-	 * @param target
-	 * @param fileCopyActionCallBack
-	 *            当fileCopyActionCallBack为null的时候,将不会更新进度;
-	 * @throws IOException
+	 * @param source 源路径
+	 * @param target 目标路径
+	 * @param fileCopyActionCallBack 当fileCopyActionCallBack为null的时候,将不会更新进度;
 	 */
 	public static void copyFileByFileChannel(File source, File target, RateCallBackI fileCopyActionCallBack) {
 		FileChannel in = null;
@@ -713,14 +708,11 @@ public class FileUtils {
 	/**
 	 * 带进度的文件拷贝
 	 * 
-	 * @param source
-	 * @param target
-	 * @param fileCopyActionCallBack
-	 *            当fileCopyActionCallBack为null的时候,将不会更新进度;
-	 * @throws IOException
+	 * @param source 源路径
+	 * @param target 目标路径
+	 * @param fileCopyActionCallBack 当fileCopyActionCallBack为null的时候,将不会更新进度;
 	 */
-	public static void copyFileByFileChannel(String source, String target, RateCallBackI fileCopyActionCallBack)
-			throws IOException {
+	public static void copyFileByFileChannel(String source, String target, RateCallBackI fileCopyActionCallBack){
 		copyFileByFileChannel(new File(source), new File(target), fileCopyActionCallBack);
 	}
 
@@ -885,7 +877,6 @@ public class FileUtils {
 	 * @param file
 	 * @param destPath
 	 * @param destFileName
-	 * @throws IOException
 	 */
 	public static void copyFile(File file, String destPath, String destFileName){
 		try {
@@ -933,7 +924,7 @@ public class FileUtils {
 	/**
 	 * 通过base64的字符串来获取文件名data:image/png;
 	 * @param imgStr 如果没有获取到或者内容是空则返回空串
-	 * @return
+	 * @return 文件扩展名称
 	 */
 	public static String getExtensionNameByBase64Img(String imgStr){
 		if(StringUtils.isNotEmpty(imgStr)){
@@ -948,9 +939,8 @@ public class FileUtils {
 
 	/**
 	 * 上传成功返回true，否则返回false;并且会自动关闭输出流
-	 * @param fileStr
-	 * @param out
-	 * @return
+	 * @param fileStr base64编码字符串
+	 * @param out 输出流
 	 */
 	public static void saveBase64File(String fileStr,OutputStream out){
 		//对字节数组字符串进行Base64解码并生成图片
@@ -985,8 +975,8 @@ public class FileUtils {
 
 	/**
 	 * 获取base64的图片的内容信息
-	 * @param fileStr
-	 * @return
+	 * @param fileStr base64编码字符串
+	 * @return 去除base64文件名称和扩展名信息后的内容
 	 */
 	public static String getBase64ImgFileContent(String fileStr){
 		int flag = fileStr.indexOf(",");
