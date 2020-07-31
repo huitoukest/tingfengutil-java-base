@@ -4,8 +4,8 @@ import java.util.Map;
 
 /**
  * 长度为2的元组
- * @param <A>
- * @param <B>
+ * @param <A> 第一个元素,对应属性 _1
+ * @param <B> 第二个元素 ,对应属性 _2
  */
 public class Tuple2<A,B> {
     private A _1;

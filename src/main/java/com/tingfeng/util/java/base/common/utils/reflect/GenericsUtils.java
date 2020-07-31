@@ -12,16 +12,14 @@ import java.util.List;
  */
 public class GenericsUtils {
 	/**
-	 * 通过反射,获得指定类的父类的泛型参数的实际类型. 如BuyerServiceBean extends DaoSupport<Buyer>
-	 * 
+	 * 通过反射,获得指定类的父类的泛型参数的实际类型.
 	 * @param clazz
 	 *            clazz 需要反射的类,该类必须继承范型父类
 	 * @param index
 	 *            泛型参数所在索引,从0开始.
 	 * @return 范型参数的实际类型, 如果没有实现ParameterizedType接口，即不支持泛型，所以直接返回
-	 *         <code>Object.class</code>
 	 */
-	public static Class<?> getSuperClassGenricType(Class<?> clazz, int index) {
+	public static Class<?> getSuperClassGenericType(Class<?> clazz, int index) {
 		Type genType = clazz.getGenericSuperclass();// 得到泛型父类
 		// 如果没有实现ParameterizedType接口，即不支持泛型，直接返回Object.class
 		if (!(genType instanceof ParameterizedType)) {
@@ -40,19 +38,18 @@ public class GenericsUtils {
 	}
 
 	/**
-	 * 通过反射,获得指定类的父类的第一个泛型参数的实际类型. 如BuyerServiceBean extends DaoSupport<Buyer>
+	 * 通过反射,获得指定类的父类的第一个泛型参数的实际类型.
 	 * 
 	 * @param clazz
 	 *            clazz 需要反射的类,该类必须继承泛型父类
 	 * @return 泛型参数的实际类型, 如果没有实现ParameterizedType接口，即不支持泛型，所以直接返回
-	 *         <code>Object.class</code>
 	 */
-	public static Class<?> getSuperClassGenricType(Class<?> clazz) {
-		return getSuperClassGenricType(clazz, 0);
+	public static Class<?> getSuperClassGenericType(Class<?> clazz) {
+		return getSuperClassGenericType(clazz, 0);
 	}
 
 	/**
-	 * 通过反射,获得方法返回值泛型参数的实际类型. 如: public Map<String, Buyer> getNames(){}
+	 * 通过反射,获得方法返回值泛型参数的实际类型. 如: public Map[String, Buyer] getNames(){}
 	 * 
 	 * @param method
 	 *            method 方法
@@ -74,7 +71,7 @@ public class GenericsUtils {
 	}
 
 	/**
-	 * 通过反射,获得方法返回值第一个泛型参数的实际类型. 如: public Map<String, Buyer> getNames(){}
+	 * 通过反射,获得方法返回值第一个泛型参数的实际类型. 如: public Map[String, Buyer] getNames(){}
 	 * 
 	 * @param method
 	 *            method 方法
@@ -86,8 +83,8 @@ public class GenericsUtils {
 	}
 
 	/**
-	 * 通过反射,获得方法输入参数第index个输入参数的所有泛型参数的实际类型. 如: public void add(Map<String,
-	 * Buyer> maps, List<String> names){}
+	 * 通过反射,获得方法输入参数第index个输入参数的所有泛型参数的实际类型. 如: public void add(Map[String,
+	 * Buyer] maps, List[String] names){}
 	 * 
 	 * @param method
 	 *            method 方法
@@ -114,8 +111,8 @@ public class GenericsUtils {
 	}
 
 	/**
-	 * 通过反射,获得方法输入参数第一个输入参数的所有泛型参数的实际类型. 如: public void add(Map<String, Buyer>
-	 * maps, List<String> names){}
+	 * 通过反射,获得方法输入参数第一个输入参数的所有泛型参数的实际类型. 如: public void add(Map[String, Buyer]
+	 * maps, List[String] names){}
 	 * 
 	 * @param method
 	 *            method 方法
@@ -126,13 +123,12 @@ public class GenericsUtils {
 	}
 
 	/**
-	 * 通过反射,获得Field泛型参数的实际类型. 如: public Map<String, Buyer> names;
+	 * 通过反射,获得Field泛型参数的实际类型. 如: public Map[String, Buyer] names;
 	 * 
 	 * @param field
 	 *            field 字段
 	 * @param index index 泛型参数所在索引,从0开始.
 	 * @return 泛型参数的实际类型, 如果没有实现ParameterizedType接口，即不支持泛型，所以直接返回
-	 *         <code>Object.class</code>
 	 */
 	public static Class<?> getFieldGenericType(Field field, int index) {
 		Type genericFieldType = field.getGenericType();
@@ -149,12 +145,11 @@ public class GenericsUtils {
 	}
 
 	/**
-	 * 通过反射,获得Field泛型参数的实际类型. 如: public Map<String, Buyer> names;
+	 * 通过反射,获得Field泛型参数的实际类型. 如: public Map[String, Buyer] names;
 	 * 
 	 * @param field
 	 *            field 字段，泛型参数所在索引,默认索引从0开始.
 	 * @return 泛型参数的实际类型, 如果没有实现ParameterizedType接口，即不支持泛型，所以直接返回
-	 *         <code>Object.class</code>
 	 */
 	public static Class<?> getFieldGenericType(Field field) {
 		return getFieldGenericType(field, 0);

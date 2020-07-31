@@ -27,9 +27,8 @@ public class CSVUtil {
      * 默认英文逗号分隔,
      * 当写入内容为空时，可以写入一个字符串""（表示csv的内容是空串），防止csv读取软件读取了csv编码内容
      * 错误会抛出异常
-     * @param out
-     * @param csvWriter
-     * @throws IOException
+     * @param out 给定内容的输出流
+     * @param csvWriter com.tingfeng.util.java.base.file.csv.CSVWriter 实例
      */
     public static void writeCsv(OutputStream out,CSVWriter csvWriter){
         OutputStreamWriter osw=null;
@@ -37,7 +36,8 @@ public class CSVUtil {
         try {
             osw = new OutputStreamWriter(out);
             bw =new BufferedWriter(osw);
-            byte[] bom ={(byte) 0xEF,(byte) 0xBB,(byte) 0xBF};//UTF-8编码bom头
+            //UTF-8编码bom头
+            byte[] bom ={(byte) 0xEF,(byte) 0xBB,(byte) 0xBF};
             out.write(bom);
             csvWriter.write(bw);
         }catch (Throwable e){
@@ -46,7 +46,6 @@ public class CSVUtil {
             if(bw!=null){
                 try {
                     bw.close();
-                    bw=null;
                 } catch (IOException e) {
                     e.printStackTrace();
                 } 
@@ -54,7 +53,6 @@ public class CSVUtil {
             if(osw!=null){
                 try {
                     osw.close();
-                    osw=null;
                 } catch (IOException e) {
                     e.printStackTrace();
                 } 
@@ -63,12 +61,11 @@ public class CSVUtil {
     }
 
     /**
-     * 导入
-     * @param reader
+     * 导入读取CSV文件
+     * @param reader 内容输入的Reader对象
      * @param converter 将读取的csv单行数据转换为T类型
-     * @Param functionVOne
-     * @param <T>
-     * @throws IOException
+     * @param functionVOne 将读取到的数据消费
+     * @param <T> 读取到的数据转后后的对应的java bean对象
      */
     public static <T> void readCsv(Reader reader, ConvertI<String,T> converter, FunctionVOne<T> functionVOne){
         BufferedReader br=null;
@@ -94,8 +91,8 @@ public class CSVUtil {
     }
     /**
      * 默认英文逗号分隔,转意双引号和逗号
-     * @param line
-     * @return
+     * @param line csv行数据
+     * @return 转义后的字符串
      */
     public static String escapeCsv(String line){
     	if(null == line)
@@ -113,7 +110,6 @@ public class CSVUtil {
     * @param fileName 导出文件名称
     * @param csvPageWriter
     * @param params 获取数据传入的参数,在每次取得数据后因该对参数内容做调整以做到分批得到数据
-    * @throws Exception  当导出的记录数量超过最大导出数量的时候,抛出传入的异常
     */
     public static <T> void writeCsvByPage(OutputStream out, String fileName, final CSVPageWriter<T> csvPageWriter, final Object... params){
     		final long count = csvPageWriter.getTotalCount();
@@ -130,7 +126,7 @@ public class CSVUtil {
                         Object[] data = null;
                         for (int i = 0; i < susbs.size(); i++) {
                             if (i == 0) {
-                                data = csvPageWriter.getTableHearder();
+                                data = csvPageWriter.getTableHeader();
                                 content = getCSVLineData(data, sb);
                                 bufferedWriter.append(content).append(V_NEW_LINE);
                             } else if (i > 0) {
@@ -157,13 +153,12 @@ public class CSVUtil {
                 CSVUtil.writeCsv(out, csvWriter);
                 out.flush();
                 out.close();
-                out = null;
             }catch (Throwable e){
                 throw new BaseException(e);
             }
     }
     /**
-     * 
+     * 将对应数组中的数据转为CSV单行字符串
      * @param csvData
      * @param sb 此StringBuilder中原数据会被清空
      * @return 返回csv中单行数据

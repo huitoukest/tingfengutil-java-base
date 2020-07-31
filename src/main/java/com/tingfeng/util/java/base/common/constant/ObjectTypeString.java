@@ -1,8 +1,8 @@
 package com.tingfeng.util.java.base.common.constant;
 
 /**
+ * 常见的java Object的class的名称
  * @author huitoukest
- * @describe 常见的java Object的class的名称
  */
 public class ObjectTypeString {
 	/**

@@ -11,13 +11,13 @@ public interface CSVPageWriter<T> {
 	 long getMaxExportCount();
 	/**
 	 * 当导出的记录数量超过最大导出数量的时候,抛出此异常
-	 * @return
+	 * @return 超过最大导出数量时的异常(自定义的)
 	 */
 	 RuntimeException getOverMaxExportCountException();
 	/**
 	 * 每次获取数据的传入参数
-	 * @param params
-	 * @return
+	 * @param params 参数信息
+	 * @return 参数对应的结果数据
 	 */
 	 List<T> getList(Object ...params);
 	/**
@@ -26,12 +26,12 @@ public interface CSVPageWriter<T> {
 	 */
 	 int getCountOfPerExport();
 	/**
-	 * 返回表头
+	 * @return 表头
 	 */
-	 String[] getTableHearder();
+	 String[] getTableHeader();
 	/**
-	 * 返回单行表格数据
-	 * @return
+	 *
+	 * @return 单行表格数据
 	 */
 	 Object[] getTableLineData(T t);
 }

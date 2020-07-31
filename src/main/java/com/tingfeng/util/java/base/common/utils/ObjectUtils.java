@@ -156,9 +156,10 @@ public class ObjectUtils {
      * 这里如果obj是T类型，则直接返回，否则将之转为String类型后自动如果是基础数据类型
      * 则转为T类型，否则返回null
      *
-     * @param cls
+     * @param cls 需要转换的目标类型的class文件
      * @param obj 传入的数据
-     * @return <T></>
+     * @param <T> 需要转换的目标类型
+     * @return T对象
      */
     public static <T> T getObject(Class<T> cls, Object obj) {
         if (cls == null) {

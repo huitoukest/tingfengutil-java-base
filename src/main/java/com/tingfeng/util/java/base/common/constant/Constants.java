@@ -1,8 +1,7 @@
 package com.tingfeng.util.java.base.common.constant;
 /**
- * 
+ * 常见的一些数据常量
  * @author huitoukest
- * @describe 常见的一些数据常量
  */
 public interface Constants {
 

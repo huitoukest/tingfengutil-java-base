@@ -3,7 +3,7 @@ package com.tingfeng.util.java.base.common.inter;
 import java.util.function.Function;
 
 /**
- *  ConvertI<T,S> 将传入的一个对象E转换为指定对象T
+ *  Convert[T,S] 将传入的一个对象E转换为指定对象T
  * @author huitoukest
  *
  * @param <T> the type of the input to the function

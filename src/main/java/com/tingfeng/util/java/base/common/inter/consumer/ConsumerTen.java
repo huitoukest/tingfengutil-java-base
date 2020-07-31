@@ -3,23 +3,32 @@ package com.tingfeng.util.java.base.common.inter.consumer;
 /**
  * consumer function
  * @author huitoukest
- * 
+ * @param <P1> Px表示第x个参数,即params x
+ * @param <P2> Px表示第x个参数,即params x
+ * @param <P3> Px表示第x个参数,即params x
+ * @param <P4> Px表示第x个参数,即params x
+ * @param <P5> Px表示第x个参数,即params x
+ * @param <P6> Px表示第x个参数,即params x
+ * @param <P7> Px表示第x个参数,即params x
+ * @param <P8> Px表示第x个参数,即params x
+ * @param <P9> Px表示第x个参数,即params x
+ * @param <P10> Px表示第x个参数,即params x
  */
 @FunctionalInterface
 public interface ConsumerTen<P1,P2,P3,P4,P5,P6,P7,P8,P9,P10> {
 
     /**
      * consumer these data
-     * @param p1
-     * @param p2
-     * @param p3
-     * @param p4
-     * @param p5
-     * @param p6
-     * @param p7
-     * @param p8
-     * @param p9
-     * @param p10
+     * @param p1 px表示第x个参数,即params x , 对应类型Px
+     * @param p2 px表示第x个参数,即params x , 对应类型Px
+     * @param p3 px表示第x个参数,即params x , 对应类型Px
+     * @param p4 px表示第x个参数,即params x , 对应类型Px
+     * @param p5 px表示第x个参数,即params x , 对应类型Px
+     * @param p6 px表示第x个参数,即params x , 对应类型Px
+     * @param p7 px表示第x个参数,即params x , 对应类型Px
+     * @param p8 px表示第x个参数,即params x , 对应类型Px
+     * @param p9 px表示第x个参数,即params x , 对应类型Px
+     * @param p10 px表示第x个参数,即params x , 对应类型Px
      */
     void accept(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5, P6 p6, P7 p7, P8 p8, P9 p9, P10 p10) ;
 

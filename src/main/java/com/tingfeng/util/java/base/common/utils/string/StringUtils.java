@@ -59,7 +59,6 @@ public class StringUtils {
      *
      * @param in InputStream
      * @return String
-     * @throws Exception
      */
     public static String getStringByStream(InputStream in) {
         return getStringByStream(in, Constants.CharSet.UTF8);
@@ -71,7 +70,6 @@ public class StringUtils {
      * @param in
      * @param encoding
      * @return
-     * @throws Exception
      */
     public static String getStringByStream(InputStream in, String encoding) {
         String string = null;
@@ -100,8 +98,6 @@ public class StringUtils {
      * @param in
      * @param charEncode
      * @return
-     * @throws UnsupportedEncodingException
-     * @throws Exception
      */
     public static String getStringByBytes(byte[] in, String charEncode) throws UnsupportedEncodingException {
         String string = new String(in, charEncode);
@@ -274,7 +270,6 @@ public class StringUtils {
      *
      * @param str
      * @return
-     * @date
      */
     public static String toSbcCaseByDbcCase(String str) {
         if (str == null || "".equals(str)) {
@@ -734,7 +729,7 @@ public class StringUtils {
      *
      * @param len 　字符串长度　长度计量单位为一个GBK汉字　　两个英文字母计算为一个单位长度
      * @param str
-     * @return12
+     * @return
      */
     public static String getStringByLimitLength(String str, int len) {
         return getStringByLimitLength(str, len, "...", "UTF-8");

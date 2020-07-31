@@ -19,7 +19,7 @@ public class BinaryOperationUtils {
 
     /**
      * 求出(baseNum) 和 (以2为底数的x幂的比baseNum小的数） 做与位运算的 低位相同的数字
-     * 比如输入 15 -> 返回 [1,2,4,8]
+     * 比如输入 15 --&gt; 返回 [1,2,4,8]
      * @param parentNum
      * @return parentNum包含的2的n次幂数
      */

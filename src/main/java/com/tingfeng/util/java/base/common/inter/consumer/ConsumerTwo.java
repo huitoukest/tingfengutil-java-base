@@ -3,14 +3,15 @@ package com.tingfeng.util.java.base.common.inter.consumer;
 /**
  * consumer function
  * @author huitoukest
- * 
+ * @param <P1> Px表示第x个参数,即params x
+ * @param <P2> Px表示第x个参数,即params x
  */
 @FunctionalInterface
 public interface ConsumerTwo<P1,P2> {
     /**
      * consumer these data
-     * @param p1
-     * @param p2
+     * @param p1 px表示第x个参数,即params x , 对应类型Px
+     * @param p2 px表示第x个参数,即params x , 对应类型Px
      */
     void accept(P1 p1, P2 p2);
 }
