@@ -218,4 +218,58 @@ public class MathUtils {
         }
         return result;
     }
+
+    /**
+     * 最大公约数
+     * @param a
+     * @param b
+     * @return
+     */
+    public static int gcd(int a, int b){
+        int r;
+        while(b > 0){
+            r = a % b;
+            a = b;
+            b = r;
+        }
+        return a;
+    }
+
+    /**
+     * 求最小公倍数
+     * @param m
+     * @param n
+     * @return
+     */
+    public static int lcm(int m, int n) {
+        int gcdValue = gcd(m , n);
+        return m / gcdValue * n;
+    }
+
+    /**
+     * 最大公约数
+     * @param a
+     * @param b
+     * @return
+     */
+    public static long gcd(long a, long b){
+        long r;
+        while(b > 0){
+            r = a % b;
+            a = b;
+            b = r;
+        }
+        return a;
+    }
+
+    /**
+     * 求最小公倍数
+     * @param m
+     * @param n
+     * @return
+     */
+    public static long lcm(long m, long n) {
+        long gcdValue = gcd(m , n);
+        return m / gcdValue * n;
+    }
 }
