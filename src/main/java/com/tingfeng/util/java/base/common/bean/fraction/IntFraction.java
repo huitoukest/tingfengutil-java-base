@@ -5,6 +5,7 @@ import com.tingfeng.util.java.base.common.utils.MathUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Objects;
 
@@ -28,7 +29,9 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
 
 
     public IntFraction(int numerator, int denominator){
-        assert denominator != 0;
+        if(denominator == 0){
+            throw new ArithmeticException("denominator can not be zero!");
+        }
         this.numerator = numerator;
         this.denominator = denominator;
     }
@@ -44,9 +47,11 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
      */
     public IntFraction(String str){
         String[] array = str.split("/");
-        this.numerator = Integer.parseInt(array[0]);
         this.denominator = Integer.parseInt(array[1]);
-        assert numerator != this.denominator;
+        if(0 == this.denominator){
+            throw new ArithmeticException("denominator can not be zero!");
+        }
+        this.numerator = Integer.parseInt(array[0]);
     }
 
     @Override

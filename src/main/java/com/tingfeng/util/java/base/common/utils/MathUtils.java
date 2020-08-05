@@ -272,4 +272,25 @@ public class MathUtils {
         long gcdValue = gcd(m , n);
         return m / gcdValue * n;
     }
+
+    /**
+     * 最大公约数
+     * @param a
+     * @param b
+     * @return
+     */
+    public static BigInteger gcd(BigInteger a, BigInteger b) {
+        return a.gcd(b);
+    }
+
+    /**
+     * 求最小公倍数
+     * @param a
+     * @param b
+     * @return
+     */
+    public static BigInteger lcm(BigInteger a, BigInteger b) {
+        BigInteger gcdValue = gcd(a , b);
+        return a.divide(gcdValue).multiply(b);
+    }
 }
