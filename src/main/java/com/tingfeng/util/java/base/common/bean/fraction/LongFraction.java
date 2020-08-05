@@ -11,7 +11,7 @@ import java.util.Objects;
 
 /**
  * 适用于简单的分数计算
- * 分子分母是long类型 的分数 , 计算值过大时可能溢出, 溢出时结果会错误 (当最简分数的分母分母中的两个最大值相乘不超过Int上限则不会溢出) ;
+ * 分子分母是long类型 的分数 , 计算值过大时可能溢出, 溢出时结果会错误 (当最简分数的分母分母中的两个最大值相乘不超过Long上限则不会溢出) ;
  * 分数本身的结构也是可以抽象的, 但是为了提高计算效率使用java 原始类型, 所以无法使用泛型 ;
  * 当分母为零时,分子默认为1; 默认均保留原始的分子分母值  , 计算时使用最简分数形式生成新值 ;
  * 最简分数的符号位以分子为准 , 分母均为正.
@@ -29,7 +29,9 @@ public class LongFraction extends AbstractFraction implements IFractionOperation
 
 
     public LongFraction(long numerator, long denominator){
-        assert denominator != 0;
+        if(denominator == 0){
+            throw new ArithmeticException("denominator can not be zero!");
+        }
         this.numerator = numerator;
         this.denominator = denominator;
     }
@@ -45,9 +47,11 @@ public class LongFraction extends AbstractFraction implements IFractionOperation
      */
     public LongFraction(String str){
         String[] array = str.split("/");
-        this.numerator = Integer.parseInt(array[0]);
-        this.denominator = Integer.parseInt(array[1]);
-        assert numerator != this.denominator;
+        this.denominator = Long.parseLong(array[1]);
+        if(0 == this.denominator){
+            throw new ArithmeticException("denominator can not be zero!");
+        }
+        this.numerator = Long.parseLong(array[0]);
     }
 
     @Override
