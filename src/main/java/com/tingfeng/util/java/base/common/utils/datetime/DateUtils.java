@@ -700,4 +700,33 @@ public class DateUtils {
 	public static List<Date> getDatesBetweenTwoDate(Date beginDate, Date endDate){
 		   return getDatesBetweenTwoDate(beginDate,endDate,true,true);
 	}
+
+	/**
+	 * 获取日期对应的数值 如 20200101 , 8位数字
+	 * @param date
+	 * @return
+	 */
+	public static int getDateNumber(Date date){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
+		int year = calendar.get(Calendar.YEAR);
+		int month = calendar.get(Calendar.MONTH) + 1;
+		int day = calendar.get(Calendar.DAY_OF_MONTH);
+		int currentDate = year * 10000 + month * 100 + day;
+		return currentDate;
+	}
+
+	/**
+	 * 解析数值类型的日期 , 如 20200101 , 8位数字
+	 * @param dateNumber
+	 * @return
+	 */
+	public static Date getDate(int dateNumber){
+		Calendar calendar = getInitCalendar(new Date(), 0, 0, 0, 0);
+		calendar.set(Calendar.YEAR, dateNumber / 10000);
+		calendar.set(Calendar.MONTH, ( dateNumber % 10000 ) / 100 - 1);
+		calendar.set(Calendar.DAY_OF_MONTH, ( dateNumber % 100 ));
+		return calendar.getTime();
+	}
+
 }
