@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.common;
 
 import java.util.Date;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
@@ -17,6 +18,19 @@ public class DateUtilsTest {
 			String formateString = DateUtils.getDateString(date);
 			System.out.println(formateString);		 
 		}
-		
+	}
+
+	@Test
+	public void getDateNumberTest(){
+		int number = 20200501;
+		int dateNumber = DateUtils.getDateNumber(DateUtils.getDate("" + number));
+		Assert.assertEquals(number, dateNumber);
+	}
+
+	@Test
+	public void getDateTest(){
+		int number = 20200501;
+		Date date = DateUtils.getDate(number);
+		Assert.assertEquals(number , DateUtils.getDateNumber(date));
 	}
 }
