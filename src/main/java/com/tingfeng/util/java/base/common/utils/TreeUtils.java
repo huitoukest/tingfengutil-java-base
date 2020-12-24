@@ -61,7 +61,7 @@ public class TreeUtils {
      * @param addChildAction 加入一个child的Action,第一个参数是child，第二个是parent
      * @param isChildAction  判断第一个参数是否是第二个参数的子节点,第一个参数是child，第二个是parent，返回true/false
      * @param orderAction 排序操作,if null won't use it
-     * @param <T> 当前操作的类型
+     * @param <T> 当前排序的类型
      * @return
      */
     public static <T> List<T> getTreeList(List<T> list, FunctionVTwo<T,T> addChildAction, FunctionRTwo<Boolean,T,T> isChildAction, FunctionROne<Integer,T> orderAction) {
@@ -132,6 +132,7 @@ public class TreeUtils {
 
     /**
      * T = 目标类型，S = 来源类型； 建议执行convertAction后，手动处理(设置为null)节点的Children关联；
+     * 注意： 此平铺展开不会影响原有bean 属性中的集合设置，即原来如果有子节点集合，此方法不会自动修改关联关系
      * @param treeList 原始tree结构的list
      * @param flatAction 获取子节点的action
      * @param convertAction 转换类型
