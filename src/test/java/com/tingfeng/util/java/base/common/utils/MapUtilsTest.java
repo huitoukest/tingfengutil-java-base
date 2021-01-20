@@ -32,4 +32,18 @@ public class MapUtilsTest {
         Map<Integer,String> reMap = MapUtils.compute(map,null,it -> "" + it.size());
         assert reMap.get("B").equals("3");
     }
+
+    @Test
+    public void newHashMapATest(){
+        Map<Object, Object> objectMap = MapUtils.newHashMap(new Object[]{"A", 1, "B", 2});
+        assert objectMap.get("A").equals(1);
+    }
+
+    @Test
+    public void newHashMapBTest(){
+        Map<String, Integer> objectMap = MapUtils.newHashMap(String::valueOf,it -> Integer.valueOf(it.toString()),
+                "A", "1", "B", "2");
+        assert objectMap.get("B").equals(2);
+    }
+
 }
