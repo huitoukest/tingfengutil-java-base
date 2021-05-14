@@ -29,11 +29,11 @@ public interface ObjectDealReturnInter<T>{
     T dealMap(Map<?,?> source);
 
     /**
-     * 处理一个Array
+     * 处理一个Array, 可能是基础数据类型Array或Object[]
      * @param source
-     * @return
+     * @return return true if empty else false
      */
-    T dealArray(Object[] source);
+    T dealArray(Object source);
 
     /**
      * 处理一个字符序列 CharSequence

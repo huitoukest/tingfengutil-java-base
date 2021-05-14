@@ -42,6 +42,20 @@ public class ObjectUtilsTest {
         Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList(""),false,true));
         Assert.assertTrue(ObjectUtils.isEmpty("  ",true,true));
     }
+    @Test
+    public void isEmptyBaseDataTest(){
+        Assert.assertFalse(ObjectUtils.isEmpty(new int[][]{new int[]{1}},true,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(new int[][]{},true,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(new int[][][]{new int[][]{}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new int[][][]{new int[][]{new int[]{1}}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new byte[][]{new byte[]{1}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new short[][]{new short[]{1}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new long[][]{new long[]{1}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new float[][]{new float[]{1}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new double[][]{new double[]{1}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new char[][]{new char[]{1}},true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(new boolean[][]{new boolean[]{true}},true,true));
+    }
 
     @Test
     public void getValueTest(){

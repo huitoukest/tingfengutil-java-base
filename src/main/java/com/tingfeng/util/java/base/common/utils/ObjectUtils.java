@@ -367,7 +367,7 @@ public class ObjectUtils {
             return judgeEmptyHelper.dealCharSequence((CharSequence) obj);
         }
         if (obj.getClass().isArray()) {
-            return judgeEmptyHelper.dealArray((Object[]) obj);
+            return judgeEmptyHelper.dealArray(obj);
         }
         return judgeEmptyHelper.dealCommonObject(obj);
     }
