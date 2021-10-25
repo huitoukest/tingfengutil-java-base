@@ -42,7 +42,7 @@ public class CurrencyUtils {
 			integer.append(upperNumber(integerData.length() - i - 1));
 		}
 		StringBuffer decimal = new StringBuffer();
-		if (part.length > 1 && !"00".equals(decimalData)) {
+		if (part.length > 1) {
 			int length = decimalData.length() >= 2 ? 2 : decimalData.length();
 			for (int i = 0; i < length; i++) {
 				char perchar = decimalData.charAt(i);
@@ -131,7 +131,7 @@ public class CurrencyUtils {
 		result = result.replaceAll("圆零角零分|圆零角$|圆$|^零$|圆零$|零圆$", "圆整");
 		result = result.replaceAll("^圆整$", "零圆整");
 		result = result.replaceAll("零+", "零");
-		
+		result = result.replaceAll("(^.*)(圆[零]+$)", "$1圆整");
 		return result;
 	}
 
