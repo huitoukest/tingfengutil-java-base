@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.common.helper;
 
+import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 /**
@@ -127,6 +128,7 @@ public class HashEncryptionHelper {
         for (int i = 0; i < chars.length; i++) {
             int index = BASE_CHARS_DICTIONARY[chars[i]];
             if(withPositionEncode) {
+                checkPositionDicIsInit();
                 int offsetValue = hashedPositionValueOffsetDictionary[i % hashedPositionValueOffsetDictionary.length];
                 index = index + offsetValue;
                 index = index % BASE_CHARS.length;
@@ -146,6 +148,7 @@ public class HashEncryptionHelper {
         for (int i = 0; i < chars.length; i++) {
             int index = hashedCharsDictionary[chars[i]];
             if(withPositionDecode) {
+                checkPositionDicIsInit();
                 int offsetValue = hashedPositionValueOffsetDictionary[i % hashedPositionValueOffsetDictionary.length];
                 index = index - offsetValue;
                 if (index < 0) {
@@ -155,6 +158,12 @@ public class HashEncryptionHelper {
             chars[i] = BASE_CHARS[index];
         }
         return new String(chars);
+    }
+
+    private void checkPositionDicIsInit() {
+        if(hashedPositionValueOffsetDictionary == null){
+            throw new BaseException("you must invoke hashPositionDictionary() method to init  position dic data");
+        }
     }
 
 }
