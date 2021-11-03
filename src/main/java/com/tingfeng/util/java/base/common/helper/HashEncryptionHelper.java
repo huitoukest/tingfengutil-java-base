@@ -130,7 +130,7 @@ public class HashEncryptionHelper {
             if(withPositionEncode) {
                 checkPositionDicIsInit();
                 int offsetValue = hashedPositionValueOffsetDictionary[i % hashedPositionValueOffsetDictionary.length];
-                index = index + offsetValue;
+                index = index + (offsetValue + str.length() % BASE_CHARS.length);
                 index = index % BASE_CHARS.length;
             }
             chars[i] = hashedChars[index];
@@ -150,7 +150,7 @@ public class HashEncryptionHelper {
             if(withPositionDecode) {
                 checkPositionDicIsInit();
                 int offsetValue = hashedPositionValueOffsetDictionary[i % hashedPositionValueOffsetDictionary.length];
-                index = index - offsetValue;
+                index = index - ( offsetValue + str.length() ) % BASE_CHARS.length;
                 if (index < 0) {
                     index = index % BASE_CHARS.length + BASE_CHARS.length;
                 }
