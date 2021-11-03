@@ -35,6 +35,10 @@ public class HashEncryptionHelper {
      * 映射加盐的字符串
      */
     private String salt;
+    /**
+     * hash映射时原始值根据位置来做的值映射的字典
+     */
+    private int[] hashedPositionValueOffsetDictionary;
 
     public HashEncryptionHelper(String salt){
         if(StringUtils.isEmpty(salt)){
@@ -42,6 +46,28 @@ public class HashEncryptionHelper {
         }
         this.salt = salt + salt.length();
         hashChars();
+    }
+
+    /**
+     * 位置映射的初始化，
+     * @param length
+     */
+    public void hashPositionDictionary(int length){
+        assert length > 0;
+        hashedPositionValueOffsetDictionary = new int[length];
+        int saltLength = this.salt.length();
+        long seedValue = saltLength;
+        char[] saltArr = salt.toCharArray();
+        for (int i = 0; i < saltArr.length; i++) {
+            int v = ((int) saltArr[i]);
+            seedValue +=  v * 13;
+        }
+        seedValue = Math.abs(seedValue);
+        for (int i = 0; i < hashedPositionValueOffsetDictionary.length; i++) {
+            long modValue = saltLength > i ? seedValue + saltArr[i] : seedValue + saltArr[i % saltLength] + i;
+            int offsetValue = (int) (modValue % BASE_CHARS.length);
+            hashedPositionValueOffsetDictionary[i] = offsetValue;
+        }
     }
 
     /**
@@ -55,6 +81,7 @@ public class HashEncryptionHelper {
             seedValue +=  v * 31;
         }
         seedValue += saltArr.length;
+        seedValue = Math.abs(seedValue);
 
         hashedChars = new char[BASE_CHARS.length];
         System.arraycopy(BASE_CHARS,0,hashedChars,0, BASE_CHARS.length);
@@ -67,7 +94,6 @@ public class HashEncryptionHelper {
             hashedChars[i] = hashedChars[exChangeIdx];
             hashedChars[exChangeIdx] = tmp;
         }
-
         for (int i = 0; i < hashedChars.length; i++) {
             hashedCharsDictionary[hashedChars[i]] = i;
         }
@@ -79,9 +105,32 @@ public class HashEncryptionHelper {
      * @return 编码后的字符串
      */
     public String encode(String str){
+        return encode(str,false);
+    }
+
+    /**
+     * 将原始字符串做解码
+     * @param str 需要解码的字符串
+     * @return 解码后的字符串
+     */
+    public String decode(String str){
+        return decode(str,false);
+    }
+
+    /**
+     * 将原始字符串做编码
+     * @param str 需要编码的字符串
+     * @return 编码后的字符串
+     */
+    public String encode(String str,boolean withPositionEncode){
         char[] chars = str.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             int index = BASE_CHARS_DICTIONARY[chars[i]];
+            if(withPositionEncode) {
+                int offsetValue = hashedPositionValueOffsetDictionary[i % hashedPositionValueOffsetDictionary.length];
+                index = index + offsetValue;
+                index = index % BASE_CHARS.length;
+            }
             chars[i] = hashedChars[index];
         }
         return new String(chars);
@@ -92,10 +141,17 @@ public class HashEncryptionHelper {
      * @param str 需要解码的字符串
      * @return 解码后的字符串
      */
-    public String decode(String str){
+    public String decode(String str,boolean withPositionDecode){
         char[] chars = str.toCharArray();
         for (int i = 0; i < chars.length; i++) {
             int index = hashedCharsDictionary[chars[i]];
+            if(withPositionDecode) {
+                int offsetValue = hashedPositionValueOffsetDictionary[i % hashedPositionValueOffsetDictionary.length];
+                index = index - offsetValue;
+                if (index < 0) {
+                    index = index % BASE_CHARS.length + BASE_CHARS.length;
+                }
+            }
             chars[i] = BASE_CHARS[index];
         }
         return new String(chars);
