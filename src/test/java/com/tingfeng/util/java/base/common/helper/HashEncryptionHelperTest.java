@@ -49,4 +49,25 @@ public class HashEncryptionHelperTest {
         System.out.println("deStr = " + deStr);
     }
 
+    @Test
+    public void bathTestEncodeDecodeWithPositionOffset(){
+        TestUtils.printTime(4, 10000, index -> {
+            encodeDecode();
+            encodeDecodeWithPositionOffset();
+        });
+    }
+
+    @Test
+    public void encodeDecodeWithPositionOffset(){
+        String salt = RandomUtils.randomString(15);
+        HashEncryptionHelper hashEncryption = new HashEncryptionHelper(salt);
+        hashEncryption.hashPositionDictionary(RandomUtils.randomInt(1,1000));
+        String str = "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000";
+        String enStr = hashEncryption.encode(str,true);
+        String deStr = hashEncryption.decode(enStr,true);
+        System.out.println("salt = " + salt);
+        System.out.println("str = " + str);
+        System.out.println("enStr = " + enStr);
+        System.out.println("deStr = " + deStr);
+    }
 }
