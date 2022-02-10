@@ -1,6 +1,7 @@
 package com.tingfeng.util.java.base.common;
 
 import java.util.Date;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -32,5 +33,12 @@ public class DateUtilsTest {
 		int number = 20200501;
 		Date date = DateUtils.getDate(number);
 		Assert.assertEquals(number , DateUtils.getDateNumber(date));
+	}
+
+	@Test
+	public void getDatesBetweenTwoDateTest(){
+		List<Date> list = DateUtils.getDatesBetweenTwoDate(DateUtils.getDate("2022-01-01"), DateUtils.getDate("2022-01-01"));
+		Assert.assertEquals(1,list.size());
+		Assert.assertEquals("2022-01-01",DateUtils.formatDateToString(list.get(0)));
 	}
 }

@@ -655,7 +655,6 @@ public class DateUtils {
 		List<Date> dates = new ArrayList<Date>();
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(beginDate);
-		Date tmpDate = null;
 
 		if(isContainsBeginDate){
 			dates.add(beginDate);
@@ -678,7 +677,7 @@ public class DateUtils {
 				break;
 			}
 		}
-		if(isContainsEndDate){
+		if(isContainsEndDate && endDate.getTime() != beginDate.getTime()){
 			dates.add(endDate);
 		}
 		return dates.stream().map(it -> {
@@ -692,7 +691,8 @@ public class DateUtils {
 	}
 
 	/**
-	 * 获取两个日期之间的日期(并且将每天的时间格式化为0点),默认包含开始和结束时间
+	 * 1. 获取两个日期之间的日期(并且将每天的时间格式化为0点),默认包含开始和结束时间
+	 * 2. 结束时间可以大于等于或者小于开始时间，返回的时间不重复
 	 * @param beginDate
 	 * @param endDate
 	 * @return
