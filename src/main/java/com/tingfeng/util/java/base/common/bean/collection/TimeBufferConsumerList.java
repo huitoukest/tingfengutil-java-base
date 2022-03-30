@@ -4,6 +4,7 @@ import com.tingfeng.util.java.base.common.abs.collection.BaseTimeBufferConsumerC
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -19,16 +20,18 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     private final Consumer<List<T>> consumer;
     private final int maxHoldMs;
 
-    private List<T> buffer = new ArrayList<>(512);
+    private LinkedList<List<T>> buffer = new LinkedList<>() ;
+
+    private List<T> currentBuffer = new ArrayList<>();;
 
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private long lastConsumerTime = System.currentTimeMillis();
+    private volatile long lastConsumerTime = System.currentTimeMillis();
 
     /**
      * if the add elements size >= batchSize, or maxHoldMs milliseconds elapsed and 0 <= elements size ;
      * then call the consumerIfMatch, to invoke to consumer elements
      * @param checkInterval
-     * @param batchSize
+     * @param batchSize must less than maxIntValue / 2;
      * @param maxHoldMs
      * @param consumer
      */
@@ -47,18 +50,34 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     }
 
     @Override
-    public synchronized void add(T t) {
+    public void add(T t) {
+        synchronized(this.buffer) {
+            this.currentBuffer.add(t);
+            if(this.currentBuffer.size() >= batchSize){
+                this.buffer.add(currentBuffer);
+                this.currentBuffer = new ArrayList<>();
+            }
+        }
         consumerIfMatch();
-        this.buffer.add(t);
     }
 
     @Override
-    public synchronized void consumerIfMatch() {
-        if(System.currentTimeMillis() - lastConsumerTime >= maxHoldMs || this.buffer.size() >= batchSize){
-            if(!this.buffer.isEmpty()) {
-                this.consumer.accept(Collections.unmodifiableList(this.buffer));
+    public void consumerIfMatch() {
+        List<T> consumerList = Collections.emptyList();
+        boolean timeMatch = System.currentTimeMillis() - lastConsumerTime >= maxHoldMs;
+        synchronized(this.buffer) {
+            if(timeMatch){
+                this.buffer.add(currentBuffer);
+                this.currentBuffer = new ArrayList<>();
             }
-            this.buffer.clear();
+            List<T> firstList = this.buffer.stream().findFirst().orElse(Collections.emptyList());
+            if(timeMatch || firstList.size() >= batchSize) {
+                consumerList = firstList;
+                this.buffer.removeFirst();
+            }
+        }
+        if(!consumerList.isEmpty()) {
+            this.consumer.accept(consumerList);
             lastConsumerTime = System.currentTimeMillis();
         }
     }
