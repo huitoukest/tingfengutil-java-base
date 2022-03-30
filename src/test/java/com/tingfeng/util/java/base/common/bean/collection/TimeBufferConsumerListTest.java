@@ -12,7 +12,7 @@ public class TimeBufferConsumerListTest {
     @Test
     public void test() throws InterruptedException {
         AtomicInteger consumerSize = new AtomicInteger(0);
-        TimeBufferConsumerList<Integer> batchScorePushQueue = new TimeBufferConsumerList<>(5,64,200,list -> {
+        TimeBufferConsumerList<Integer> timeBufferConsumerList = new TimeBufferConsumerList<>(5,64,300,list -> {
             int size = list.size();
             System.out.println("当前时间:" + System.currentTimeMillis() +",当前消费数量:" + size + ",消费总数:" + consumerSize.addAndGet(size));
         });
@@ -25,7 +25,7 @@ public class TimeBufferConsumerListTest {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            batchScorePushQueue.add(1);
+            timeBufferConsumerList.add(1);
         });
         while (consumerSize.intValue() < total){
             Thread.sleep(1);
