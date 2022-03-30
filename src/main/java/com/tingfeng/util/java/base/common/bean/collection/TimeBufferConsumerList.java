@@ -17,11 +17,8 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     private final int batchSize;
     private final Consumer<List<T>> consumer;
     private final int maxHoldMs;
-
     private LinkedList<List<T>> buffer = new LinkedList<>() ;
-
     private List<T> currentBuffer = new ArrayList<>();;
-
     private volatile long lastConsumerTime = System.currentTimeMillis();
 
     /**
