@@ -2,7 +2,6 @@ package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.exception.io.StreamCloseException;
-import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
 
 import java.io.*;
 import java.util.function.Consumer;
