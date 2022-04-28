@@ -1,16 +1,20 @@
 package  com.tingfeng.util.java.base.file.csv;
 
+import com.tingfeng.util.java.base.common.bean.CSVBatchReadParam;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+import com.tingfeng.util.java.base.common.utils.BeanUtils;
+import com.tingfeng.util.java.base.common.utils.ObjectUtils;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
+import java.io.*;
 import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * CSV读写工具类
@@ -179,5 +183,80 @@ public class CSVUtil {
     		}
     	}
        return sb.toString();
+    }
+
+    /**
+     * 分批读取CSV内容并转为指定对象
+     * @param csvBatchReadParam
+     * @param <T>
+     */
+    public static <T> void readCSVInBatch(CSVBatchReadParam<T> csvBatchReadParam){
+        //获取字段
+        String separator = csvBatchReadParam.getSeparator();
+        int batchSize = csvBatchReadParam.getBatchSize();
+        String[] headers = csvBatchReadParam.getHeaders();
+        boolean firstLineIsHeaders = csvBatchReadParam.isFirstLineIsHeaders();
+        Class<T> beanCls = csvBatchReadParam.getBeanCls();
+        Supplier<Stream<String>> contentSupplier = csvBatchReadParam.getContentSupplier();
+       if(csvBatchReadParam.getBatchSize() <= 0){
+           throw new IllegalArgumentException("batch size must over than 0");
+       }
+       if(ObjectUtils.isAnyEmpty(csvBatchReadParam.getConsumerContentF(),csvBatchReadParam.getContentSupplier(),csvBatchReadParam.getBeanCls())){
+           throw new IllegalArgumentException("contentSupplier,consumerContentF,beanCls must not be null");
+       }
+       if(headers == null || headers.length == 0){
+           if(!firstLineIsHeaders){
+                throw new IllegalArgumentException("can not read used headers! first line is headers or specified the headers");
+           }
+           headers = contentSupplier.get()
+                   .findFirst()
+                   .map(str -> str.split(separator))
+                   .orElse(new String[]{});
+           if(csvBatchReadParam.getHeaderHandler() != null){
+               csvBatchReadParam.getHeaderHandler().accept(headers);
+           }
+       }
+        Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter() == null ?
+                BeanUtils.createBeanConverter(headers, beanCls, null) : csvBatchReadParam.getBeanConverter();
+        //分批次读取每一行的值
+        handleByBatch(csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0,batchSize,(skip,limit) -> {
+            //在这里处理每一列的值
+            List<T> contentList = null;
+                Stream<String[]> stream = contentSupplier.get()
+                        .skip(skip)
+                        .limit(limit)
+                        .map(str -> str.split(separator));
+                if(csvBatchReadParam.getContentHandler() != null){
+                    stream = stream.peek(csvBatchReadParam.getContentHandler());
+                }
+                contentList = stream
+                        .map(beanConverter::apply)
+                        .collect(Collectors.toList());
+                csvBatchReadParam.getConsumerContentF().accept(contentList);
+            return contentList;
+        });
+    }
+
+    private static <T> void handleByBatch(int startLine,int batchSize, Function2<List<T>, Integer, Integer> handleContentF){
+        int skipSize = startLine;
+        while (true) {
+            List<T> list = handleContentF.run(skipSize, batchSize);
+            if(ObjectUtils.isEmpty(list) || list.size() < batchSize){
+                break;
+            }
+            skipSize += batchSize;
+        }
+    }
+
+    /**
+     * 分批读取CSV内容并转为指定对象
+     * @param batchSize
+     * @param beanCls
+     * @param contentSupplier
+     * @param consumerContentF
+     * @param <T>
+     */
+    public static <T> void readCSVInBatch(int batchSize,Class<T> beanCls,Supplier<Stream<String>> contentSupplier, Consumer<List<T>> consumerContentF){
+        readCSVInBatch(new CSVBatchReadParam<>(batchSize,beanCls,contentSupplier,consumerContentF));
     }
 }
