@@ -5,6 +5,7 @@ import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
 import com.tingfeng.util.java.base.common.inter.PropertyFunction;
+import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
@@ -22,6 +23,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @author huitoukest
@@ -354,5 +356,61 @@ public class BeanUtils {
         }
         // 小写第一个字母
         return StringUtils.firstLetterToLower(getterName);
+    }
+
+    /**
+     * 获取一个转换器，将输入的字符串数组转为一个bean
+     * @param filedNames  需要转换的字段名称
+     * @param beanCls 需要转为的目标对象的class， 必须是标准的java bean, 带有标准的getter 与 setter 方法
+     * @param filedValueConverter  自定义的属性转换器：输入[当前字段名称，当前内容字符串], 返回转换后的对象; 传入 null 则不使用
+     * @param <T>
+     * @return
+     */
+    public static <T> Function<String[],T> createBeanConverter(String[] filedNames, Class<T> beanCls, Function2<Object,String,String> filedValueConverter){
+        PropertyDescriptor[] propertyDescriptors;
+        try {
+            propertyDescriptors = Introspector.getBeanInfo(beanCls).getPropertyDescriptors();
+        } catch (IntrospectionException e) {
+            throw new RuntimeException(e);
+        }
+        Map<String, PropertyDescriptor> beanFiledNameMap = Arrays.asList(propertyDescriptors)
+                .stream()
+                .collect(Collectors.toMap(PropertyDescriptor::getName, Function.identity()));
+        Map<Integer, PropertyDescriptor> filedIndexMap = IntStream.range(0, filedNames.length)
+                .mapToObj(index -> {
+                    PropertyDescriptor propertyDescriptor = beanFiledNameMap.get(filedNames[index]);
+                    if (propertyDescriptor == null || propertyDescriptor.getWriteMethod() == null) {
+                        return null;
+                    }
+                    return new Tuple2<>(index,propertyDescriptor);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Tuple2::get_1, Tuple2::get_2));
+        return contents -> {
+            T bean;
+            try {
+                bean = beanCls.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            IntStream.range(0,contents.length)
+                    .forEach(index -> {
+                        PropertyDescriptor propertyDescriptor = filedIndexMap.get(index);
+                        if(propertyDescriptor != null) {
+                            Object filedValue = contents[index];
+                            if (null != filedValueConverter) {
+                                filedValue = filedValueConverter.run(propertyDescriptor.getName(), contents[index]);
+                            } else {
+                                filedValue = ObjectUtils.getObject(propertyDescriptor.getPropertyType(), contents[index]);
+                            }
+                            try {
+                                propertyDescriptor.getWriteMethod().invoke(bean, filedValue);
+                            } catch (IllegalAccessException | InvocationTargetException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
+            return bean;
+        };
     }
 }
