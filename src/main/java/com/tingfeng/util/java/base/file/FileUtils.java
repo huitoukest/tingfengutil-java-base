@@ -207,7 +207,7 @@ public class FileUtils {
 					}
 					int countOfNowCycle = 0;// 当前循环的次数
 					while ((lengthPerTime = (is.read(b))) != -1) {
-						fStream.write(b);
+						fStream.write(b,0,lengthPerTime);
 						if(callBack != null) {
 							lengthReadSum += lengthPerTime;
 							if (countOfNowCycle >= countOfUpdate) {
