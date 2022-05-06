@@ -9,11 +9,14 @@ import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.ObjectUtils;
 
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -81,7 +84,7 @@ public class CSVUtil {
                 functionVOne.accept(t);
             }
         }catch (Throwable e){
-
+            throw new BaseException(e);
         }finally{
             if(br!=null){
                 try {
@@ -216,10 +219,17 @@ public class CSVUtil {
                csvBatchReadParam.getHeaderHandler().accept(headers);
            }
        }
-        Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter() == null ?
-                BeanUtils.createBeanConverter(headers, beanCls, null) : csvBatchReadParam.getBeanConverter();
+        Function<String[], ?> beanConverter = csvBatchReadParam.getBeanConverter();
+        if(beanConverter == null){
+            if(beanCls.isAssignableFrom(Map.class)){
+                beanConverter = createMapConverter(headers);
+            }else {
+                beanConverter = BeanUtils.createBeanConverter(headers, beanCls, null);
+            }
+        }
         //分批次读取每一行的值
-        handleByBatch(csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0,batchSize,(skip,limit) -> {
+        Function<String[], ?> finalBeanConverter = beanConverter;
+        handleByBatch(csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0,batchSize,(skip, limit) -> {
             //在这里处理每一列的值
             List<T> contentList = null;
                 Stream<String[]> stream = contentSupplier.get()
@@ -229,12 +239,23 @@ public class CSVUtil {
                 if(csvBatchReadParam.getContentHandler() != null){
                     stream = stream.peek(csvBatchReadParam.getContentHandler());
                 }
-                contentList = stream
-                        .map(beanConverter::apply)
-                        .collect(Collectors.toList());
+                contentList = ((List<T>) stream
+                        .map(finalBeanConverter::apply)
+                        .collect(Collectors.toList()));
                 csvBatchReadParam.getConsumerContentF().accept(contentList);
             return contentList;
         });
+    }
+
+    private static <T> Function<String[],Map<String,String>> createMapConverter(String[] headers) {
+        return contents -> {
+            Map<String,String> map = new HashMap<>();
+            IntStream.range(0, contents.length)
+                    .forEach(index -> {
+                        map.put(headers[index],contents[index]);
+                    });
+            return map;
+        };
     }
 
     private static <T> void handleByBatch(int startLine,int batchSize, Function2<List<T>, Integer, Integer> handleContentF){
@@ -258,5 +279,15 @@ public class CSVUtil {
      */
     public static <T> void readCSVInBatch(int batchSize,Class<T> beanCls,Supplier<Stream<String>> contentSupplier, Consumer<List<T>> consumerContentF){
         readCSVInBatch(new CSVBatchReadParam<>(batchSize,beanCls,contentSupplier,consumerContentF));
+    }
+
+    /**
+     * 分批读取CSV内容并转为指定对象,通过map方式读取内容
+     * @param batchSize
+     * @param contentSupplier
+     * @param consumerContentF
+     */
+    public static void readCSVInBatchToMap(int batchSize,Supplier<Stream<String>> contentSupplier, Consumer<List<Map>> consumerContentF){
+        readCSVInBatch(new CSVBatchReadParam<>(batchSize, Map.class, contentSupplier, consumerContentF));
     }
 }
