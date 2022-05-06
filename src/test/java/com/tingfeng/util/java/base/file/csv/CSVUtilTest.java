@@ -14,8 +14,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
 
-import static org.junit.Assert.*;
-
 public class CSVUtilTest {
 
     @Test
@@ -33,6 +31,24 @@ public class CSVUtilTest {
                 list -> {
                     Assert.assertEquals(2,list.size());
                     Assert.assertEquals(DateUtils.getDate("2022-04-28 00:00:00"),list.get(0).getHeader5());
+                });
+    }
+
+    @Test
+    public void readCSVInBatchToMap() throws URISyntaxException {
+        URL resource = Thread.currentThread().getContextClassLoader().getResource("CSVTest.csv");
+        Path path = Paths.get(resource.toURI());
+        CSVUtil.readCSVInBatchToMap(RandomUtils.randomInt(2,2000),
+                () -> {
+                    try {
+                        return Files.lines(path, StandardCharsets.UTF_8);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                },
+                list -> {
+                    Assert.assertEquals(2,list.size());
+                    Assert.assertEquals("2022-04-28 00:00:00",list.get(0).get("header5"));
                 });
     }
 
