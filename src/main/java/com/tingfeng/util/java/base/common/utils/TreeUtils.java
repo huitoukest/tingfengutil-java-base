@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.bean.DefaultTreeNode;
 import com.tingfeng.util.java.base.common.bean.GenericTreeNode;
+import com.tingfeng.util.java.base.common.bean.TreeNode;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.consumer.ConsumerTwo;
 import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
@@ -338,7 +339,7 @@ public class TreeUtils {
      * @param <T> 当前排序的类型
      * @return
      */
-    public static <T extends GenericTreeNode> List<T> getTreeList(List<T> list, Comparator<T> comparator) {
+    public static <T extends TreeNode> List<T> getTreeList(List<T> list, Comparator<T> comparator) {
         if(comparator != null){
             list = list.stream().sorted(comparator).collect(Collectors.toList());
         }
@@ -356,7 +357,7 @@ public class TreeUtils {
                     rootNodes.add(t);
                 }else {
                     if(null == parent.getChildren()){
-                        parent.setChildren(new ArrayList());
+                        throw new BaseException("can't add child to tree node, because TreeNode#getChildren() method return null");
                     }
                     parent.getChildren().add(t);
                 }
