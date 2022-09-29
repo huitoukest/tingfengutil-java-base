@@ -1,14 +1,11 @@
 package com.tingfeng.util.java.base.common.helper;
 
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
 import com.tingfeng.util.java.base.common.bean.tuple.Tuple3;
 import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.*;
 
 import static com.tingfeng.util.java.base.common.utils.ObjectUtils.isEmpty;
@@ -185,6 +182,17 @@ public class JudgeEmptyHelper  implements ObjectDealReturnInter<Boolean> {
     public Boolean dealCommonObject(Object obj) {
         if (null == obj) {
             return true;
+        }
+        return false;
+    }
+
+    @Override
+    public Boolean dealOptional(Optional optional) {
+        if(null == optional || !optional.isPresent()){
+             return true;
+        }
+        if(recursive){
+            return isEmpty(optional.get(), true,isTrim);
         }
         return false;
     }

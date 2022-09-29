@@ -3,6 +3,7 @@ package com.tingfeng.util.java.base.common.inter;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  *  即调用者需要区分对象可能的类型；实现者则处理具体的逻辑
@@ -55,5 +56,11 @@ public interface ObjectDealReturnInter<T>{
      * @return
      */
     T dealCommonObject(Object source);
-    
+
+    /**
+     * 处理 Optional 的对象
+     * @param optional
+     * @return
+     */
+    T dealOptional(Optional optional);
 }

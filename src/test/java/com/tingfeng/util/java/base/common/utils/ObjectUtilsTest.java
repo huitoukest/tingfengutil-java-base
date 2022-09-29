@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
 /**
  * @Author wangGang
@@ -41,6 +42,11 @@ public class ObjectUtilsTest {
         Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList("",new Object[]{Collections.EMPTY_LIST,"  "}),false,true));
         Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList(""),false,true));
         Assert.assertTrue(ObjectUtils.isEmpty("  ",true,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(Optional.of("  "),true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(Optional.of("  "),false,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(Optional.of("  "),true,false));
+        Assert.assertTrue(ObjectUtils.isEmpty(Arrays.asList(Optional.of("  ")),true,true));
+        Assert.assertFalse(ObjectUtils.isEmpty(Arrays.asList(Optional.of("  ")),true,false));
     }
     @Test
     public void isEmptyBaseDataTest(){
@@ -55,6 +61,13 @@ public class ObjectUtilsTest {
         Assert.assertFalse(ObjectUtils.isEmpty(new double[][]{new double[]{1}},true,true));
         Assert.assertFalse(ObjectUtils.isEmpty(new char[][]{new char[]{1}},true,true));
         Assert.assertFalse(ObjectUtils.isEmpty(new boolean[][]{new boolean[]{true}},true,true));
+        //test Optional
+        Assert.assertTrue(ObjectUtils.isEmpty(Optional.empty(),false,false));
+        Assert.assertTrue(ObjectUtils.isEmpty(Optional.empty(),true,false));
+        Assert.assertTrue(ObjectUtils.isEmpty(Optional.empty(),false,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(Optional.empty(),true,true));
+        Assert.assertTrue(ObjectUtils.isEmpty(Optional.of(new char[][]{}),true,false));
+        Assert.assertFalse(ObjectUtils.isEmpty(Optional.of(new byte[][]{new byte[]{1}}),true,true));
     }
 
     @Test

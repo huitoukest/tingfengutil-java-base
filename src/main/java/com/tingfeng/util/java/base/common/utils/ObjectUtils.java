@@ -369,6 +369,9 @@ public class ObjectUtils {
         if (obj.getClass().isArray()) {
             return judgeEmptyHelper.dealArray(obj);
         }
+        if(obj instanceof Optional){
+            return judgeEmptyHelper.dealOptional((Optional) obj);
+        }
         return judgeEmptyHelper.dealCommonObject(obj);
     }
 
