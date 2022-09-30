@@ -596,6 +596,9 @@ public class DateUtils {
 			}
 			value = value.replaceAll("[^\\d]","");
 			int length = value.length();
+			if(length == 10){
+				return new Date(1000 * Long.parseLong(value));
+			}
 			if(length == 13){//默认识别为毫秒数量
 				return new Date(Long.parseLong(value));
 			}
