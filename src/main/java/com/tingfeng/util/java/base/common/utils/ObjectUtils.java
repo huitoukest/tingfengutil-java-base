@@ -587,8 +587,10 @@ public class ObjectUtils {
             if(isInteger(a) && isInteger(b)){
                 return ((Number) a).longValue() - ((Number) b).longValue() == 0;
             }else if(isFloat(a) && isFloat(b)){
-               return ((Number) a).doubleValue() - ((Number) b).doubleValue() == 0;
-            }else{
+                return ((Number) a).doubleValue() - ((Number) b).doubleValue() == 0;
+            }else if(a.equals(b) || b.equals(a)){
+                return true;
+            }else {
                 String aStr = String.valueOf(a);
                 String bStr = String.valueOf(b);
                 return aStr.equals(bStr);
