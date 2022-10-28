@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
 import com.tingfeng.util.java.base.common.utils.BeanUtils;
@@ -68,66 +69,53 @@ public class DateUtils {
 	 */
 	public static final String FORMATE_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
-	private static final Map<String,SimpleDateFormat> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25);
+	private static final Map<String,FixedPoolHelper<SimpleDateFormat>> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25);
 	/**
 	 * 最大的MapSize，通过此可以控制缓存的SimpleDateFormat的数量,非线程安全，从性能角度考虑
 	 */
 	public static int maxFormatMapSize = 40;
-
-	//初始化,对常用的格式进行缓存
-	static {
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD,new SimpleDateFormat(FORMATE_YYYYMMDD));
-	    DATE_FORMAT_MAP.put(FORMATE_HHMMSS,new SimpleDateFormat(FORMATE_HHMMSS));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMM,new SimpleDateFormat(FORMATE_YYYYMM));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYY,new SimpleDateFormat(FORMATE_YYYY));
-	    
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDD_THROUGH_LINE));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMM_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMM_THROUGH_LINE));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE));
-		DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDTHHMMSSZ_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDDTHHMMSSZ_THROUGH_LINE));
-		DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE,new SimpleDateFormat(FORMATE_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE));
-
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD_CHN,new SimpleDateFormat(FORMATE_YYYYMMDD_CHN));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMM_CHN,new SimpleDateFormat(FORMATE_YYYYMM_CHN));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_CHN));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_CHN,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_CHN));
-	    
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDD_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDD_OBLINE));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSS_OBLINE));
-	    DATE_FORMAT_MAP.put(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE,new SimpleDateFormat(FORMATE_YYYYMMDDHHMMSSSSS_OBLINE));
-
-
-	}
+	/**
+	 * 记录系统定义的几种常见的日期格式
+	 */
+	public static final String[] BASE_DATE_FORMAT = new String[]{
+			FORMATE_YYYYMMDDHHMMSSSSS,FORMATE_YYYYMMDDHHMMSS,FORMATE_YYYYMMDD,FORMATE_HHMMSS,FORMATE_YYYYMM,FORMATE_YYYY,
+			FORMATE_YYYYMMDD_THROUGH_LINE,FORMATE_YYYYMM_THROUGH_LINE,FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE,FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE,FORMATE_YYYYMMDDTHHMMSSZ_THROUGH_LINE,FORMATE_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE,
+			FORMATE_YYYYMMDD_CHN,FORMATE_YYYYMM_CHN,FORMATE_YYYYMMDDHHMMSS_CHN,FORMATE_YYYYMMDDHHMMSSSSS_CHN,
+			FORMATE_YYYYMMDD_OBLINE,FORMATE_YYYYMMDDHHMMSS_OBLINE,FORMATE_YYYYMMDDHHMMSSSSS_OBLINE
+	};
 
 	/**
 	 * 保存当前缓存map的一个大小，非线程安全，从性能角度考虑
 	 */
 	private static int currentMapSize = DATE_FORMAT_MAP.size();
+	/**
+	 * 日期格式化中 缓存的(每一种format格式对应) SimpleDateFormat 数量最大对象值，在多线程并发的时候指定此值可以提高并发性能
+	 * 推荐值等于 cpu核心数 的1-2倍数, 默认值为 max(8,cpu核心数);
+	 * 在调用此DateUtils 方法前设定此值可以生效
+	 */
+	public static int DATE_EACH_FORMAT_POOL_INIT_SIZE = Math.max(8,Runtime.getRuntime().availableProcessors());
 
 	/**
 	 * 获取一个指定格式的SimpleDateFormat对象
-	 * @param formateString
+	 * @param formatString
 	 * @return
 	 */
-	private static SimpleDateFormat getSimpleDateFormat(String formateString) {
-	    SimpleDateFormat simpleDateFormat = DATE_FORMAT_MAP.get(formateString);
-	    if( simpleDateFormat == null) {
-			simpleDateFormat = new SimpleDateFormat(formateString);
+	private static FixedPoolHelper<SimpleDateFormat> getSimpleDateFormatPool(String formatString) {
+		FixedPoolHelper<SimpleDateFormat> simpleDateFormatHelper = DATE_FORMAT_MAP.get(formatString);
+	    if( simpleDateFormatHelper == null) {
+			simpleDateFormatHelper = new FixedPoolHelper(DATE_EACH_FORMAT_POOL_INIT_SIZE,() -> new SimpleDateFormat(formatString));
 			/**
 			 * 从性能角度考虑，不加锁。最多创建一些多余的对象，资源开销不大
 			 */
 	    	if(currentMapSize < maxFormatMapSize){
-				DATE_FORMAT_MAP.put(formateString, simpleDateFormat);
+				DATE_FORMAT_MAP.put(formatString, simpleDateFormatHelper);
 				currentMapSize++;
 	    	}
 	    }
-	    return simpleDateFormat;
+	    return simpleDateFormatHelper;
 	}
 
-
+	
 
 	/**
 	 * 根据给定的格式与时间(Date类型的)，返回时间字符串。最为通用。<br>
@@ -149,10 +137,8 @@ public class DateUtils {
 	 * @return String 指定格式的日期字符串.
 	 */
 	public static String format(Date date,String format){
-		SimpleDateFormat sdf = getSimpleDateFormat(format);
-		synchronized (sdf) {
-			return sdf.format(date);
-		}
+		FixedPoolHelper<SimpleDateFormat> formatPool = getSimpleDateFormatPool(format);
+		return formatPool.run(simpleDateFormat -> simpleDateFormat.format(date));
 	}
 
 	/**
@@ -161,12 +147,15 @@ public class DateUtils {
 	 * @param format 格式化的字符串，见常量
 	 * @return
 	 */
-	public static Date parse(String date,String format) throws ParseException {
-		SimpleDateFormat sdf = getSimpleDateFormat(format);
-		synchronized (sdf) {
-			sdf = new SimpleDateFormat(format);
-			return sdf.parse(date);
-		}
+	public static Date parse(String date,String format){
+		FixedPoolHelper<SimpleDateFormat> formatPool = getSimpleDateFormatPool(format);
+		return formatPool.run(simpleDateFormat -> {
+			try {
+				return simpleDateFormat.parse(date);
+			} catch (ParseException e) {
+				throw new RuntimeException(e);
+			}
+		});
 	}
 
 	/*************************************
