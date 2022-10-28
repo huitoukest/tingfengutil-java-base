@@ -72,6 +72,7 @@ public class DateUtils {
 	private static final Map<String,FixedPoolHelper<SimpleDateFormat>> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25);
 	/**
 	 * 最大的MapSize，通过此可以控制缓存的SimpleDateFormat的数量,非线程安全，从性能角度考虑
+	 * 在调用此DateUtils 方法前设定此值可以生效
 	 */
 	public static int maxFormatMapSize = 40;
 	/**
@@ -95,9 +96,17 @@ public class DateUtils {
 	 */
 	public static int DATE_EACH_FORMAT_POOL_INIT_SIZE = Math.max(8,Runtime.getRuntime().availableProcessors());
 
+	static {
+		//将预定义的初始化格式写入
+		for (int i = 0; i < BASE_DATE_FORMAT.length; i++) {
+			getSimpleDateFormatPool(BASE_DATE_FORMAT[i]);
+		}
+	}
 	/**
 	 * 获取一个指定格式的SimpleDateFormat对象
-	 * @param formatString
+	 * 默认缓存最多 maxFormatMapSize = 40 种格式,系统预置 19种; 超过 maxFormatMapSize 中后由于未命中缓存性能会下降很多 </br>
+	 * 在调用此DateUtils 方法前设定 maxFormatMapSize 值可以生效
+	 * @param formatString 日期格式
 	 * @return
 	 */
 	private static FixedPoolHelper<SimpleDateFormat> getSimpleDateFormatPool(String formatString) {
