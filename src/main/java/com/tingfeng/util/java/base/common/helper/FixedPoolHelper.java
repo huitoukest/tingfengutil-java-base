@@ -65,7 +65,9 @@ public class FixedPoolHelper<T> {
     }
 
     /**
-     * 此方法是线程安全的,这里的currentThread不需要同步，
+     * 此方法是线程安全的
+     * </br>实现说明：</br>
+     * 这里的currentThread不需要同步
      * 只需要大概正确就行，这样反而效率更高
      * @param run
      * @param <R>
