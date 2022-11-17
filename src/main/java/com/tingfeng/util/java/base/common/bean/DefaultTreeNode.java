@@ -4,6 +4,20 @@ public class DefaultTreeNode extends GenericTreeNode<DefaultTreeNode,String>{
     private String id;
     private String parentId;
     private int sortValue;
+
+    public DefaultTreeNode(String id, String parentId, int sortValue) {
+        this.id = id;
+        this.parentId = parentId;
+        this.sortValue = sortValue;
+    }
+
+    public DefaultTreeNode(String id, String parentId) {
+       this(id,parentId,0);
+    }
+
+    public DefaultTreeNode() {
+    }
+
     @Override
     public String getId() {
         return this.id;

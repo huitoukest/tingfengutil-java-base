@@ -1,18 +1,18 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.tingfeng.util.java.base.common.bean.DefaultTreeNode;
-import com.tingfeng.util.java.base.common.bean.GenericTreeNode;
 import com.tingfeng.util.java.base.common.bean.TreeNode;
+import com.tingfeng.util.java.base.common.bean.TreeTraverseContext;
+import com.tingfeng.util.java.base.common.constant.TraversalPolicy;
 import com.tingfeng.util.java.base.common.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.consumer.ConsumerTwo;
-import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVTwo;
+import com.tingfeng.util.java.base.common.utils.support.tree.Traverse;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -157,197 +157,62 @@ public class TreeUtils {
     }
 
     /**
-     * 前序遍历(Preorder Traversal 亦称先序遍历)——访问根结点—>根的左子树—>根的右子树 (Data -> Left -> Right)。
-     * @param treeList tree 结构的List
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
+     * 遍历 一个 tree结构的数据; 当前遍历层级默认为0,当前 treeList 的父节点默认为 null
+     * @param treeList 当前 tree的根节点数据
+     * @param traversalPolicy 遍历的策略 {@link TraversalPolicy}
+     * @param childrenGetter 获取当前节点的children的方法
+     * @param traverseF 用于遍历数据，输入节点信息，返回是否继续遍历
      * @param <T>
      */
-    /*public static <T> void traverseByDLR(List<T> treeList, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        traverseByDLR(treeList,null,childrenGetter,nodeAndParentConsumer);
-    }*/
-    /**
-     * 前序遍历(Preorder Traversal 亦称先序遍历)——访问根结点—>根的左子树—>根的右子树 (Data -> Left -> Right)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByDLR(List<T> treeList,T parent, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        for (T t : treeList) {
-            nodeAndParentConsumer.accept(t,parent);
-            Optional.ofNullable(childrenGetter.apply(t))
-                    .filter(ObjectUtils::isNotEmpty)
-                    .ifPresent(children -> {
-                        traverseByDLR(children,t,childrenGetter,nodeAndParentConsumer);
-                    });
-        }
-    }*/
+    public static <T> void traverse(List<T> treeList, TraversalPolicy traversalPolicy, Function<T,List<T>> childrenGetter, Predicate<TreeTraverseContext<T>> traverseF){
+        traverse(treeList,traversalPolicy,null,childrenGetter,traverseF);
+    }
 
     /**
-     * 前序遍历 (Preorder Traversal 亦称先序遍历)——访问根结点—>根的右子树—>根的左子树 (Data -> Right -> Left)。
-     * @param treeList tree 结构的List
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
+     * 遍历 一个 tree结构的数据； 当前遍历层级默认为0
+     * @param treeList 当前 tree的根节点数据
+     * @param traversalPolicy 遍历的策略 {@link TraversalPolicy}
+     * @param parent 当前 treeList 的父节点,可以指定父节点
+     * @param childrenGetter 获取当前节点的children的方法
+     * @param traverseF 用于遍历数据，输入节点信息，返回是否继续遍历
      * @param <T>
      */
-    /*public static <T> void traverseByDRL(List<T> treeList, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        traverseByDRL(treeList,null,childrenGetter,nodeAndParentConsumer);
-    }*/
+    public static <T> void traverse(List<T> treeList, TraversalPolicy traversalPolicy,T parent, Function<T,List<T>> childrenGetter,Predicate<TreeTraverseContext<T>> traverseF){
+        traverse(treeList,0,traversalPolicy,parent,childrenGetter,traverseF);
+    }
 
     /**
-     * 前序遍历 (Preorder Traversal 亦称先序遍历)——访问根结点>根的右子树—>根的左子树— (Data -> Right -> Left)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
+     * 遍历 一个 tree结构的数据
+     * @param treeList 当前 tree的根节点数据
+     * @param level 指定当前层级信息,默认值为 0
+     * @param traversalPolicy 遍历的策略 {@link TraversalPolicy}
+     * @param parent 当前 treeList 的父节点,可以指定父节点
+     * @param childrenGetter 获取当前节点的children的方法
+     * @param traverseF 用于遍历数据，输入节点信息，返回是否继续遍历
      * @param <T>
      */
-    /*public static <T> void traverseByDRL(List<T> treeList,T parent, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        for (int i = treeList.size() - 1; i >= 0 ; i--) {
-            T t = treeList.get(i);
-            nodeAndParentConsumer.accept(t,parent);
-            Optional.ofNullable(childrenGetter.apply(t))
-                    .filter(ObjectUtils::isNotEmpty)
-                    .ifPresent(children -> {
-                        traverseByDRL(children,t,childrenGetter,nodeAndParentConsumer);
-                    });
-
-        }
-    }*/
-
-    /**
-     * LDR：中序遍历(Inorder Traversal)——根的左子树—>根节点—>根的右子树 (Left  -> Data -> Right)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param canVisitParentPredicate [当前父节点的所有子节点，当前所有子节点 遍历的次数] 返回是否可以遍历父节点(在遍历子节点前触发); 遍历完所有子节点后会再次尝试遍历一次父节点 ; 如果一直返回false，则只会遍历 整棵树的叶子结点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByLDR(List<T> treeList, T parent, Function<T,List<T>> childrenGetter, Function2<Boolean,List<T>,Integer> canVisitParentPredicate, ConsumerTwo<T,T> nodeAndParentConsumer){
-        for (int i = 0; i < treeList.size(); i++) {
-            T t = treeList.get(i);
-            Optional.ofNullable(childrenGetter.apply(t))
-                    .filter(ObjectUtils::isNotEmpty)
-                    .ifPresent(children -> {
-                        int size = children.size();
-                        for (int j = 0; j <= size; j++) {
-                            if(canVisitParentPredicate.run(children,j)){
-                                nodeAndParentConsumer.accept(t,parent);
-                            }
-                            if(j < size) {
-                                T child = children.get(j);
-                                traverseByLDR(treeList,child,childrenGetter,canVisitParentPredicate,nodeAndParentConsumer);
-                                nodeAndParentConsumer.accept(child, t);
-                            }
-                        }
-                    });
-
-        }
-    }*/
-
-    /**
-     * LDR：中序遍历(Inorder Traversal)——根的左子树—>根节点—>根的右子树 (Left  -> Data -> Right)。
-     * 默认遍历顺序()
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByLDR(List<T> treeList, T parent, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        traverseByLDR(treeList,parent,childrenGetter,(children,count) -> count == 1,nodeAndParentConsumer);
-    }*/
-
-    /**
-     * RDL：中序遍历(Inorder Traversal)——根的左子树—>根节点—>根的右子树 (Right  -> Data -> Left)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param canVisitParentPredicate [当前父节点的所有子节点，当前所有子节点 遍历的次数] 返回是否可以遍历父节点(在遍历子节点前触发); 遍历完所有子节点后会再次尝试遍历一次父节点 ; 如果一直返回false，则只会遍历 整棵树的叶子结点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByRDL(List<T> treeList, T parent, Function<T,List<T>> childrenGetter, Function2<Boolean,List<T>,Integer> canVisitParentPredicate, ConsumerTwo<T,T> nodeAndParentConsumer){
-        for (int i = treeList.size() - 1; i >= 0 ; i--) {
-            T t = treeList.get(i);
-            Optional.ofNullable(childrenGetter.apply(t))
-                    .filter(ObjectUtils::isNotEmpty)
-                    .ifPresent(children -> {
-                        int size = children.size();
-                        for (int j = 0; j <= size; j++) {
-                            if(canVisitParentPredicate.run(children,j)){
-                                nodeAndParentConsumer.accept(t,parent);
-                            }
-                            if(j < size) {
-                                T child = children.get(size - 1 - j);
-                                traverseByLDR(treeList,child,childrenGetter,canVisitParentPredicate,nodeAndParentConsumer);
-                                nodeAndParentConsumer.accept(child, t);
-                            }
-                        }
-                    });
-
-        }
-    }*/
-
-    /**
-     * RDL：中序遍历(Inorder Traversal)——根的左子树—>根节点—>根的右子树 (Right  -> Data -> Left)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByRDL(List<T> treeList, T parent, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        traverseByRDL(treeList,parent,childrenGetter,(children,count) -> count == 1,nodeAndParentConsumer);
-    }*/
-
-
-    /**
-     * LRD：后序遍历(Inorder Traversal)——根的左子树—>根的右子树—>根节点 (Left -> Right  -> Data)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByLRD(List<T> treeList, T parent, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        traverseByLDR(treeList,parent,childrenGetter,(children,count) -> count == children.size(),nodeAndParentConsumer);
-    }*/
-
-    /**
-     * RLD：后序遍历(Inorder Traversal)—— 根的右子树—>根的左子树—>根节点 (Left -> Right  -> Data)。
-     * @param treeList tree 结构的List
-     * @param parent 当前treeList 的父节点
-     * @param childrenGetter 获取当前节点的所有子节点
-     * @param nodeAndParentConsumer [当前节点，父节点]
-     * @param <T>
-     */
-    /*public static <T> void traverseByRLD(List<T> treeList, T parent, Function<T,List<T>> childrenGetter, ConsumerTwo<T,T> nodeAndParentConsumer){
-        traverseByRDL(treeList,parent,childrenGetter,(children,count) -> count == children.size(),nodeAndParentConsumer);
-    }*/
+    public static <T> void traverse(List<T> treeList,int level, TraversalPolicy traversalPolicy,T parent, Function<T,List<T>> childrenGetter,Predicate<TreeTraverseContext<T>> traverseF){
+        Traverse traverse = traversalPolicy.getTraverse();
+        traverse.traverse(treeList,level,parent,childrenGetter,traverseF);
+    }
 
     /**
      * 将list中的数据转换为树形结构的数据;
-     * 操作时将会直接引用List中的对象，所以会影响原对象
+     * 操作时将会直接引用List中的对象，<br/> 注意：所以会影响原对象,会给参数中输入的list 对象填充 children 对象的值
      * 本方法以头通过Map快速查找 树的父子关系，内存消耗高，速度快
      * 性能测试： 1w节点 -> 12ms ; 10w 节点 -> 82ms
      * @param list 数据来源list
      * @param comparator if null ,not use ;
      * @param <T> 当前排序的类型
-     * @return
+     * @return 树形结构的数据
      */
     public static <T extends TreeNode> List<T> getTreeList(List<T> list, Comparator<T> comparator) {
         if(comparator != null){
             list = list.stream().sorted(comparator).collect(Collectors.toList());
         }
-        Map<Object,T> nodeMap = new HashMap<>((int)(list.size() * 0.7));
+        Map<Object,T> nodeMap = list.stream()
+                .collect(Collectors.toMap(T::getId,Function.identity()));
         List<T> rootNodes = new ArrayList<>();
-        for (T t : list) {
-            nodeMap.put(t.getId(),t);
-        }
         for (T t : list) {
             if(t.getParentId() == null || t.getParentId().equals(t.getId())){
                 rootNodes.add(t);
