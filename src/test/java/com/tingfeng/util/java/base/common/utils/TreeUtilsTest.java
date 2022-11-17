@@ -3,9 +3,12 @@ package com.tingfeng.util.java.base.common.utils;
 import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.DefaultTreeNode;
 import com.tingfeng.util.java.base.common.bean.User;
+import com.tingfeng.util.java.base.common.constant.TraversalPolicy;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 public class TreeUtilsTest {
@@ -46,6 +49,12 @@ public class TreeUtilsTest {
         return k;
     }
 
+    /**
+     * 生成 深度等于 level, 总节点数为 maxNodeSize 的一个 tree
+     * @param level
+     * @param maxNodeSize
+     * @return 一个 tree 的各个 Node,它们的层级关系是同级的，尚未建立父子层级关系
+     */
     public List<DefaultTreeNode> generateTree(int level,int maxNodeSize){
 
         Function<Integer,String> levelNodeBaseRandomCharF = l -> {
@@ -121,51 +130,143 @@ public class TreeUtilsTest {
         });
     }
 
-   /* @Test
-    public void traverseByDLR() {
-        int testCount = 5000;
-        List<DefaultTreeNode> treeNodes = generateTree(10,testCount);
-        TestUtils.printTime(1,10,index -> {
-            List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-            AtomicInteger traverseCount = new AtomicInteger();
-            TreeUtils.traverseByDLR(treeList,DefaultTreeNode::getChildren,(node,parent) -> traverseCount.incrementAndGet());
-            Assert.assertEquals(testCount,traverseCount.intValue());
+    /**
+     * 示例图：
+     *                 1
+     *      ---------------------------
+     *      /      |       \         \
+     *     21      22       23        24
+     *    / \     |     /  |   \       |
+     *   31 32    33   34  35  36     37
+     *     /     |         |   |
+     *    41     42        43  44
+     * 期望的遍历的顺序为  1,21,31,32,41,22,33,42,23,34,35,43,36,44,24,37
+     */
+    @Test
+    public void testTraverseByDLR() {
+        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
+        int[] traverseExpectValue = new int[]{1,21,31,32,41,22,33,42,23,34,35,43,36,44,24,37};
+        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        AtomicInteger traverseCount = new AtomicInteger();
+        TreeUtils.traverse(treeList, TraversalPolicy.DLR,DefaultTreeNode::getChildren,traverseContext -> {
+            int currentIndex = traverseCount.getAndIncrement();
+            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            return true;
         });
     }
 
     @Test
-    public void testTraverseByDLR() {
-    }
-
-    @Test
-    public void traverseByDRL() {
-    }
-
-    @Test
     public void testTraverseByDRL() {
+        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
+        int[] traverseExpectValue = new int[]{1,24,37,23,36,44,35,43,34,22,33,42,21,32,41,31};
+        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        AtomicInteger traverseCount = new AtomicInteger();
+        TreeUtils.traverse(treeList, TraversalPolicy.DRL,DefaultTreeNode::getChildren,traverseContext -> {
+            int currentIndex = traverseCount.getAndIncrement();
+            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            //System.out.print("," + traverseContext.getNode().getId());
+            return true;
+        });
     }
 
-    @Test
-    public void traverseByLDR() {
+    /**
+     * 数据图：
+     *                 1
+     *      ---------------------------
+     *      /      |       \         \
+     *     21      22       23        24
+     *    / \     |     /  |   \       |
+     *   31 32    33   34  35  36     37
+     *     /     |         |   |
+     *    41     42        43  44
+     * @return 返回数据图中的 Tree结构的数据。
+     */
+    private static List<DefaultTreeNode> getTreeNodesForTraverse() {
+        List<DefaultTreeNode> treeNodes = new ArrayList<>();
+        treeNodes.add(new DefaultTreeNode("1",null,1));
+
+        treeNodes.add(new DefaultTreeNode("21","1",1));
+        treeNodes.add(new DefaultTreeNode("22","1",2));
+        treeNodes.add(new DefaultTreeNode("23","1",3));
+        treeNodes.add(new DefaultTreeNode("24","1",4));
+
+        treeNodes.add(new DefaultTreeNode("31","21",1));
+        treeNodes.add(new DefaultTreeNode("32","21",2));
+        treeNodes.add(new DefaultTreeNode("33","22",3));
+        treeNodes.add(new DefaultTreeNode("34","23",4));
+        treeNodes.add(new DefaultTreeNode("35","23",5));
+        treeNodes.add(new DefaultTreeNode("36","23",6));
+        treeNodes.add(new DefaultTreeNode("37","24",7));
+
+        treeNodes.add(new DefaultTreeNode("41","32",1));
+        treeNodes.add(new DefaultTreeNode("42","33",2));
+        treeNodes.add(new DefaultTreeNode("43","35",3));
+        treeNodes.add(new DefaultTreeNode("44","36",4));
+        return treeNodes;
     }
 
+    /**
+     * 中序遍历
+     * <pre>
+     * 当前遍历一个子节点后立即遍历父节点,然后遍历其它子节点
+     * 则期望的遍历的顺序为   31,21,41,32,1,42,33,22,34,23,43,35,44,36,37,24
+     * </pre>
+     */
     @Test
     public void testTraverseByLDR() {
+        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
+        int[] traverseExpectValue = new int[]{31,21,41,32,1,42,33,22,34,23,43,35,44,36,37,24};
+        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        AtomicInteger traverseCount = new AtomicInteger();
+        TreeUtils.traverse(treeList, TraversalPolicy.LDR,DefaultTreeNode::getChildren,traverseContext -> {
+            int currentIndex = traverseCount.getAndIncrement();
+            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            //System.out.print("," + traverseContext.getNode().getId());
+            //当前遍历一个子节点后,当前的索引为0 ,则接下来立即遍历父节点,然后遍历其它子节点
+            return true;
+        });
     }
 
     @Test
     public void traverseByRDL() {
-    }
-
-    @Test
-    public void testTraverseByRDL() {
+        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
+        int[] traverseExpectValue = new int[]{37,24,1,44,36,23,43,35,34,42,33,22,41,32,21,31};
+        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        AtomicInteger traverseCount = new AtomicInteger();
+        TreeUtils.traverse(treeList, TraversalPolicy.RDL,DefaultTreeNode::getChildren,traverseContext -> {
+            int currentIndex = traverseCount.getAndIncrement();
+            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            //System.out.print("," + traverseContext.getNode().getId());
+            //当前遍历一个子节点后,当前的索引为0 ,则接下来立即遍历父节点,然后遍历其它子节点
+            return true;
+        });
     }
 
     @Test
     public void traverseByLRD() {
+        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
+        int[] traverseExpectValue = new int[]{31,41,32,21,42,33,22,34,43,35,44,36,23,37,24,1};
+        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        AtomicInteger traverseCount = new AtomicInteger();
+        TreeUtils.traverse(treeList, TraversalPolicy.LRD,DefaultTreeNode::getChildren,traverseContext -> {
+            int currentIndex = traverseCount.getAndIncrement();
+            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            //System.out.print("," + traverseContext.getNode().getId());
+            return true;
+        });
     }
 
     @Test
     public void traverseByRLD() {
-    }*/
+        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
+        int[] traverseExpectValue = new int[]{37,24,44,36,43,35,34,23,42,33,22,41,32,31,21,1};
+        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        AtomicInteger traverseCount = new AtomicInteger();
+        TreeUtils.traverse(treeList, TraversalPolicy.RLD,DefaultTreeNode::getChildren,traverseContext -> {
+            int currentIndex = traverseCount.getAndIncrement();
+            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            //System.out.print("," + traverseContext.getNode().getId());
+            return true;
+        });
+    }
 }

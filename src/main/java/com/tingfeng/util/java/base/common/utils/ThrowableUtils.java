@@ -26,11 +26,11 @@ public class ThrowableUtils {
     }
 
     /**
-     * 获取特定的Throwable
-     * @param throwable
-     * @param exception
-     * @param <T>
-     * @return
+     * 从当前异常实例 获取特定的Throwable
+     * @param throwable 当前异常实例
+     * @param exception T类型的异常对应的 类
+     * @param <T> 指定的异常的类型
+     * @return 如果没有获取到则返回 null, 否则返回第一次获取到的指定 T类型的 实例
      */
     public static <T extends Throwable> T getThrowable(Throwable throwable,Class<T> exception){
         Throwable tmp = throwable;
