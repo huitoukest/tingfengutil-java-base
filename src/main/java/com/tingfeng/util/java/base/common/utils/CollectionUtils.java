@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
@@ -438,5 +439,55 @@ public class CollectionUtils {
      */
     public static <T> String toString(Collection<T> collection, String open, String close, String separator, Function<T, String> itemToStrF) {
         return toString(collection, open, close, separator, (item , index) -> itemToStrF.apply(item));
+    }
+
+    /**
+     * 通过指定映射规则 将两个Collection 做Join操作并以Map链接，数据关联在一起, 会忽略所有 keyMapper 与 valueMapper 函数执行后结果是 null 的数据
+     * @param keyList
+     * @param valueList
+     * @param keyMapper
+     * @param valueMapper
+     * @return Map&lt;K,V&gt; key = keyList中的元素,value= valueList 中的元素的Map;
+     * @param <K> 返回结果Map中key的类型
+     * @param <V> 返回结果Map中value的类型
+     * @param <J> 两个collection 在join操作时关联的对象的类型
+     */
+    public static <K,V,J> Map<K,V> join(Collection<K> keyList,Collection<V> valueList,Function<K,J> keyMapper,Function<V,J> valueMapper){
+        Map<J, List<K>> jkMap = keyList.stream()
+                .filter(it -> it != null && keyMapper.apply(it) != null)
+                .collect(Collectors.groupingBy(keyMapper));
+        Map<J, V> jvMap = valueList.stream()
+                .filter(it -> it != null && valueMapper.apply(it) != null)
+                .collect(Collectors.toMap(valueMapper,Function.identity(),(a,b) -> b));
+        return jkMap.entrySet()
+                .stream()
+                .flatMap(it -> it.getValue().stream().map(k -> new Tuple2<>(k,jvMap.get(it.getKey()))))
+                .filter(it -> it.get_2() != null)
+                .collect(Collectors.toMap(Tuple2::get_1,Tuple2::get_2));
+    }
+
+    /**
+     * 讲一个Collection转换为指定类型的List
+     * @param collection 输入的指定类型
+     * @param mapper 映射函数，将输入类型转换为目标类型
+     * @return List&lt;T&gt;
+     * @param <S> 容器中输入类型，来源类型
+     * @param <T> 容器中返回类型
+     */
+    public static <S,T> List<T> getList(Collection<S> collection,Function<S,T> mapper){
+        return collection.stream()
+                .map(mapper)
+                .collect(Collectors.toList());
+    }
+    /**
+     * 讲一个Collection转换为指定类型的Map
+     * @param collection 输入的指定类型
+     * @param keyMapper 映射函数，将输入类型转换为返回map中的key类型数据
+     * @return Map&lt;K,V&gt;
+     * @param <K> 返回的Map中key的类型
+     * @param <V> 返回的Map中value的类型
+     */
+    public static <K,V> Map<K,V> toMap(Collection<V> collection,Function<V,K> keyMapper){
+        return collection.stream().collect(Collectors.toMap(keyMapper, Function.identity(),(a,b) -> b));
     }
 }
