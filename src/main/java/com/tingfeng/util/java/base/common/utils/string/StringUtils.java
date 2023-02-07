@@ -6,7 +6,6 @@ import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.helper.StringTemplateHelper;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
-import com.tingfeng.util.java.base.common.utils.CollectionUtils;
 import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
 import org.apache.commons.logging.Log;
@@ -1381,5 +1380,46 @@ public class StringUtils {
                 target, endIndex - startIndex);
         //默认返回的索引是相对于偏移量的，所以这里需要通过偏移量来恢复索引值
         return offsetIndex >= 0 ?  offsetIndex + startIndex : offsetIndex;
+    }
+
+    /**
+     * 自定义分割函数，返回全部
+     * @param str   待分割的字符串
+     * @param delimitString 分隔符,字符串
+     * @param limit 限制返回的List的数量
+     * @return 分割后的返回结果
+     */
+    public static List<String> splitByStr(String str, String delimitString,int limit) {
+        if (null == str || limit <= 0) {
+            return Collections.emptyList();
+        }
+        if (isEmpty(delimitString)) {
+            return Arrays.asList(str);
+        }
+
+        List<String> stringList = new ArrayList<>();
+        int lastIndex = 0;
+        while (true && limit > 0) {
+            int index = str.indexOf(delimitString,lastIndex);
+            if (index < 0) {
+                stringList.add(str.substring(lastIndex));
+                break;
+            }else {
+                stringList.add(str.substring(lastIndex, index));
+            }
+            --limit;
+            lastIndex = index + delimitString.length();
+        }
+        return stringList;
+    }
+
+    /**
+     * 自定义分割函数，返回全部
+     * @param str   待分割的字符串
+     * @param delimitString 分隔符,字符串
+     * @return 分割后的返回结果
+     */
+    public static List<String> splitByStr(String str, String delimitString) {
+        return splitByStr(str,delimitString,Integer.MAX_VALUE);
     }
 }
