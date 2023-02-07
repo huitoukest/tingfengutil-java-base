@@ -1,9 +1,13 @@
-package com.tingfeng.util.java.base.common.utils;
+package com.tingfeng.util.java.base.common.utils.string;
 
+import com.tingfeng.util.java.base.common.utils.CollectionUtils;
+import com.tingfeng.util.java.base.common.utils.TestUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
@@ -37,7 +41,7 @@ public class StringUtilsTest {
             int[] next = StringUtils.getKmpNextArray(StringUtils.getCharArray(subStr));
            StringUtils.indexOfByKMP(str,subStr,next);
            System.out.println("start ...");
-           TestUtils.printTime(10,1,index ->{
+           TestUtils.printTime(10,1, index ->{
                int position = str.indexOf(subStr);
                if(index == 0){
                    System.out.println(position);
@@ -70,5 +74,21 @@ public class StringUtilsTest {
         Assert.assertEquals(6,StringUtils.lastIndexOf(a,target,6,7));
         Assert.assertEquals(6,StringUtils.lastIndexOf(a,target,4,9));
         Assert.assertEquals(-1,StringUtils.lastIndexOf(a,target,7,10));
+    }
+
+    @Test
+    public void testSplitByStr() {
+        Assert.assertEquals(Collections.emptyList(),StringUtils.splitByStr(null,"a"));
+        Assert.assertEquals(Collections.emptyList(),StringUtils.splitByStr("a,b,c",",",0));
+        Assert.assertEquals(Collections.emptyList(),StringUtils.splitByStr("a,b,c",",",-1));
+        Assert.assertEquals("a",StringUtils.splitByStr("a,b,c",",",1).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a",StringUtils.splitByStr("a,",",",1).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a@",StringUtils.splitByStr("a,",",",2).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a",StringUtils.splitByStr("a",",",1).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a",StringUtils.splitByStr("a",",",2).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a",StringUtils.splitByStr("a",",",3).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a@b@c@d",StringUtils.splitByStr("a,b,c,d",",",4).stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a@b@c@d@e@@",StringUtils.splitByStr("a,b,c,d,e,,",",").stream().collect(Collectors.joining("@")));
+        Assert.assertEquals("a@b@c@d@e@",StringUtils.splitByStr("a,b,c,d,e,",",").stream().collect(Collectors.joining("@")));
     }
 }
