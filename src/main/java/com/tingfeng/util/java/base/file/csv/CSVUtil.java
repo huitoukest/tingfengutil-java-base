@@ -3,19 +3,18 @@ package  com.tingfeng.util.java.base.file.csv;
 import com.tingfeng.util.java.base.common.bean.CSVBatchReadParam;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
-import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.ObjectUtils;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -28,7 +27,10 @@ public class CSVUtil {
 	public static final String  V_COMMON = ",";
 	public static final String V_NEW_LINE = "\r";
 	public static final String V_NULL_STRING = "";
-
+    /**
+     * 批量读写时，默认的批处理数量
+     */
+    private static final int DEFAULT_BATCH_SIZE = 5000;
 
     /**
      * 默认英文逗号分隔,
@@ -114,11 +116,10 @@ public class CSVUtil {
    /**
     * 
     * @param out 输出流 ,此方法关闭输出流
-    * @param fileName 导出文件名称
     * @param csvPageWriter
     * @param params 获取数据传入的参数,在每次取得数据后因该对参数内容做调整以做到分批得到数据
     */
-    public static <T> void writeCsvByPage(OutputStream out, String fileName, final CSVPageWriter<T> csvPageWriter, final Object... params){
+    public static <T> void writeCsvByPage(OutputStream out, final CSVPageWriter<T> csvPageWriter, final Object... params){
     		final long count = csvPageWriter.getTotalCount();
             if (count > csvPageWriter.getMaxExportCount()) {
     			throw csvPageWriter.getOverMaxExportCountException();
@@ -195,56 +196,62 @@ public class CSVUtil {
      */
     public static <T> void readCSVInBatch(CSVBatchReadParam<T> csvBatchReadParam){
         //获取字段
-        String separator = csvBatchReadParam.getSeparator();
-        int batchSize = csvBatchReadParam.getBatchSize();
-        String[] headers = csvBatchReadParam.getHeaders();
         boolean firstLineIsHeaders = csvBatchReadParam.isFirstLineIsHeaders();
         Class<T> beanCls = csvBatchReadParam.getBeanCls();
-        Supplier<Stream<String>> contentSupplier = csvBatchReadParam.getContentSupplier();
+        Stream<String> contentStream = csvBatchReadParam.getContentStream();
        if(csvBatchReadParam.getBatchSize() <= 0){
            throw new IllegalArgumentException("batch size must over than 0");
        }
-       if(ObjectUtils.isAnyEmpty(csvBatchReadParam.getConsumerContentF(),csvBatchReadParam.getContentSupplier(),csvBatchReadParam.getBeanCls())){
+       if(ObjectUtils.isAnyEmpty(csvBatchReadParam.getConsumerContentF(),csvBatchReadParam.getContentStream(),csvBatchReadParam.getBeanCls())){
            throw new IllegalArgumentException("contentSupplier,consumerContentF,beanCls must not be null");
        }
-       if(headers == null || headers.length == 0){
-           if(!firstLineIsHeaders){
-                throw new IllegalArgumentException("can not read used headers! first line is headers or specified the headers");
+       final String[][] headers = {csvBatchReadParam.getHeaders()};
+       AtomicLong index = new AtomicLong(0);
+       String separator = csvBatchReadParam.getSeparator();
+       int batchSize = csvBatchReadParam.getBatchSize();
+       List<T> contentList = new ArrayList<>(Math.max(16,Math.min(DEFAULT_BATCH_SIZE,csvBatchReadParam.getBatchSize())));
+       contentStream.forEach(line -> {
+           long lineNumber = index.incrementAndGet();
+           if(headers[0] == null || headers[0].length == 0){
+               if(!firstLineIsHeaders){
+                   throw new IllegalArgumentException("can not read used headers! first line is headers or specified the headers");
+               }
+               if(lineNumber == 1){
+                   headers[0] = Optional.ofNullable(line)
+                           .map(str -> str.split(separator))
+                           .orElse(new String[]{});
+               }
+               if(csvBatchReadParam.getHeaderHandler() != null){
+                   csvBatchReadParam.getHeaderHandler().accept(headers[0]);
+               }
            }
-           headers = contentSupplier.get()
-                   .findFirst()
-                   .map(str -> str.split(separator))
-                   .orElse(new String[]{});
-           if(csvBatchReadParam.getHeaderHandler() != null){
-               csvBatchReadParam.getHeaderHandler().accept(headers);
+           Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter();
+           if(beanConverter == null){
+               if(beanCls.isAssignableFrom(Map.class)){
+                   beanConverter = (Function<String[], T>) createMapConverter(headers[0]);
+               }else {
+                   beanConverter = BeanUtils.createBeanConverter(headers[0], beanCls, null);
+               }
            }
-       }
-        Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter();
-        if(beanConverter == null){
-            if(beanCls.isAssignableFrom(Map.class)){
-                beanConverter = (Function<String[], T>) createMapConverter(headers);
-            }else {
-                beanConverter = BeanUtils.createBeanConverter(headers, beanCls, null);
-            }
+           int contentOffset = csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0;
+           if(lineNumber > contentOffset){
+               String[] contentStr = line.split(separator);
+               if(csvBatchReadParam.getContentHandler() != null){
+                   csvBatchReadParam.getContentHandler().accept(contentStr);
+               }
+               T content = beanConverter.apply(contentStr);
+               contentList.add(content);
+           }
+           if(lineNumber > contentOffset && (lineNumber - contentOffset) % batchSize == 0){
+               csvBatchReadParam.getConsumerContentF().accept(contentList);
+               contentList.clear();
+           }
+       });
+        if(!contentList.isEmpty()){
+            csvBatchReadParam.getConsumerContentF().accept(contentList);
+            contentList.clear();
         }
-        //分批次读取每一行的值
-        Function<String[], T> finalBeanConverter = beanConverter;
-        handleByBatch(csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0,batchSize,(skip, limit) -> {
-            //在这里处理每一列的值
-            List<T> contentList = null;
-                Stream<String[]> stream = contentSupplier.get()
-                        .skip(skip)
-                        .limit(limit)
-                        .map(str -> str.split(separator));
-                if(csvBatchReadParam.getContentHandler() != null){
-                    stream = stream.peek(csvBatchReadParam.getContentHandler());
-                }
-                contentList = stream
-                        .map(finalBeanConverter::apply)
-                        .collect(Collectors.toList());
-                csvBatchReadParam.getConsumerContentF().accept(contentList);
-            return contentList;
-        });
+        System.gc();
     }
 
     private static <T> Function<String[],Map<String,String>> createMapConverter(String[] headers) {
@@ -258,36 +265,55 @@ public class CSVUtil {
         };
     }
 
-    private static <T> void handleByBatch(int startLine,int batchSize, Function2<List<T>, Integer, Integer> handleContentF){
-        int skipSize = startLine;
-        while (true) {
-            List<T> list = handleContentF.run(skipSize, batchSize);
-            if(ObjectUtils.isEmpty(list) || list.size() < batchSize){
-                break;
-            }
-            skipSize += batchSize;
-        }
-    }
-
     /**
      * 分批读取CSV内容并转为指定对象
      * @param batchSize
      * @param beanCls
-     * @param contentSupplier
+     * @param contentStream
      * @param consumerContentF
      * @param <T>
      */
-    public static <T> void readCSVInBatch(int batchSize,Class<T> beanCls,Supplier<Stream<String>> contentSupplier, Consumer<List<T>> consumerContentF){
-        readCSVInBatch(new CSVBatchReadParam<>(batchSize,beanCls,contentSupplier,consumerContentF));
+    public static <T> void readCSVInBatch(int batchSize,Class<T> beanCls,Stream<String> contentStream, Consumer<List<T>> consumerContentF){
+        readCSVInBatch(new CSVBatchReadParam<>(batchSize,beanCls,contentStream,consumerContentF));
     }
 
     /**
      * 分批读取CSV内容并转为指定对象,通过map方式读取内容
      * @param batchSize
-     * @param contentSupplier
+     * @param contentStream
      * @param consumerContentF
      */
-    public static void readCSVInBatchToMap(int batchSize,Supplier<Stream<String>> contentSupplier, Consumer<List<Map>> consumerContentF){
-        readCSVInBatch(new CSVBatchReadParam<>(batchSize, Map.class, contentSupplier, consumerContentF));
+    public static void readCSVInBatchToMap(int batchSize,Stream<String> contentStream, Consumer<List<Map>> consumerContentF){
+        readCSVInBatch(new CSVBatchReadParam<>(batchSize, Map.class, contentStream, consumerContentF));
+    }
+
+    /**
+     * 读取数据 并转为指定 Bean; 如果传入 Map.class 则默认返回数据为 List[Map[String,String]]
+     * @param beanCls bean对象的class 或者 Map.class
+     * @param stream 每一行数据的Stream 流
+     * @param charset 编码
+     * @return
+     * @param <T>
+     */
+    public static <T> List<T> readToBean(Class<T> beanCls, Stream<String> stream, Charset charset){
+        List<T> resultList = new ArrayList<>(64);
+        CSVUtil.readCSVInBatch(DEFAULT_BATCH_SIZE,beanCls,stream,list -> resultList.addAll(list));
+        return resultList;
+    }
+    /**
+     * 读取数据 并转为指定 Bean; 如果传入 Map.class 则默认返回数据为 List[Map[String,String]]
+     * @param beanCls bean对象的class 或者 Map.class
+     * @param path 文件路径
+     * @param charset 编码
+     * @return
+     * @param <T>
+     */
+    public static <T> List<T> readToBean(Class<T> beanCls,Path path, Charset charset){
+        try {
+            Stream<String> lines = Files.lines(path, charset);
+            return readToBean(beanCls,lines,charset);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
