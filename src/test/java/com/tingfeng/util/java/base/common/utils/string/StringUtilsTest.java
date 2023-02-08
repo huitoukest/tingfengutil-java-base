@@ -1,10 +1,12 @@
 package com.tingfeng.util.java.base.common.utils.string;
 
 import com.tingfeng.util.java.base.common.utils.CollectionUtils;
+import com.tingfeng.util.java.base.common.utils.RandomUtils;
 import com.tingfeng.util.java.base.common.utils.TestUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.rules.Stopwatch;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -90,5 +92,12 @@ public class StringUtilsTest {
         Assert.assertEquals("a@b@c@d",StringUtils.splitByStr("a,b,c,d",",",4).stream().collect(Collectors.joining("@")));
         Assert.assertEquals("a@b@c@d@e@@",StringUtils.splitByStr("a,b,c,d,e,,",",").stream().collect(Collectors.joining("@")));
         Assert.assertEquals("a@b@c@d@e@",StringUtils.splitByStr("a,b,c,d,e,",",").stream().collect(Collectors.joining("@")));
+    }
+
+    //@Test
+    public void testSplitByStrWithPerformance() {
+        String longStr = RandomUtils.randomString(10000000);
+        TestUtils.printTime(4,10,index -> longStr.split("abcd"));
+        TestUtils.printTime(4,10,index -> StringUtils.splitByStr(longStr,"abcd"));
     }
 }
