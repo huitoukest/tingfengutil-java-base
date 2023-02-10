@@ -100,4 +100,20 @@ public class StringUtilsTest {
         TestUtils.printTime(4,10,index -> longStr.split("abcd"));
         TestUtils.printTime(4,10,index -> StringUtils.splitByStr(longStr,"abcd"));
     }
+
+    @Test
+    public void testEquals() {
+        Assert.assertTrue(StringUtils.equals("",""));
+        Assert.assertTrue(StringUtils.equals("","",""));
+        Assert.assertTrue(StringUtils.equals("123",1,2,3));
+        Assert.assertFalse(StringUtils.equals("123",1,null,3));
+        Assert.assertTrue(StringUtils.equals("123456",1,2,3,"","",4,5,6,""));
+        Assert.assertTrue(StringUtils.equals("123456",1,2,3,"","",4,5,6));
+        Assert.assertFalse(StringUtils.equals("123",""));
+        Assert.assertFalse(StringUtils.equals("123",1));
+        Assert.assertFalse(StringUtils.equals("123",1,3));
+        Assert.assertFalse(StringUtils.equals("123",1,2,3,4));
+        Assert.assertTrue(StringUtils.equals("123456",1,2,3,"456"));
+        Assert.assertTrue(StringUtils.equals("123456","123","456"));
+    }
 }
