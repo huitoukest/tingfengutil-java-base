@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import com.tingfeng.util.java.base.common.constant.Constants;
@@ -17,19 +18,24 @@ import com.tingfeng.util.java.base.common.inter.ConvertI;
  */
 public class ArrayUtils {
 	final static int BUFFER_SIZE = 1024;
-	
+
+	/**
+	 * 当前数组是否包含对象T
+	 * @param array 数组
+	 * @param t 对象实例
+	 * @return 是否包含
+	 * @param <T>
+	 */
 	public static <T> boolean isContain(T[] array, T t) {
-		if(array==null) {
+		if(array == null) {
 			return false;
 		}
-		// 转换为list
-		List<T> tempList = Arrays.asList(array);
-		// 利用list的包含方法,进行判断
-		if (tempList.contains(t)) {
-			return true;
-		} else {
-			return false;
+		for (int i = 0; i < array.length; i++) {
+			if (Objects.equals(array[i],t)) {
+				return true;
+			}
 		}
+		return false;
 	}
 
 	/**

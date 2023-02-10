@@ -125,4 +125,17 @@ public class SimpleCacheHelper<K,V> {
             }
         }
     }
+
+    /**
+     * 返回当前缓存的所有 KeySet
+     * @return
+     */
+    public Set<K> keySet(){
+        try{
+            readLock.lock();
+            return map.keySet();
+        }finally {
+            readLock.unlock();
+        }
+    }
 }

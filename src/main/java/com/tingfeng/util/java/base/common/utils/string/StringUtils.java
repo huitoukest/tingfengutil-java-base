@@ -1422,4 +1422,62 @@ public class StringUtils {
     public static List<String> splitByStr(String str, String delimitString) {
         return splitByStr(str,delimitString,Integer.MAX_VALUE);
     }
+
+    /**
+     * 判断 str 中的内容是否与 content中每一项的toString 连接后的内容相等
+     * @param str 字符串
+     * @param content 内容
+     * @return 是否值相等
+     */
+    public static boolean equals(String str,Object... content){
+        if(content == null){
+            if(str == null) {
+                return true;
+            }
+            return false;
+        }
+        if (content.length == 0 && "".equals(str)) {
+            return true;
+        }
+        int compareIndex = 0;
+        for (int i = 0; i < content.length; i++) {
+            String item = String.valueOf(content[i]);
+            int maxCompareLength = compareIndex + item.length();
+            if(maxCompareLength > str.length()){
+                return false;
+            }
+            if(!equals(str,compareIndex,maxCompareLength,item,0,item.length())){
+                return false;
+            }
+            compareIndex = maxCompareLength;
+        }
+        if(compareIndex != str.length()){
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 判断两个字符串指定开始结束位置的 子串是否相等
+     * @param sourceStr 来源字符串
+     * @param sourceStart 比较使用的来源的字符串的开始的 索引值
+     * @param sourceEnd 比较使用的来源的字符串的 结束的 索引值
+     * @param targetStr 目标字符串
+     * @param targetStart 比较使用的目标的字符串的开始的 索引值
+     * @param targetEnd 比较使用的目标的字符串的 结束的 索引值
+     * @return 是否相等
+     */
+    public static boolean equals(String sourceStr,int sourceStart,int sourceEnd,String targetStr,int targetStart,int targetEnd){
+        int sourceLength = sourceEnd - sourceStart;
+        int endLength = targetEnd - targetStart;
+        if(sourceLength != endLength){
+            return false;
+        }
+        for (int i = sourceStart,j = targetStart; i < sourceEnd && j < targetEnd; i++,j++) {
+            if(sourceStr.charAt(i) != targetStr.charAt(j)){
+                return false;
+            }
+        }
+        return true;
+    }
 }
