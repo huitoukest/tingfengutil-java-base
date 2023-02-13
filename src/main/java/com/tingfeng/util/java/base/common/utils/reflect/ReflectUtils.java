@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.common.utils.reflect;
 
+import com.tingfeng.util.java.base.common.bean.UnionKey;
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.common.exception.BaseException;
@@ -26,7 +27,7 @@ public class ReflectUtils {
     /**
      * 数量固定的属性资源缓存
      */
-    private static SimpleCacheHelper<String,List<Field>> DATA_FILED_LIST_CACHE = new SimpleCacheHelper<>(100);
+    private static SimpleCacheHelper<UnionKey,List<Field>> DATA_FILED_LIST_CACHE = new SimpleCacheHelper<>(100);
 
     /**
      * 缓存类的单个自动获取
@@ -196,16 +197,9 @@ public class ReflectUtils {
             return Collections.EMPTY_LIST;
         }
         List<Field> fieldList = null;
-        String key = StringUtils.doAppend(sb -> {
-            sb.append(cls.getName());
-            sb.append(Constants.Symbol.semicolon);
-            sb.append(isContainsStatic);
-            sb.append(isFinal);
-            sb.append(containsParentPrivateField);
-            return sb.toString();
-        });
+        UnionKey unionKey = new UnionKey(cls,isContainsStatic,isFinal,containsParentPrivateField);
         if(isUseCache){
-            fieldList = DATA_FILED_LIST_CACHE.get(key);
+            fieldList = DATA_FILED_LIST_CACHE.get(unionKey);
             if(null == fieldList) {
                 fieldList = new ArrayList<>();
                 Collections.addAll(fieldList, cls.getDeclaredFields());
@@ -218,7 +212,7 @@ public class ReflectUtils {
                 if(containsParentPrivateField){
                     fieldList.addAll(getFields(cls.getSuperclass(),isContainsStatic,isFinal,false,containsParentPrivateField));
                 }
-                DATA_FILED_LIST_CACHE.set(key, fieldList);
+                DATA_FILED_LIST_CACHE.set(unionKey, fieldList);
             }
         }else {
             fieldList = Arrays.asList(cls.getDeclaredFields());

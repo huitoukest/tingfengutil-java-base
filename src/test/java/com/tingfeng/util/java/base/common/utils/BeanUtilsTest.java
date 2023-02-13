@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.User;
 import com.tingfeng.util.java.base.common.bean.UserWechatServiceFansInfo;
 import com.tingfeng.util.java.base.common.bean.WechatServiceUserInfo;
+import lombok.Getter;
+import lombok.Setter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -77,5 +79,65 @@ public class BeanUtilsTest {
         System.out.println(str);
         User parseB = JSON.parseObject(str,User.class);
         Assert.assertEquals( b.getUser().getC() , parseB.user.getC());
+    }
+
+    @Getter
+    @Setter
+    public static class SaveParentDTO{
+        private Long parent_id;
+        private Long student_id;
+        private String student_name;
+        private String class_name;
+        private Long classId;
+        private Long school_id;
+        private String updated;
+        private String relationship;
+        private String parentMobilePhone;
+        private String mobileCountryCode;
+    }
+
+    @Getter
+    @Setter
+    public static class SaveParentDTO2{
+        private Long parent_id;
+        private Long student_id;
+        private String student_name;
+        private String class_name;
+        private Long classId;
+        private Long school_id;
+        private String updated;
+        private String relationship;
+        private String parentMobilePhone;
+        private String mobileCountryCode;
+    }
+
+    @Test
+    public void copyTest2(){
+        int count = 10000000;
+        SaveParentDTO saveParentDTO = new SaveParentDTO();
+        saveParentDTO.setParent_id(111L);
+        saveParentDTO.setStudent_name(RandomUtils.randomString(25));
+        saveParentDTO.setRelationship(RandomUtils.randomString(30));
+        saveParentDTO.setClassId(RandomUtils.randomLong());
+        TestUtils.printTime(1,1,index -> {
+            for (int i = 0; i < count; i++) {
+                BeanUtils.copyProperties(new SaveParentDTO2(),saveParentDTO);
+            }
+        });
+    }
+
+    @Test
+    public void copyTest3(){
+        int count = 10000000;
+        SaveParentDTO saveParentDTO = new SaveParentDTO();
+        saveParentDTO.setParent_id(111L);
+        saveParentDTO.setStudent_name(RandomUtils.randomString(25));
+        saveParentDTO.setRelationship(RandomUtils.randomString(30));
+        saveParentDTO.setClassId(RandomUtils.randomLong());
+        TestUtils.printTime(1,1,index -> {
+            for (int i = 0; i < count; i++) {
+                BeanUtils.copyProperties(new SaveParentDTO2(),saveParentDTO,false,"relationship");
+            }
+        });
     }
 }

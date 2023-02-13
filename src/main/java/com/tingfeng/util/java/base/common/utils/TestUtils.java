@@ -1,6 +1,5 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVTwo;
 
