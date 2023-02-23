@@ -41,4 +41,16 @@ public class CollectionUtilsTest {
         Assert.assertTrue(CollectionUtils.getLast(a).equals(200));
     }
 
+    @Test
+    public void mergeToList() {
+        List<Integer> a = Arrays.asList(100,200);
+        Integer[] b = new Integer[]{1,2,3};
+        Assert.assertEquals(null,CollectionUtils.mergeToList(false,null));
+        Assert.assertEquals("4",CollectionUtils.join(CollectionUtils.mergeToList(false,4)));
+        Assert.assertEquals("100,200",CollectionUtils.join(CollectionUtils.mergeToList(false,a)));
+        Assert.assertEquals("100,200,1,2,3,4",CollectionUtils.join(CollectionUtils.mergeToList(false,a,b,4)));
+        Assert.assertEquals("100,200,1,2,3,4",CollectionUtils.join(CollectionUtils.mergeToList(false,Arrays.asList(a,b),4)));
+        Assert.assertEquals("100,200,1,2,3,4",CollectionUtils.join(CollectionUtils.mergeToList(true,new Object[]{a,b,4},4)));
+    }
+
 }

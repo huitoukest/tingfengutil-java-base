@@ -126,7 +126,7 @@ public class BeanUtils {
      * 注意：
      * 1. 不copy类型是final或者static的属性
      * 2. 判断和过滤的优先级如下 exceptFields &gt; predicate &gt; mapper ;
-     * 注意： 通过反射机制 属性机制copy，效率比标准bean内省的性能略低，需要高性能请使用另一个通过 PropertyDescriptor实现的copyProperties方法
+     * 注意： 通过反射机制 属性机制copy，效率约标准bean内省的50%性能，需要高性能请使用另一个通过 PropertyDescriptor实现的copyProperties方法
      * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
      * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
      *
