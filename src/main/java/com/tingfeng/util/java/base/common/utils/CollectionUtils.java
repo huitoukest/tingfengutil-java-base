@@ -112,23 +112,22 @@ public class CollectionUtils {
      * 如：List&lt;Integer&gt; intList = new ArrayList&lt;Integer&gt;();
      * 调用方法：StringUtils.listTtoString(intList); 效率：list中4条信息，1000000次调用时间为850ms左右
      *
-     * @param <T>        泛型
      * @param collection
      * @param symbol 分隔标识符号
      * @return 以symbol分隔的字符串
      */
-    public static <T> String join(Collection<T> collection, String symbol) {
+    public static  String join(Collection collection, String symbol) {
         if (collection == null || collection.size() < 1) {
             return "";
         }
-        Iterator<T> i = collection.iterator();
+        Iterator i = collection.iterator();
         if (!i.hasNext()) {
             return "";
         }
         boolean isAppend = symbol.length() > 0 ? true : false;
         return StringUtils.doAppend(sb -> {
             for (; ; ) {
-                T e = i.next();
+                Object e = i.next();
                 sb.append(e);
                 if (!i.hasNext()) {
                     return sb.toString();
@@ -146,7 +145,7 @@ public class CollectionUtils {
      * @param collection
      * @return
      */
-    public static <T> String join(Collection<T> collection) {
+    public static String join(Collection collection) {
         return join(collection, ",");
     }
 
@@ -489,5 +488,47 @@ public class CollectionUtils {
      */
     public static <K,V> Map<K,V> toMap(Collection<V> collection,Function<V,K> keyMapper){
         return collection.stream().collect(Collectors.toMap(keyMapper, Function.identity(),(a,b) -> b));
+    }
+
+    /**
+     * 创建一个List,并加入传入的所有元素; 默认对传入对象平铺展开，如果是集合或者数组则递归展开，如果是对象则直接加入
+     * @param distinct 返回的结果是否去重
+     * @param objs 传入的对象，支持普通对象与  Collection平铺展开、Array平铺展开
+     * @param <T>
+     * @return list 包含传入的所有对象
+     */
+    public static <T> List<T> mergeToList(boolean distinct,Object... objs) {
+        if(null == objs){
+            return null;
+        }
+        List<T> list = new ArrayList<>();
+        mergeToCollection(list,distinct,objs);
+        return list;
+    }
+    /**
+     * 给定一个Collection,加入传入的所有元素; 默认对传入对象平铺展开，如果是集合或者数组则递归展开，如果是对象则直接加入
+     * @param distinct 是否对加入的元素去重
+     * @param objs 传入的对象，支持普通对象与  Collection平铺展开、Array 平铺展开
+     */
+    public static void mergeToCollection(Collection targetCollection,boolean distinct,Object... objs) {
+        if(null == objs){
+            return;
+        }
+        for (int i = 0; i < objs.length; i++) {
+            Object obj = objs[i];
+            if(obj instanceof Collection){
+                Collection<?> collection = (Collection<?>) obj;
+                collection.forEach(item -> mergeToCollection(targetCollection,distinct,item));
+            }else if(obj.getClass().isArray()){
+                Object[] objects = (Object[]) obj;
+                for (Object item : objects) {
+                    mergeToCollection(targetCollection,distinct,item);
+                }
+            }else {
+                if(!distinct || !targetCollection.contains(obj)) {
+                    targetCollection.add(obj);
+                }
+            }
+        }
     }
 }
