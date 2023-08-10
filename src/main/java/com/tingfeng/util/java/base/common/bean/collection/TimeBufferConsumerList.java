@@ -17,6 +17,11 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     private final int batchSize;
     private final Consumer<List<T>> consumer;
     private final int maxHoldMs;
+    /**
+     * 是否在添加时检查,且在检查符合当前条件时触发消费逻辑
+     */
+    private final boolean consumerIfMatchWhenAdd;
+
     private LinkedList<List<T>> buffer = new LinkedList<>() ;
     private List<T> currentBuffer = new ArrayList<>();;
     private volatile long lastConsumerTime = System.currentTimeMillis();
@@ -27,9 +32,10 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
      * @param checkInterval
      * @param batchSize must less than maxIntValue / 2;
      * @param maxHoldMs
+     * @param consumerIfMatchWhenAdd 是否在添加时检查,且在检查符合当前条件时触发消费逻辑
      * @param consumer
      */
-    public TimeBufferConsumerList(int checkInterval,int batchSize, int maxHoldMs,Consumer<List<T>> consumer) {
+    public TimeBufferConsumerList(int checkInterval,int batchSize, int maxHoldMs, boolean consumerIfMatchWhenAdd,Consumer<List<T>> consumer) {
         super(checkInterval);
         if(checkInterval >= maxHoldMs){
            throw new IllegalArgumentException("checkInterval must great than maxHoldMs");
@@ -37,6 +43,18 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
         this.batchSize = batchSize;
         this.maxHoldMs = maxHoldMs;
         this.consumer = consumer;
+        this.consumerIfMatchWhenAdd = consumerIfMatchWhenAdd;
+    }
+    /**
+     * if the add elements size >= batchSize, or maxHoldMs milliseconds elapsed and 0 <= elements size ;
+     * then call the consumerIfMatch, to invoke to consumer elements
+     * @param checkInterval
+     * @param batchSize must less than maxIntValue / 2;
+     * @param maxHoldMs
+     * @param consumer
+     */
+    public TimeBufferConsumerList(int checkInterval,int batchSize, int maxHoldMs,Consumer<List<T>> consumer) {
+        this(checkInterval,batchSize,maxHoldMs,false,consumer);
     }
 
     public TimeBufferConsumerList(int batchSize, Consumer<List<T>> consumer) {
@@ -52,7 +70,9 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
                 this.currentBuffer = new ArrayList<>();
             }
         }
-        consumerIfMatch();
+        if(consumerIfMatchWhenAdd) {
+            consumerIfMatch();
+        }
     }
 
     @Override
