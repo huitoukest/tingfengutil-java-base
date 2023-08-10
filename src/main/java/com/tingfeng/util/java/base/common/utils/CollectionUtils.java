@@ -227,7 +227,7 @@ public class CollectionUtils {
      * @return
      */
     public static <T> boolean eq(List<T> listA, List<T> listB) {
-        return eq(listA, listA, (a, b) -> a.equals(b));
+        return eq(listA, listB, (a, b) -> a.equals(b));
     }
 
     /**
