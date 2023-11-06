@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static com.tingfeng.util.java.base.common.utils.datetime.DateUtils.FORMATE_YYYYMMDDHHMMSSSSS_CHN;
+import static com.tingfeng.util.java.base.common.utils.datetime.DateUtils.FORMAT_YYYYMMDDHHMMSSSSS_CHN;
 
 public class DateUtilsTest extends TestCase {
 
@@ -22,14 +22,14 @@ public class DateUtilsTest extends TestCase {
                 .collect(Collectors.toList());
         //before 1225 , after optimize no change
         TestUtils.printTime(1,1000000,index -> {
-            String dateStr = DateUtils.format(dates.get(index), FORMATE_YYYYMMDDHHMMSSSSS_CHN);
+            String dateStr = DateUtils.format(dates.get(index), FORMAT_YYYYMMDDHHMMSSSSS_CHN);
             if(index % 100000 == 0){
                 System.out.println(dateStr);
             }
         });
         //before 1311 , after optimize 293
         TestUtils.printTime(10,100000,(i,j) -> {
-            String dateStr = DateUtils.format(dates.get(i * 100000 + j), FORMATE_YYYYMMDDHHMMSSSSS_CHN);
+            String dateStr = DateUtils.format(dates.get(i * 100000 + j), FORMAT_YYYYMMDDHHMMSSSSS_CHN);
             if((i * 100000 + j) % 100000 == 0){
                 System.out.println(dateStr);
             }
@@ -46,14 +46,14 @@ public class DateUtilsTest extends TestCase {
         //before 1014 , after optimize noChange
         TestUtils.printTime(1,1000000,index -> {
             Date date = null;
-                date = DateUtils.parse(dates.get(index),DateUtils.FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
+                date = DateUtils.parse(dates.get(index),DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
             if(index % 100000 == 0){
                 System.out.println(date);
             }
         });
         //before 1298 , after optimize 289
         TestUtils.printTime(10,100000,(i,j) -> {
-            Date date = DateUtils.parse(dates.get(i * 100000 + j),DateUtils.FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
+            Date date = DateUtils.parse(dates.get(i * 100000 + j),DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
             if((i * 100000 + j) % 100000 == 0){
                 System.out.println(date);
             }
