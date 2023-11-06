@@ -3,70 +3,30 @@ package com.tingfeng.util.java.base.common.utils.datetime;
 import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
 import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.utils.ArrayUtils;
+import com.tingfeng.util.java.base.common.utils.RegExpUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
- * 关于时间和日期的工具类，包含一些常用处理时间的函数
+ * 关于时间和日期的工具类，包含一些常用处理时间的函数,线程安全
  * 因为SimpleDateFormat 是线程不安全的所以使用加锁处理
  * 
  */
-public class DateUtils {
+public class DateUtils implements DateFormat{
 	private static final Log logger = LogFactory.getLog(DateUtils.class);
-	/** DateFormat:yyyyMMddHHmmssSSS */
-	public static final String FORMATE_YYYYMMDDHHMMSSSSS = "yyyyMMddHHmmssSSS";
 
-	/** DateFormat:yyyyMMddHHmmss */
-	public static final String FORMATE_YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
-	/** DateFormat:yyyyMMdd */
-	public static final String FORMATE_YYYYMMDD = "yyyyMMdd";
-	/** DateFormat:HH:mm:ss */
-	public static final String FORMATE_HHMMSS = "HHmmss";
-	public static final String FORMATE_YYYYMM = "yyyyMM";
-	public static final String FORMATE_YYYY = "yyyy";
-
-	/** DateFormat:yyyy-MM-dd */
-	public static final String FORMATE_YYYYMMDD_THROUGH_LINE = "yyyy-MM-dd";
-	/** DateFormat:yyyy-MM */
-	public static final String FORMATE_YYYYMM_THROUGH_LINE = "yyyy-MM";
-	/** DateFormat:yyyy-MM-dd HH:mm:ss */
-	public static final String FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE = "yyyy-MM-dd HH:mm:ss";
-	/** DateFormat:yyyy-MM-dd HH:mm:ss.SSS */
-	public static final String FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE = "yyyy-MM-dd HH:mm:ss.SSS";
-
-	/** 年月日格式 */
-	public static final String FORMATE_YYYYMMDD_CHN = "yyyy年MM月dd日";
-	/** 年月格式 */
-	public static final String FORMATE_YYYYMM_CHN = "yyyy年MM月";
-
-	/** 年月日格式时分秒 */
-	public static final String FORMATE_YYYYMMDDHHMMSS_CHN = "yyyy年MM月dd日 HH:mm:ss";
-	/** 年月日格式 时分秒毫秒 */
-	public static final String FORMATE_YYYYMMDDHHMMSSSSS_CHN = "yyyy年MM月dd日 HH:mm:ss.SSS";
-
-	/** yyyy/MM/dd */
-	public static final String FORMATE_YYYYMMDD_OBLINE = "yyyy/MM/dd";
-	/** yyyy/MM/dd HH:mm:ss */
-	public static final String FORMATE_YYYYMMDDHHMMSS_OBLINE = "yyyy/MM/dd HH:mm:ss";
-	/** yyyy/MM/dd HH:mm:ss.SSS */
-	public static final String FORMATE_YYYYMMDDHHMMSSSSS_OBLINE = "yyyy/MM/dd HH:mm:ss.SSS";
-	/**
-	 * yyyy-MM-dd'T'HH:mm:ss'Z' 国际标准UTC时间
-	 */
-	public static final String FORMATE_YYYYMMDDTHHMMSSZ_THROUGH_LINE = "yyyy-MM-dd'T'HH:mm:ss'Z'";
-
-	/**
-	 * yyyy-MM-dd'T'HH:mm:ss.SSS'Z' 国际标准UTC时间
-	 */
-	public static final String FORMATE_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'";
 
 	private static final Map<String,FixedPoolHelper<SimpleDateFormat>> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25);
 	/**
@@ -78,10 +38,10 @@ public class DateUtils {
 	 * 记录系统定义的几种常见的日期格式
 	 */
 	public static final String[] BASE_DATE_FORMAT = new String[]{
-			FORMATE_YYYYMMDDHHMMSSSSS,FORMATE_YYYYMMDDHHMMSS,FORMATE_YYYYMMDD,FORMATE_HHMMSS,FORMATE_YYYYMM,FORMATE_YYYY,
-			FORMATE_YYYYMMDD_THROUGH_LINE,FORMATE_YYYYMM_THROUGH_LINE,FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE,FORMATE_YYYYMMDDHHMMSSSSS_THROUGH_LINE,FORMATE_YYYYMMDDTHHMMSSZ_THROUGH_LINE,FORMATE_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE,
-			FORMATE_YYYYMMDD_CHN,FORMATE_YYYYMM_CHN,FORMATE_YYYYMMDDHHMMSS_CHN,FORMATE_YYYYMMDDHHMMSSSSS_CHN,
-			FORMATE_YYYYMMDD_OBLINE,FORMATE_YYYYMMDDHHMMSS_OBLINE,FORMATE_YYYYMMDDHHMMSSSSS_OBLINE
+			FORMAT_YYYYMMDDHHMMSSSSS,FORMAT_YYYYMMDDHHMMSS,FORMAT_YYYYMMDD,FORMAT_HHMMSS,FORMAT_YYYYMM,FORMAT_YYYY,
+			FORMAT_YYYYMMDD_THROUGH_LINE,FORMAT_YYYYMM_THROUGH_LINE,FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE,FORMAT_YYYYMMDDHHMMSSSSS_THROUGH_LINE,FORMAT_YYYYMMDDTHHMMSSZ_THROUGH_LINE,FORMAT_YYYYMMDDTHHMMSSSSSZ_THROUGH_LINE,
+			FORMAT_YYYYMMDD_CHN,FORMAT_YYYYMM_CHN,FORMAT_YYYYMMDDHHMMSS_CHN,FORMAT_YYYYMMDDHHMMSSSSS_CHN,
+			FORMAT_YYYYMMDD_OBLINE,FORMAT_YYYYMMDDHHMMSS_OBLINE,FORMAT_YYYYMMDDHHMMSSSSS_OBLINE
 	};
 
 	/**
@@ -527,7 +487,7 @@ public class DateUtils {
 	 * @return
 	 */
 	public static String getDateString(Date date) {
-		return getDateString(date, DateUtils.FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
+		return getDateString(date, DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
 	}
 
 	/*************************************
@@ -567,7 +527,7 @@ public class DateUtils {
 	 * @return
 	 */
 	public static Date getDate(String value, Date defaultValue) {
-		return getDate(value, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE, defaultValue);
+		return getDate(value, FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE, defaultValue);
 	}
 
 	/**
@@ -583,7 +543,7 @@ public class DateUtils {
 
 	/** isAutoConvert是false时返回,"yyyy-MM-dd HH:mm:ss"支持的格式
 	 * @param value
-	 * @param isAutoConvert 是否根据输入的值,自动猜测时间格式并转换 ,支持:DateUtils中所列出的常量格式类型的自动猜测转换
+	 * @param isAutoConvert 是否根据输入的值,自动猜测时间格式并转换 ,支持:DateFormat中所列出的常量格式类型的自动猜测转换
 	 * @return 
 	 */
 	public static Date getDate(String value,boolean isAutoConvert) {
@@ -593,10 +553,11 @@ public class DateUtils {
 			}
 			value = value.replaceAll("[^\\d]","");
 			int length = value.length();
-			if(length == 10){
+			if(length == 10 && RegExpUtils.isIntegerNumber(value)){
 				return new Date(1000 * Long.parseLong(value));
 			}
-			if(length == 13){//默认识别为毫秒数量
+			if(length == 13 && RegExpUtils.isIntegerNumber(value)){
+				//默认识别为毫秒数量
 				return new Date(Long.parseLong(value));
 			}
 			StringBuilder sb = new StringBuilder(30);
@@ -610,9 +571,9 @@ public class DateUtils {
 				}
 
 			}
-			return getDate(sb.toString(), FORMATE_YYYYMMDDHHMMSSSSS);
+			return getDate(sb.toString(), FORMAT_YYYYMMDDHHMMSSSSS);
 		}else {
-			return getDate(value, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE, null);
+			return getDate(value, FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE, null);
 		}	
 	}
 
@@ -629,7 +590,7 @@ public class DateUtils {
 	 **************************************/
 
 	public static String formatDateToString(Date date){
-		return format(date, FORMATE_YYYYMMDD_THROUGH_LINE);
+		return format(date, FORMAT_YYYYMMDD_THROUGH_LINE);
 	}
 
 	/**
@@ -638,7 +599,7 @@ public class DateUtils {
 	 * @return
 	 */
 	public static String formatDateTimeToString(Date date){
-		return format(date, FORMATE_YYYYMMDDHHMMSS_THROUGH_LINE);
+		return format(date, FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
 	}
 
 
@@ -727,6 +688,30 @@ public class DateUtils {
 		calendar.set(Calendar.MONTH, ( dateNumber % 10000 ) / 100 - 1);
 		calendar.set(Calendar.DAY_OF_MONTH, ( dateNumber % 100 ));
 		return calendar.getTime();
+	}
+
+	/**
+	 * 转换日期
+	 * @param date
+	 * @return
+	 */
+	public static LocalDate toLocalDate(Date date){
+		return Optional.ofNullable(toLocalDateTime(date)).map(LocalDateTime::toLocalDate).orElse(null);
+	}
+
+	/**
+	 * 转换日期+时间
+	 * @param date
+	 * @return
+	 */
+	public static LocalDateTime toLocalDateTime(Date date){
+		if(date == null){
+			return null;
+		}
+		Instant instant = date.toInstant();
+		ZoneId zone = ZoneId.systemDefault();
+		LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, zone);
+		return localDateTime;
 	}
 
 }
