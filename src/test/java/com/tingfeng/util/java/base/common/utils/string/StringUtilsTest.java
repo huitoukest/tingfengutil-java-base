@@ -116,4 +116,11 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.equals("123456",1,2,3,"456"));
         Assert.assertTrue(StringUtils.equals("123456","123","456"));
     }
+
+    @Test
+    public void unescape() {
+        String str = "\"\\\\123\"";
+        String unescape = StringUtils.unescape(str);
+        System.out.println(unescape);
+    }
 }
