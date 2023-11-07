@@ -36,6 +36,10 @@ public class CSVBatchReadParam<T> {
      * 对读取到的已经转换后的内容做处理
      */
     private Consumer<List<T>> consumerContentF;
+    /**
+     * 当倍引号,包括单引号与双引号围绕字段时,进行反转移
+     */
+    private boolean unescapeWhenAroundQuotationMarks = true;
 
     public CSVBatchReadParam(){}
 

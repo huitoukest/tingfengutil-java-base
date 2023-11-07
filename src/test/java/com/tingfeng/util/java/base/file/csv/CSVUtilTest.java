@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.file.csv;
 
+import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.utils.RandomUtils;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
 import org.junit.Assert;
@@ -73,8 +74,26 @@ public class CSVUtilTest {
     }
 
     @Test
+    public void readToBean2() throws URISyntaxException {
+        URL resource = Thread.currentThread().getContextClassLoader().getResource("CSVTest2.csv");
+        Path path = Paths.get(resource.toURI());
+        List<CSVReadTestVO> list = CSVUtil.readToBean(CSVReadTestVO.class, path, Charset.forName("UTF-8"));
+        Assert.assertEquals(2,list.size());
+        Assert.assertEquals(DateUtils.getDate("2022-04-28 00:00:00"),list.get(0).getHeader5());
+    }
+
+    @Test
     public void readToBeanWithMap() throws URISyntaxException {
         URL resource = Thread.currentThread().getContextClassLoader().getResource("CSVTest.csv");
+        Path path = Paths.get(resource.toURI());
+        List<Map> list = CSVUtil.readToBean(Map.class, path, Charset.forName("UTF-8"));
+        Assert.assertEquals(2,list.size());
+        Assert.assertEquals("2022-04-28 00:00:00",list.get(0).get("header5"));
+    }
+
+    @Test
+    public void readToBeanWithMap2() throws URISyntaxException {
+        URL resource = Thread.currentThread().getContextClassLoader().getResource("CSVTest2.csv");
         Path path = Paths.get(resource.toURI());
         List<Map> list = CSVUtil.readToBean(Map.class, path, Charset.forName("UTF-8"));
         Assert.assertEquals(2,list.size());

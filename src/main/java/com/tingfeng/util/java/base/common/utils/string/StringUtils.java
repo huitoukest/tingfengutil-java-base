@@ -1480,4 +1480,25 @@ public class StringUtils {
         }
         return true;
     }
+
+    /**
+     * 反转义字符串
+     * @param str 字符串
+     * @return 反转后的义字符串
+     */
+    public static String unescape(String str){
+        boolean unescape = false;
+        if(str.startsWith("\"") && str.endsWith("\"")){
+            unescape = true;
+        }
+        if(str.startsWith("\'") && str.endsWith("\'")){
+            unescape = true;
+        }
+        if(unescape && str.length() > 1){
+            str = str.substring(1, str.length() - 1);
+            str = str.replaceAll("(\\\\(?!\\\\)(.))","$2")
+                    .replaceAll("\\\\\\\\","\\\\");
+        }
+        return str;
+    }
 }

@@ -6,6 +6,7 @@ import com.tingfeng.util.java.base.common.inter.ConvertI;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.ObjectUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -225,6 +226,14 @@ public class CSVUtil {
                    csvBatchReadParam.getHeaderHandler().accept(headers[0]);
                }
            }
+           if(csvBatchReadParam.isUnescapeWhenAroundQuotationMarks()) {
+               for (int i = 0; i < headers[0].length; i++) {
+                   String header = headers[0][i];
+                   if(header.length() > 1){
+                       headers[0][i] = StringUtils.unescape(header);
+                   }
+               }
+           }
            Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter();
            if(beanConverter == null){
                if(beanCls.isAssignableFrom(Map.class)){
@@ -236,6 +245,11 @@ public class CSVUtil {
            int contentOffset = csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0;
            if(lineNumber > contentOffset){
                String[] contentStr = line.split(separator);
+               if(csvBatchReadParam.isUnescapeWhenAroundQuotationMarks()) {
+                   for (int i = 0; i < contentStr.length; i++) {
+                       contentStr[i] = StringUtils.unescape(contentStr[i]);
+                   }
+               }
                if(csvBatchReadParam.getContentHandler() != null){
                    csvBatchReadParam.getContentHandler().accept(contentStr);
                }
