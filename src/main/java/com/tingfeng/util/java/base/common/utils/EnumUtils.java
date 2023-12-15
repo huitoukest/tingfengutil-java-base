@@ -1,11 +1,11 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import com.tingfeng.util.java.base.common.bean.UnionKey;
 import com.tingfeng.util.java.base.common.inter.IEnum;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -14,8 +14,9 @@ import java.util.stream.Collectors;
 public class EnumUtils {
     /**
      *  枚举的值的缓存
+     *  Map[UnionKey[枚举类,方法类],[value,枚举类的实例]]
      */
-    private static final Map<Class<? extends Enum>,Map<?,? extends  Enum>> ENUM_VALUE_CACHE_MAP = new java.util.HashMap<>();
+    private static final  Map<UnionKey,Map<?,? extends  Enum>> ENUM_VALUE_CACHE_MAP = new java.util.HashMap<>();
 
     /**
      * 等同于枚举的valueOf方法
@@ -45,13 +46,13 @@ public class EnumUtils {
         if(!useCache){
             return Arrays.asList(es).stream().filter(it -> value.equals(supplyValue.apply(it))).findAny().orElse(null);
         }else {
-            Map<?,E> cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(enumClass);
+            Map<?, E> cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(new UnionKey(enumClass, supplyValue));
             if(cacheData == null){
                 synchronized (ENUM_VALUE_CACHE_MAP){
                     cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(enumClass);
                     if(cacheData == null){
                         cacheData = Arrays.asList(es).stream().collect(Collectors.toMap(it -> supplyValue.apply(it),it -> it));
-                        ENUM_VALUE_CACHE_MAP.put(enumClass,cacheData);
+                        ENUM_VALUE_CACHE_MAP.put(new UnionKey(enumClass, supplyValue),cacheData);
                     }
                 }
             }
