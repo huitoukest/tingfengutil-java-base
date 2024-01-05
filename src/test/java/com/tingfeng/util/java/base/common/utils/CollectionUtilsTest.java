@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * @Author wangGang
@@ -53,4 +54,14 @@ public class CollectionUtilsTest {
         Assert.assertEquals("100,200,1,2,3,4",CollectionUtils.join(CollectionUtils.mergeToList(true,new Object[]{a,b,4},4)));
     }
 
+    @Test
+    public void shuffle() {
+        List<Integer> integers = IntStream.range(0, 100).mapToObj(Integer::valueOf).collect(Collectors.toList());
+        List<Integer> newIntegers = CollectionUtils.shuffle(integers);
+        String oldValue = CollectionUtils.join(integers);
+        String newValue = CollectionUtils.join(newIntegers);
+        Assert.assertEquals(integers.size(), newIntegers.size());
+        Assert.assertNotEquals(oldValue, newValue);
+        Assert.assertTrue(CollectionUtils.eq(integers, newIntegers.stream().sorted().collect(Collectors.toList())));
+    }
 }

@@ -1,16 +1,15 @@
 package com.tingfeng.util.java.base.common.utils;
 
+import com.tingfeng.util.java.base.common.constant.Constants;
+import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
-
-import com.tingfeng.util.java.base.common.constant.Constants;
-import com.tingfeng.util.java.base.common.inter.ConvertI;
 
 /**
  * 操作数组的一些工具;
@@ -74,41 +73,6 @@ public class ArrayUtils {
 		}finally {
 			outStream.close();
 		}
-	}
-
-	/**
-	 * 把整形数组转换成以“,”相隔的字符串
-	 *
-	 * @param a 数组a
-	 * @return 以“,”相隔的字符串
-	 * @author fengliang
-	 * @serialData 2008-01-08
-	 */
-	public static String join(Object[] a, String symbol) {
-		if (a == null) {
-			return "";
-		}
-		int iMax = a.length - 1;
-		if (iMax == -1) {
-			return "";
-		}
-		StringBuilder b = new StringBuilder();
-		for (int i = 0; ; i++) {
-			b.append(a[i]);
-			if (i == iMax) {
-				return b.toString();
-			}
-			b.append(symbol);
-		}
-	}
-
-	/**
-	 * 数组a中的内容 用英语逗号分隔连接为字符串
-	 * @param a
-	 * @return
-	 */
-	public static String join(Object[] a) {
-		return join(a, Constants.Symbol.comma);
 	}
 
 	/**
@@ -227,4 +191,336 @@ public class ArrayUtils {
 		}
 		return array[array.length - 1];
 	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @param shuffleCount 打乱的次数,默认为  array.length
+	 */
+	public static void shuffle(int[] array,int shuffleCount) {
+		for (int i = 0; i < shuffleCount; i++) {
+			int exchangeIndex = RandomUtils.randomInt(i, array.length);
+			int tmp = array[i];
+			array[i] = array[exchangeIndex];
+			array[exchangeIndex] = tmp;
+		}
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @return 打乱顺序的新array
+	 */
+	public static void shuffle(int[] array) {
+		 shuffle(array, array.length);
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @param shuffleCount 打乱的次数,默认为  array.length
+	 */
+	public static void shuffle(long[] array,int shuffleCount) {
+		for (int i = 0; i < shuffleCount; i++) {
+			int exchangeIndex = RandomUtils.randomInt(i, array.length);
+			long tmp = array[i];
+			array[i] = array[exchangeIndex];
+			array[exchangeIndex] = tmp;
+		}
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @return 打乱顺序的新array
+	 */
+	public static void shuffle(long[] array) {
+		shuffle(array, array.length);
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @param shuffleCount 打乱的次数,默认为  array.length
+	 */
+	public static void shuffle(char[] array,int shuffleCount) {
+		for (int i = 0; i < shuffleCount; i++) {
+			int exchangeIndex = RandomUtils.randomInt(i, array.length);
+			char tmp = array[i];
+			array[i] = array[exchangeIndex];
+			array[exchangeIndex] = tmp;
+		}
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @return 打乱顺序的新array
+	 */
+	public static void shuffle(char[] array) {
+		shuffle(array, array.length);
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @param shuffleCount 打乱的次数,默认为  array.length
+	 */
+	public static void shuffle(boolean[] array,int shuffleCount) {
+		for (int i = 0; i < shuffleCount; i++) {
+			int exchangeIndex = RandomUtils.randomInt(i, array.length);
+			boolean tmp = array[i];
+			array[i] = array[exchangeIndex];
+			array[exchangeIndex] = tmp;
+		}
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @return 打乱顺序的新array
+	 */
+	public static void shuffle(boolean[] array) {
+		shuffle(array, array.length);
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @param shuffleCount 打乱的次数,默认为  array.length
+	 */
+	public static void shuffle(byte[] array,int shuffleCount) {
+		for (int i = 0; i < shuffleCount; i++) {
+			int exchangeIndex = RandomUtils.randomInt(i, array.length);
+			byte tmp = array[i];
+			array[i] = array[exchangeIndex];
+			array[exchangeIndex] = tmp;
+		}
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @return 打乱顺序的新array
+	 */
+	public static void shuffle(byte[] array) {
+		shuffle(array, array.length);
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @param shuffleCount 打乱的次数,默认为  array.length
+	 */
+	public static <T> void shuffle(T[] array,int shuffleCount) {
+		for (int i = 0; i < shuffleCount; i++) {
+			int exchangeIndex = RandomUtils.randomInt(i, array.length);
+			T tmp = array[i];
+			array[i] = array[exchangeIndex];
+			array[exchangeIndex] = tmp;
+		}
+	}
+
+	/**
+	 * 打乱一个array
+	 * 使用洗牌算法
+	 * @param array 来源数据
+	 * @return 打乱顺序的新array
+	 */
+	public static <T> void shuffle(T[] array) {
+		shuffle(array, array.length);
+	}
+
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @param splitStr
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static String join(byte[] array,String splitStr) {
+		if(array == null){
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static <T> String join(T[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @param splitStr
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static String join(int[] array,String splitStr) {
+		if(array == null){
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @param splitStr
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static String join(long[] array,String splitStr) {
+		if(array == null){
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @param splitStr
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static String join(boolean[] array,String splitStr) {
+		if(array == null){
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @param splitStr
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static String join(char[] array,String splitStr) {
+		if(array == null){
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+	/**
+	 * 之用指定分隔符连接数组数据
+	 * @param array
+	 * @param splitStr
+	 * @return 如果数组为 null则返回null,否则返回连接后的字符串
+	 */
+	public static <T> String join(T[] array,String splitStr) {
+		if(array == null){
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+
+	/**
+	 * 使用逗号连接字符串
+	 * @param array 数组
+	 * @return 如果数组为 null则返回null,否则逗号连接后的字符串
+	 */
+	public static String toString(byte[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+	/**
+	 * 使用逗号连接字符串
+	 * @param array 数组
+	 * @return 如果数组为 null则返回null,否则逗号连接后的字符串
+	 */
+	public static String toString(int[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+	/**
+	 * 使用逗号连接字符串
+	 * @param array 数组
+	 * @return 如果数组为 null则返回null,否则逗号连接后的字符串
+	 */
+	public static String toString(long[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+	/**
+	 * 使用逗号连接字符串
+	 * @param array 数组
+	 * @return 如果数组为 null则返回null,否则逗号连接后的字符串
+	 */
+	public static String toString(boolean[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+	/**
+	 * 使用逗号连接字符串
+	 * @param array 数组
+	 * @return 如果数组为 null则返回null,否则逗号连接后的字符串
+	 */
+	public static String toString(char[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+	/**
+	 * 使用逗号连接字符串
+	 * @param array 数组
+	 * @return 如果数组为 null则返回null,否则逗号连接后的字符串
+	 */
+	public static <T> String toString(T[] array) {
+		return join(array, Constants.Symbol.comma);
+	}
+
+
 }
