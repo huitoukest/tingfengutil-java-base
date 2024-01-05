@@ -11,6 +11,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -530,5 +531,37 @@ public class CollectionUtils {
                 }
             }
         }
+    }
+
+    /**
+     * 打乱一个List,为了保证线程安全,这里会生成新的 List对象返回
+     * @param list 来源数据
+     * @param shuffleCount 打乱的次数,默认为  list.size
+     * @return 打乱顺序的新List
+     */
+    public static  <T> List<T> shuffle(List<T> list,int shuffleCount) {
+        int size = list.size();
+        int[] newIndexes = new int[size];
+        for (int i = 0; i < newIndexes.length; i++) {
+            newIndexes[i] = i;
+        }
+        for (int i = 0; i < shuffleCount; i++) {
+            int exchangeIndex = RandomUtils.randomInt(i, size);
+            int tmp = newIndexes[i];
+            newIndexes[i] = newIndexes[exchangeIndex];
+            newIndexes[exchangeIndex] = tmp;
+        }
+        return IntStream.of(newIndexes)
+                .mapToObj(list::get)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 打乱一个List,为了保证线程安全,这里会生成新的 List对象返回
+     * @param list 来源数据
+     * @return 打乱顺序的新List
+     */
+    public static  <T> List<T> shuffle(List<T> list) {
+        return shuffle(list, list.size());
     }
 }
