@@ -2,14 +2,14 @@ package com.tingfeng.util.java.base.common.abs.collection;
 
 import com.tingfeng.util.java.base.common.inter.collection.BufferConsumerCollection;
 
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public abstract class BaseTimeBufferConsumerCollection<T> implements BufferConsumerCollection<T> {
 
     private int checkInterval = 1;
-    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(1,Integer.MAX_VALUE,10, TimeUnit.SECONDS,new LinkedBlockingQueue<>());
+    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(1,Integer.MAX_VALUE,10, TimeUnit.SECONDS,new SynchronousQueue<>());
     /**
      * 检查的间隔时间，单位毫秒
      * @param checkInterval

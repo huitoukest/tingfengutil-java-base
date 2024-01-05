@@ -66,8 +66,8 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
         synchronized(this.buffer) {
             this.currentBuffer.add(t);
             if(this.currentBuffer.size() >= batchSize){
-                this.buffer.add(currentBuffer);
-                this.currentBuffer = new ArrayList<>();
+                this.buffer.add(new ArrayList<>(this.currentBuffer));
+                this.currentBuffer.clear();
             }
         }
         if(consumerIfMatchWhenAdd) {
@@ -79,12 +79,13 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     public void consumerIfMatch() {
         List<T> consumerList = Collections.emptyList();
         boolean timeMatch = System.currentTimeMillis() - lastConsumerTime >= maxHoldMs;
+        List<T> firstList;
         synchronized(this.buffer) {
             if(timeMatch){
-                this.buffer.add(currentBuffer);
-                this.currentBuffer = new ArrayList<>();
+                this.buffer.add(new ArrayList<>(this.currentBuffer));
+                this.currentBuffer.clear();
             }
-            List<T> firstList = this.buffer.stream().findFirst().orElse(Collections.emptyList());
+            firstList = this.buffer.stream().findFirst().orElse(Collections.emptyList());
             if(timeMatch || firstList.size() >= batchSize) {
                 consumerList = firstList;
                 this.buffer.removeFirst();
@@ -93,6 +94,17 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
         if(!consumerList.isEmpty()) {
             this.consumer.accept(consumerList);
             lastConsumerTime = System.currentTimeMillis();
+        }
+        while(!consumerIfMatchWhenAdd){
+            firstList = this.buffer.stream().findFirst().orElse(Collections.emptyList());
+            if(firstList.size() >= batchSize) {
+                consumerList = firstList;
+                this.buffer.removeFirst();
+                this.consumer.accept(consumerList);
+                lastConsumerTime = System.currentTimeMillis();
+            }else {
+                break;
+            }
         }
     }
 }
