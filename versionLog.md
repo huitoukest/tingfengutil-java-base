@@ -25,7 +25,7 @@ maven 引用:
 - bugfix
   - EnumUtils 的 getEnum 与 getEnumByValue方法，通过枚举值获取枚举对象本身时，默认使用的缓存只会以第一次获取值的枚举方法（例如枚举有A、B两个属性，一次通过A属性方法getA取值得到枚举，第二次通过B属性方法取的枚举值时，此时仍会通过A属性的取值与传入的值作比，等同时获取A属性值对应的枚举类造成bug）
 - 不兼容
-  - 日期格式化常量从 DateUtils.FORMATE_xxxx  移动到 DateFormat.DateUtils.FORMAT_xxx
+  - 日期格式化常量从 DateUtils.FORMATE_xxxx  移动到 DateFormat.FORMAT_xxx
 
 ## 0.2.1
 20230810
