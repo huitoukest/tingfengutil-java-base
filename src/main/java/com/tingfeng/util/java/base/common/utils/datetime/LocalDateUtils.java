@@ -177,12 +177,35 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
-     * 默认格式化 yyyy-MM-dd HH:mm:ss
+     * 默认格式化 yyyy-MM-dd
      *
      * @param date
      * @return
      */
     public static String getDateString(LocalDate date) {
+        return getDateString(date, FORMAT_YYYYMMDD_THROUGH_LINE);
+    }
+
+    /**
+     * 默认格式化 yyyy-MM-dd
+     *
+     * @param date
+     * @return
+     */
+    public static String getDateString(LocalDate date,String format) {
+        if(date == null){
+            return null;
+        }
+        return date.format(DateTimeFormatter.ofPattern(format));
+    }
+
+    /**
+     * 默认格式化 yyyy-MM-dd HH:mm:ss
+     *
+     * @param date
+     * @return
+     */
+    public static String getDateString(LocalDateTime date) {
         return getDateString(date, FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
     }
 
@@ -192,7 +215,7 @@ public class LocalDateUtils implements DateFormat{
      * @param date
      * @return
      */
-    public static String getDateString(LocalDate date,String format) {
+    public static String getDateString(LocalDateTime date,String format) {
         if(date == null){
             return null;
         }
