@@ -7,6 +7,10 @@ maven 引用:
           <version>0.2.3</version>
         </dependency>
 ```
+
+## 0.2.4
+- bugfix
+  - 修复 LocalDateUtils#getDateString bug
 ## 0.2.3
 20240105
 - 增强

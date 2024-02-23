@@ -4,7 +4,7 @@
   <groupId>com.tingfeng</groupId>
   <artifactId>tingfengutil-java-base</artifactId>
   <packaging>jar</packaging>
-  <version>0.2.4-SNAPSHOT</version>
+  <version>0.2.4</version>
   <name>tingfengutil-java-base</name>
   
     <dependencies>
