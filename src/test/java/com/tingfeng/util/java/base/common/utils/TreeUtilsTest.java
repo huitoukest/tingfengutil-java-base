@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.common.utils;
 
 import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.DefaultTreeNode;
+import com.tingfeng.util.java.base.common.bean.TreeTraverseContext;
 import com.tingfeng.util.java.base.common.bean.User;
 import com.tingfeng.util.java.base.common.constant.TraversalPolicy;
 import org.junit.Assert;
@@ -151,6 +152,8 @@ public class TreeUtilsTest {
         TreeUtils.traverse(treeList, TraversalPolicy.DLR,DefaultTreeNode::getChildren,traverseContext -> {
             int currentIndex = traverseCount.getAndIncrement();
             Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            System.out.print("," + traverseContext.getNode().getId() + String.format("[%s]", traverseContext.getLevel()));
+            checkTreeLevel(traverseContext);
             return true;
         });
     }
@@ -164,9 +167,22 @@ public class TreeUtilsTest {
         TreeUtils.traverse(treeList, TraversalPolicy.DRL,DefaultTreeNode::getChildren,traverseContext -> {
             int currentIndex = traverseCount.getAndIncrement();
             Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            //System.out.print("," + traverseContext.getNode().getId());
+            //System.out.print("," + JSON.toJSONString(traverseContext));
+            checkTreeLevel(traverseContext);
             return true;
         });
+    }
+
+    private void checkTreeLevel(TreeTraverseContext<DefaultTreeNode> traverseContext){
+        if(Arrays.asList("1".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
+            Assert.assertEquals( 1,traverseContext.getLevel());
+        }else if(Arrays.asList("21,22,23,24".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
+            Assert.assertEquals( 2,traverseContext.getLevel());
+        }else if(Arrays.asList("31,32,33,34,35,36,37".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
+            Assert.assertEquals(3,traverseContext.getLevel());
+        }else if(Arrays.asList("41,42,43,44".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
+            Assert.assertEquals(4,traverseContext.getLevel());
+        }
     }
 
     /**
@@ -222,6 +238,7 @@ public class TreeUtilsTest {
             int currentIndex = traverseCount.getAndIncrement();
             Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
             //System.out.print("," + traverseContext.getNode().getId());
+            checkTreeLevel(traverseContext);
             //当前遍历一个子节点后,当前的索引为0 ,则接下来立即遍历父节点,然后遍历其它子节点
             return true;
         });
@@ -236,6 +253,7 @@ public class TreeUtilsTest {
         TreeUtils.traverse(treeList, TraversalPolicy.RDL,DefaultTreeNode::getChildren,traverseContext -> {
             int currentIndex = traverseCount.getAndIncrement();
             Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            checkTreeLevel(traverseContext);
             //System.out.print("," + traverseContext.getNode().getId());
             //当前遍历一个子节点后,当前的索引为0 ,则接下来立即遍历父节点,然后遍历其它子节点
             return true;
@@ -251,6 +269,8 @@ public class TreeUtilsTest {
         TreeUtils.traverse(treeList, TraversalPolicy.LRD,DefaultTreeNode::getChildren,traverseContext -> {
             int currentIndex = traverseCount.getAndIncrement();
             Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            //System.out.print("," + traverseContext.getNode().getId() + String.format("[%s]", traverseContext.getLevel()));
+            checkTreeLevel(traverseContext);
             //System.out.print("," + traverseContext.getNode().getId());
             return true;
         });
@@ -265,6 +285,7 @@ public class TreeUtilsTest {
         TreeUtils.traverse(treeList, TraversalPolicy.RLD,DefaultTreeNode::getChildren,traverseContext -> {
             int currentIndex = traverseCount.getAndIncrement();
             Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
+            checkTreeLevel(traverseContext);
             //System.out.print("," + traverseContext.getNode().getId());
             return true;
         });

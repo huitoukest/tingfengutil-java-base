@@ -21,7 +21,10 @@ import java.util.stream.Collectors;
  *
  */
 public class TreeUtils {
-
+    /**
+     * 默认的根节点的 level 值,此节点默认为tree结构第一层的虚拟父节点
+     */
+    public static int defaultRootLevel = 0;
     /**
      * 找出指定列表中的所有的根节点;
      * 即1. 没有父节点的节点都是根节点,2. 如果父节点是自己,那么自己是根节点;
@@ -157,7 +160,7 @@ public class TreeUtils {
     }
 
     /**
-     * 遍历 一个 tree结构的数据; 当前遍历层级默认为0,当前 treeList 的父节点默认为 null
+     * 遍历 一个 tree结构的数据; 当前遍历层级默认为 1,当前 treeList 的父节点默认为 null
      * @param treeList 当前 tree的根节点数据
      * @param traversalPolicy 遍历的策略 {@link TraversalPolicy}
      * @param childrenGetter 获取当前节点的children的方法
@@ -169,7 +172,7 @@ public class TreeUtils {
     }
 
     /**
-     * 遍历 一个 tree结构的数据； 当前遍历层级默认为0
+     * 遍历 一个 tree结构的数据； 当前遍历层级默认为 1
      * @param treeList 当前 tree的根节点数据
      * @param traversalPolicy 遍历的策略 {@link TraversalPolicy}
      * @param parent 当前 treeList 的父节点,可以指定父节点
@@ -178,13 +181,13 @@ public class TreeUtils {
      * @param <T>
      */
     public static <T> void traverse(List<T> treeList, TraversalPolicy traversalPolicy,T parent, Function<T,List<T>> childrenGetter,Predicate<TreeTraverseContext<T>> traverseF){
-        traverse(treeList,0,traversalPolicy,parent,childrenGetter,traverseF);
+        traverse(treeList,TreeUtils.defaultRootLevel,traversalPolicy,parent,childrenGetter,traverseF);
     }
 
     /**
      * 遍历 一个 tree结构的数据
      * @param treeList 当前 tree的根节点数据
-     * @param level 指定当前层级信息,默认值为 0
+     * @param level 指定当前层级信息,默认值为 1
      * @param traversalPolicy 遍历的策略 {@link TraversalPolicy}
      * @param parent 当前 treeList 的父节点,可以指定父节点
      * @param childrenGetter 获取当前节点的children的方法

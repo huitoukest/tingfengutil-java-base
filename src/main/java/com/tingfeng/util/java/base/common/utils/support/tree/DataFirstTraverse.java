@@ -99,7 +99,7 @@ public class DataFirstTraverse extends AbstractTraverse{
         boolean isContinueTraverse = true;
         T node = brothers.get(indexInBrother);
         List<T> children = childrenGetter.apply(node);
-        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent,  + 1, indexInBrother, children);
+        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent,  level + 1, indexInBrother, children);
         isContinueTraverse = isContinueTraverse && traverseF.test(currentContext);
         if(!isContinueTraverse){
             return false;

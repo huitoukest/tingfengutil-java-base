@@ -86,7 +86,7 @@ public class DataAfterTraverse extends AbstractTraverse{
         if(!isContinueTraverse){
            return false;
         }
-        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent,  + 1, indexInBrother, brothers);
+        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent,  parentLevel + 1, indexInBrother, brothers);
         //因为在遍历子节点的方法中 会传入条件从而遍历(子节点的)父节点，也就是当前节点，
         // 所以只要当前节点有下级，则一定代表遍历过，所以这里判断无需再次遍历
         if(ObjectUtils.isEmpty(children)) {

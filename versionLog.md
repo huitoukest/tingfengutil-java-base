@@ -4,10 +4,13 @@ maven 引用:
         <dependency>
           <groupId>com.tingfeng</groupId>
           <artifactId>tingfengutil-java-base</artifactId>
-          <version>0.2.3</version>
+          <version>0.2.5</version>
         </dependency>
 ```
-
+## 0.2.5
+20240520
+- bugfix
+  - 修复 TreeUtils.traverse 中 TreeTraverseContext<T> 的level不正确的问题
 ## 0.2.4
 - bugfix
   - 修复 LocalDateUtils#getDateString bug

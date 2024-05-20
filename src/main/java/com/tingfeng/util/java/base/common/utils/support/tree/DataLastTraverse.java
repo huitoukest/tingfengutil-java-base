@@ -80,7 +80,7 @@ public class DataLastTraverse extends AbstractTraverse{
            return false;
         }
         //遍历当前节点
-        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent, parentLevel, indexInBrother, brothers);
+        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent, parentLevel+ 1, indexInBrother, brothers);
         isContinueTraverse = isContinueTraverse && traverseF.test(currentContext);
 
         return isContinueTraverse;
