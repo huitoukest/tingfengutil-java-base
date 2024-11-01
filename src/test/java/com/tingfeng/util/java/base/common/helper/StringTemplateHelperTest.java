@@ -1,11 +1,13 @@
 package com.tingfeng.util.java.base.common.helper;
 
+import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.utils.CollectionUtils;
 import com.tingfeng.util.java.base.common.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class StringTemplateHelperTest {
     
@@ -110,5 +112,25 @@ public class StringTemplateHelperTest {
         TestUtils.printTime(8,10000,(thread,index) -> {
             helper.generate(params);
         });
+    }
+
+    @Test
+    public void parseParam() {
+        String startFlag = "${";
+        String endFlag = "}";
+        String content = "亲,${a}你的花费余额为${b}元,月份${c}${d}元";
+        Set<String> params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
+        System.out.println(JSON.toJSONString(params));
+        Assert.assertTrue(CollectionUtils.eq(Arrays.asList("a","b","c","d").stream().collect(Collectors.toSet()), params));
+
+        content = "${d}${a}你好,顾客${a}你的花费余额为${${b}}元,月份${{c}元";
+        params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
+        System.out.println(JSON.toJSONString(params));
+        Assert.assertTrue(CollectionUtils.eq(Arrays.asList("a","d","{c","${b").stream().collect(Collectors.toSet()), params));
+
+        content = "${}}{${${a}},我们看${b}${c}好${c}${d}你}${${b}";
+        params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
+        System.out.println(JSON.toJSONString(params));
+        Assert.assertTrue(CollectionUtils.eq(Arrays.asList("b","c","d","${a","${b").stream().collect(Collectors.toSet()), params));
     }
 }

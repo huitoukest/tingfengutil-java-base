@@ -39,6 +39,16 @@ public class StringTemplateHelper {
      * @param startFlag 替换开始的标记,empty String = 使用默认值
      * @param endFlag 替换结束的标记,empty String = 使用默认值
      * @param content 模板内容
+     */
+    public StringTemplateHelper(String startFlag, String endFlag, String content){
+        this(startFlag, endFlag, content, StringTemplateHelper.parseParam(startFlag, endFlag, content));
+    }
+
+    /**
+     * 模板参数key值不能为空串
+     * @param startFlag 替换开始的标记,empty String = 使用默认值
+     * @param endFlag 替换结束的标记,empty String = 使用默认值
+     * @param content 模板内容
      * @param params  模板中的参数有哪些，参数无需包含开始结束标记
      */
     public StringTemplateHelper(String startFlag, String endFlag, String content, Set<String> params){
@@ -63,6 +73,14 @@ public class StringTemplateHelper {
      */
     public StringTemplateHelper(String content, Set<String> params){
         this(null,null,content,params);
+    }
+
+    /**
+     * 模板参数key值不能为空串
+     * @param content
+     */
+    public StringTemplateHelper(String content){
+        this(null,null,content);
     }
 
     /**
@@ -137,5 +155,36 @@ public class StringTemplateHelper {
             }).forEach(it -> sb.append(it) );
             return sb.toString();
         });
+    }
+
+    /**
+     * 根据模板内容自动解析参数
+     * 有开始结束标记的嵌套时,优先使用从左到右的第一个匹配到的数据
+     * @param startFlag 替换开始的标记,empty String = 使用默认值
+     * @param endFlag 替换结束的标记,empty String = 使用默认值
+     * @param content 模板内容
+     * @return 参数名称,若存在则返回对应参数值否则返回空集合
+     */
+    public static Set<String> parseParam(String startFlag, String endFlag, String content) {
+        int length = content.length();
+        Set<String> params = new HashSet<>(16);
+        for (int i = 0; i < length;) {
+            int startIndex = StringUtils.indexOf(content, startFlag, i, length);
+            if(startIndex < 0){
+                break;
+            }
+            int paramStartIndex = startIndex + startFlag.length();
+            int endIndex = StringUtils.indexOf(content, endFlag, paramStartIndex, length);
+            if(endIndex < 0){
+                break;
+            }
+            //即参数内容不为空的部分
+            if(paramStartIndex < endIndex) {
+                String param = content.substring(paramStartIndex, endIndex);
+                params.add(param);
+            }
+            i = endIndex + endFlag.length();
+        }
+        return params;
     }
 }
