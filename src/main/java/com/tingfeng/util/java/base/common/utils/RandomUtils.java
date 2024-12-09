@@ -5,6 +5,7 @@ import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -196,5 +197,58 @@ public class RandomUtils {
 			value = value.replace("-", "");
 		}
 		return value;
+	}
+
+	/**
+	 * 打乱来源列表顺序
+	 * @param srcList 来源数据
+	 * @param exchangeOffsetList 打乱时使用的位置的移动偏移量,代表当前打乱规则,值必须都大于等于0,值为0时返回原集合
+	 * @return 打乱后的列表(不会影响原列表)
+	 */
+	public static <T> List<T> shuffleByExchange(List<T> srcList,List<Integer> exchangeOffsetList){
+		if(ObjectUtils.isEmpty(srcList)){
+			return Collections.emptyList();
+		}
+		List<T> targetIds = new ArrayList<>(srcList);
+		for (int i = 0; i < targetIds.size(); i++) {
+			Integer exchangeOffsetIndex = i % exchangeOffsetList.size();
+			Integer exchangeOffsetValue = exchangeOffsetList.get(exchangeOffsetIndex);
+			T beforeShuffleValue = targetIds.get(i);
+			int shuffleIndex = (i + exchangeOffsetValue) % targetIds.size();
+			targetIds.set(i, targetIds.get(shuffleIndex));
+			targetIds.set(shuffleIndex, beforeShuffleValue);
+		}
+		return targetIds;
+	}
+
+	/**
+	 * 打乱来源列表顺序
+	 * @param srcArray 来源数据
+	 * @param exchangeOffsetList 打乱时使用的位置的移动偏移量,代表当前打乱规则,值必须都大于等于0,值为0时返回原集合
+	 */
+	public static <T> void shuffleByExchange(T[] srcArray,List<Integer> exchangeOffsetList){
+		if(srcArray == null || srcArray.length == 0){
+			return;
+		}
+		for (int i = 0; i < srcArray.length; i++) {
+			Integer exchangeOffsetIndex = i % exchangeOffsetList.size();
+			Integer exchangeOffsetValue = exchangeOffsetList.get(exchangeOffsetIndex);
+			T beforeShuffleValue = srcArray[i];
+			int shuffleIndex = (i + exchangeOffsetValue) % srcArray.length;
+			srcArray[i] = srcArray[shuffleIndex];
+			srcArray[shuffleIndex] = beforeShuffleValue;
+		}
+	}
+
+	/**
+	 * 获取默认的打乱偏移量列表
+	 * @param seed 种子 建议值在1 ~ 1w
+	 * @param count 偏移量的数量(建议设置长度在4~20)
+	 * @return List[偏移量列表]
+	 */
+	public static List<Integer> getDefaultExchangeOffsetValues(int seed,int count){
+		return IntStream.range(0, count)
+				.mapToObj(index -> Math.abs(index + seed / 101  + index * 31 - seed * seed))
+				.collect(Collectors.toList());
 	}
 }

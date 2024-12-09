@@ -1,11 +1,16 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.BaseTest;
+import com.alibaba.fastjson.JSON;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class RandomUtilsTest extends BaseTest {
     @Test
@@ -53,5 +58,19 @@ public class RandomUtilsTest extends BaseTest {
                 System.out.println(value);
             }
         }));
+    }
+
+    @Test
+    public void shuffleByExchange() {
+        List<Integer> list = IntStream.range(0,20).mapToObj(Integer::valueOf).collect(Collectors.toList());
+        for (int i = 0; i < 10; i++) {
+            System.out.println(JSON.toJSONString(RandomUtils.shuffleByExchange(list, RandomUtils.getDefaultExchangeOffsetValues(i,5))));
+        }
+    }
+
+    @Test
+    public void getDefaultExchangeOffsetValues() {
+        IntStream.range(1,50)
+                .forEach(seed -> System.out.println(JSON.toJSONString(RandomUtils.getDefaultExchangeOffsetValues(seed,20))));
     }
 }
