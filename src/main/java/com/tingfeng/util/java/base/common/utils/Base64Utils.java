@@ -1,7 +1,5 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.tingfeng.util.java.base.common.constant.Constants;
-
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;

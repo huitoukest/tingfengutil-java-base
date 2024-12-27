@@ -6,6 +6,7 @@ import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
 import com.tingfeng.util.java.base.common.inter.PropertyFunction;
+import com.tingfeng.util.java.base.common.inter.consumer.ConsumerTwo;
 import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
 import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
@@ -20,6 +21,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -567,6 +569,8 @@ public class BeanUtils {
         Map<String, PropertyDescriptor> beanFiledNameMap = Arrays.asList(propertyDescriptors)
                 .stream()
                 .collect(Collectors.toMap(PropertyDescriptor::getName, Function.identity()));
+        //Consumer[bean实例对象,属性值]
+        Map<String, Tuple2<Field, ConsumerTwo<Object, String>>> beanStringToFieldValueSetterMap = getBeanStringToFieldValueSetterMap(beanCls);
         Map<Integer, PropertyDescriptor> filedIndexMap = IntStream.range(0, filedNames.length)
                 .mapToObj(index -> {
                     PropertyDescriptor propertyDescriptor = beanFiledNameMap.get(filedNames[index]);
@@ -587,21 +591,76 @@ public class BeanUtils {
             IntStream.range(0,contents.length)
                     .forEach(index -> {
                         PropertyDescriptor propertyDescriptor = filedIndexMap.get(index);
+                        String srcFiledValue = contents[index];
+                        Object filedValue = srcFiledValue;
                         if(propertyDescriptor != null) {
-                            Object filedValue = contents[index];
                             if (null != filedValueConverter) {
                                 filedValue = filedValueConverter.run(propertyDescriptor.getName(), contents[index]);
-                            } else {
+                            }else {
                                 filedValue = ObjectUtils.getObject(propertyDescriptor.getPropertyType(), contents[index]);
+                            }
+                            Class<?>[] parameterTypes = propertyDescriptor.getWriteMethod().getParameterTypes();
+                            if (!parameterTypes[0].equals(String.class)) {
+                                Function<String, ?> converter = ConverterUtil.getConverter(String.class, parameterTypes[0]);
+                                if (converter != null) {
+                                    filedValue = Optional.ofNullable(srcFiledValue).map(converter::apply).orElse(null);
+                                }
                             }
                             try {
                                 propertyDescriptor.getWriteMethod().invoke(bean, filedValue);
-                            } catch (IllegalAccessException | InvocationTargetException e) {
+                            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
                                 throw new RuntimeException(e);
                             }
+                        } else {
+                            String filedName = filedNames[index];
+                            Tuple2<Field, ConsumerTwo<Object, String>> fieldConsumer = beanStringToFieldValueSetterMap.get(filedName);
+                            Optional.ofNullable(fieldConsumer)
+                                    .map(Tuple2::get_2)
+                                    .ifPresent(tuple2Consumer -> tuple2Consumer.accept(bean, srcFiledValue));
                         }
                     });
             return bean;
         };
+    }
+
+    /**
+     * 获取bean属性设置的map
+     * @param beanCls
+     * @param <T>
+     * @return Map[属性名称,Tuple2[属性对象,Consumer2[对象实例,属性值]]]
+     */
+    private static <T> Map<String, Tuple2<Field,ConsumerTwo<Object,String>>> getBeanStringToFieldValueSetterMap(Class<T> beanCls) {
+        List<Field> fields = ReflectUtils.getFields(beanCls, false, false, true, true);
+        Map<String, Tuple2<Field,ConsumerTwo<Object,String>>> beanFieldSetterMap = fields.stream()
+                .collect(Collectors.toMap(Field::getName, field -> {
+                    String name = field.getName();
+                    Class<?> fieldClass = field.getType();
+                    Method targetMethod = ReflectUtils.getMethod(beanCls, ReflectUtils.getSetterName(name), fieldClass);
+                    if(targetMethod != null) {
+                        targetMethod.setAccessible(true);
+                    }
+                    ConsumerTwo<Object,String> consumer = (bean,paramObj) -> {
+                        try {
+                            Object targetValue = paramObj;
+                            if(!fieldClass.equals(String.class)){
+                                Function<String, ?> converter = ConverterUtil.getConverter(String.class, fieldClass);
+                                if(converter != null){
+                                    targetValue = Optional.ofNullable(paramObj).map(converter::apply).orElse(null);
+                                }
+                            }
+                            if(targetMethod != null){
+                                targetMethod.invoke(bean, targetValue);
+                            }else {
+                                field.set(bean,targetValue);
+                            }
+                        } catch (IllegalAccessException | IllegalArgumentException e) {
+                            throw new RuntimeException(e);
+                        } catch (InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    };
+                    return new Tuple2<>(field, consumer);
+                }));
+        return beanFieldSetterMap;
     }
 }
