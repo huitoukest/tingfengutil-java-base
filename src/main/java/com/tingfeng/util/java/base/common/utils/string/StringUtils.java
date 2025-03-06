@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  * String工具类
  */
 public class StringUtils {
-    private final static Field STRING_VALUE_FIELD = ReflectUtils.getField(String.class,"value",true);
+    private static Field STRING_VALUE_FIELD = null;
     private static final Log logger = LogFactory.getLog(StringUtils.class);
     private final static int BUFFER_SIZE = 4096;
     /**
@@ -48,6 +48,24 @@ public class StringUtils {
         }
         sb.setLength(0);
     });
+
+    static {
+        //只在java8以及之前可用
+        try {
+            STRING_VALUE_FIELD = ReflectUtils.getField(String.class, "value", true);
+            Class<?> type = STRING_VALUE_FIELD.getType();
+            if (!type.isArray()){
+                STRING_VALUE_FIELD = null;
+            }else {
+                Class<?> componentType = type.getComponentType();
+                if (componentType != char.class) {
+                    STRING_VALUE_FIELD = null;
+                }
+            }
+        }catch (Exception e){
+            //ignore
+        }
+    }
 
     private StringUtils() {
 
@@ -1124,6 +1142,9 @@ public class StringUtils {
      */
     public static char[] getCharArray(String str){
         try {
+            if(STRING_VALUE_FIELD == null) {
+                return str.toCharArray();
+            }
             return (char[]) STRING_VALUE_FIELD.get(str);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

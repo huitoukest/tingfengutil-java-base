@@ -4,9 +4,12 @@ maven 引用:
         <dependency>
           <groupId>com.tingfeng</groupId>
           <artifactId>tingfengutil-java-base</artifactId>
-          <version>0.2.5</version>
+          <version>0.2.6</version>
         </dependency>
 ```
+## 0.2.6
+- bugfix
+  - 修复StringUtils在java9以上无法使用的问题
 ## 0.2.5
 20240520
 - bugfix

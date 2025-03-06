@@ -3,7 +3,10 @@ package com;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
+import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class BaseTest {
@@ -40,4 +43,32 @@ public class BaseTest {
         }
         System.out.println("use time:" + (System.currentTimeMillis() - startTime));
     }
+
+
+    // 判断是否为char数组（含包装类型）
+    public static boolean isCharTypeArray(Field field) {
+        Class<?> type = field.getType();
+        if (!type.isArray()) return false;
+
+        Class<?> componentType = type.getComponentType();
+        return componentType == char.class ||
+                componentType == Character.class;
+    }
+
+    public static class A{
+        private final char[] chars;
+        private final byte[] bytes;
+
+        public A(char[] chars, byte[] bytes) {
+            this.chars = chars;
+            this.bytes = bytes;
+        }
+    }
+
+    @Test
+    public void typeTest(){
+        System.out.println(isCharTypeArray(ReflectUtils.getField(A.class,"chars")));
+        System.out.println(isCharTypeArray(ReflectUtils.getField(A.class,"bytes")));
+    }
+
 }
