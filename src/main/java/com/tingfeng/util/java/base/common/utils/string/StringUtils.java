@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.common.utils.string;
 
+import com.tingfeng.util.java.base.common.bean.TrieNode;
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.common.exception.BaseException;
 import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
@@ -1521,5 +1522,18 @@ public class StringUtils {
                     .replaceAll("\\\\\\\\","\\\\");
         }
         return str;
+    }
+
+    /**
+     * 构建签字字典树
+     * @param collections
+     * @return
+     */
+    public static TrieNode build(Collection<String> collections){
+        TrieNode trieNode = new TrieNode();
+        for (String collection : collections) {
+            trieNode.insert(collection);
+        }
+        return trieNode;
     }
 }

@@ -8,6 +8,8 @@ maven 引用:
         </dependency>
 ```
 ## 0.2.6
+- 增强
+  - 新增 TrieNode 前缀树，快速构建方法放到StringUtils中
 - bugfix
   - 修复StringUtils在java9以上无法使用的问题
 ## 0.2.5
