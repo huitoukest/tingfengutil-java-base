@@ -45,4 +45,12 @@ public class UnionKey {
         }
         return false;
     }
+
+    public <T> T getKey(int index){
+        return (T) keys[index];
+    }
+
+    public Object[] getKeys(){
+        return keys;
+    }
 }
