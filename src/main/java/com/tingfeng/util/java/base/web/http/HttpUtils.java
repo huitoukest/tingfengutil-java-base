@@ -13,9 +13,11 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -192,12 +194,27 @@ public class HttpUtils {
 
     /**
      * 把 名=值 参数表转换成字符串 (url + ?a=1&amp;b=2)
-     *
+     * 1. 存在在但是只为null时,值转为空串
+     * 2. 如果已经存在参数, 则会追加参数到url上
      * @param url    url可以为null，为null则返回参数组成的字符串a=1&amp;b=2
      * @param params url中的参数
      * @return
      */
-    public static String toGetUrl(String url, Map<String, Object> params) {
+    public static String toGetUrl(String url, Map<String, ? extends Object> params) {
+        return toGetUrl(url,params,false,null);
+    }
+    /**
+     * 把 名=值 参数表转换成字符串 (url + ?a=1&amp;b=2)
+     * 1. 存在在但是只为null时,值转为空串
+     * 2. 如果已经存在参数, 则会追加参数到url上
+     * @param url    url可以为null，为null则返回参数组成的字符串a=1&amp;b=2
+     * @param params url中的参数
+     * @param encodeParam 对参数的键值做URL编码
+     * @param encodeCharSet 编码格式,仅当 encodeParam = true 时生效
+     * @return
+     */
+    public static String toGetUrl(String url, Map<String, ? extends Object> params, boolean encodeParam,String encodeCharSet) {
+        boolean urlHasParam = url != null && url.indexOf("?") > 0;
         return StringUtils.doAppend(sb->{
                 if (null != url) {
                     sb.append(url);
@@ -206,17 +223,27 @@ public class HttpUtils {
                     int i = 0;
                     for (String key : params.keySet()) {
                         Object value = params.get(key);
-                        if (value != null) {
-                            if (i == 0 && null != url) {
+                        if(i > 0 || urlHasParam) {
+                            sb.append("&");
+                        }else {
+                            if(null != url) {
                                 sb.append("?");
-                            } else {
-                                sb.append("&");
                             }
-                            sb.append(key);
-                            sb.append("=");
-                            sb.append(value);
                         }
-                        i++;
+                        if(encodeParam){
+                            try {
+                                key = URLEncoder.encode(key, encodeCharSet);
+                                if(null!= value) {
+                                    value = URLEncoder.encode(value.toString(), encodeCharSet);
+                                }
+                            } catch (UnsupportedEncodingException e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                        sb.append(key);
+                        sb.append("=");
+                        sb.append(Optional.ofNullable(value).orElse(""));
+                        ++i;
                     }
                 }
                 return sb.toString();
