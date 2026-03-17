@@ -18,9 +18,7 @@ import java.util.function.Function;
  * 工具的内容数据用,分隔；内容和签名用.分隔，如果内容中包含,号，则会自动转义。
  * 内容按照顺序保存和解析*/
 public class TokenHelper {
-    private static final Log logger = LogFactory.getLog(TokenHelper.class);
     private static final char CHAR_COMMA = ',';
-    private static final String STR_DOT = ".";
     private static final String STR_SPLIT_DOT = "\\.";
     private static final char CHAR_SLASH = '\\';
     private static final int DEFAULT_MAX_SB_SIZE = 16;
@@ -171,7 +169,7 @@ public class TokenHelper {
 
     /**
      * 检查token的基本类容和格式
-     * @param token
+     * @param token token字符串
      * @return 返回内容和签名两部分组成的数组
      * */
     private String[] tokenBaseParseAndCheck(String token){
@@ -183,11 +181,12 @@ public class TokenHelper {
             }
         }
         String[] strArray = token.split(STR_SPLIT_DOT);
-        if(contentLength != null && contentLength != strArray.length){
+        // 验证 token 格式是否正确，至少包含内容和签名两部分
+        if(strArray.length < 2){
             if(this.errorTokenException != null){
                 throw errorTokenException;
             }else{
-                throw new InfoException("token 错误！");
+                throw new InfoException("token 格式错误！");
             }
         }
         return strArray;
@@ -197,11 +196,11 @@ public class TokenHelper {
      * 如果是get方式传入的token，其中url中的“ + ”字符会被转换为空格，需要前端手动将+字符转意为%2B
      * 这样后端服务器接收到之后会自动转为“ + ”。
      * 解密出UserId，如果有问题会直接抛出异常
-     * @param token
+     * @param token token字符串
      * @param securityKey 传入解析的内容List[String]，返回securityKey ，自动校验签名，如果获取securityKey为空着不见好擦
      * @param checkParseContent 传入解析后的内容List[String]，检查内容，如果有问题直接抛出异常，否则转换为需要的类型并且返回结果
-     * @param <T>
-     * @return
+     * @param <T> 返回类型
+     * @return 解析后的结果
      */
     public <T> T parseToken(String token,Function<List<String>,String>  securityKey,Function<List<String>,T> checkParseContent){
         T t = null;
@@ -216,6 +215,16 @@ public class TokenHelper {
                 throw new InfoException("token格式 错误！");
             }
             List<String> contentList = parseContent(content);
+            
+            // 验证内容长度是否符合要求
+            if(contentLength != null && contentLength != contentList.size()){
+                if(this.errorTokenException != null){
+                    throw errorTokenException;
+                }else{
+                    throw new InfoException("token 内容长度错误！");
+                }
+            }
+            
             if (null != securityKey) {
                 byte[] expectSignBytes = this.encryptAction.apply(content + securityKey.apply(contentList));
                 String expectSign = Base64Utils.enCodeBase64UrlSafeString(expectSignBytes);
@@ -234,8 +243,8 @@ public class TokenHelper {
 
     /**
      * 返回解析的原始token，不做签名校验
-     * @param token
-     * @return
+     * @param token token字符串
+     * @return 解析后的内容列表
      */
     public List<String> parseTokenWithNoSignatureCheck(String token){
         String[] strArray = tokenBaseParseAndCheck(token);
@@ -246,12 +255,23 @@ public class TokenHelper {
         }catch (IllegalArgumentException e){
             throw new InfoException("token格式 错误！");
         }
-        return parseContent(content);
+        List<String> contentList = parseContent(content);
+        
+        // 验证内容长度是否符合要求
+        if(contentLength != null && contentLength != contentList.size()){
+            if(this.errorTokenException != null){
+                throw errorTokenException;
+            }else{
+                throw new InfoException("token 内容长度错误！");
+            }
+        }
+        
+        return contentList;
     }
 
     /**
      * 检查并且做签名校验
-     * @param token
+     * @param token token字符串
      * @param securityKey 加密字符串
      * @return 返回token中的签名:base64字符串
      */
@@ -265,8 +285,20 @@ public class TokenHelper {
         }catch (IllegalArgumentException e){
             throw new InfoException("token格式 错误！");
         }
+        List<String> contentList = parseContent(content);
+        
+        // 验证内容长度是否符合要求
+        if(contentLength != null && contentLength != contentList.size()){
+            if(this.errorTokenException != null){
+                throw errorTokenException;
+            }else{
+                throw new InfoException("token 内容长度错误！");
+            }
+        }
+        
         byte[] expectSignBytes = this.encryptAction.apply(content + securityKey);
-        String expectSign = Base64Utils.enCodeBase64UrlSafeString(Base64Utils.enCode(expectSignBytes));
+        // 修复：只进行一次 Base64 编码，与 getToken 方法保持一致
+        String expectSign = Base64Utils.enCodeBase64UrlSafeString(expectSignBytes);
         if (!expectSign.equals(sign)) {
             if(null != signErrorException){
                 throw signErrorException;

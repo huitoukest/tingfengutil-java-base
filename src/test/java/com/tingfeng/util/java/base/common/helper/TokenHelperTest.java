@@ -1,14 +1,14 @@
 package com.tingfeng.util.java.base.common.helper;
 
 import com.alibaba.fastjson.JSON;
-import com.tingfeng.util.java.base.common.utils.CollectionUtils;
+import com.tingfeng.util.java.base.common.exception.InfoException;
+import com.tingfeng.util.java.base.common.utils.MessageDigestUtils;
 import com.tingfeng.util.java.base.common.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class TokenHelperTest {
 
@@ -72,6 +72,115 @@ public class TokenHelperTest {
             System.out.println(JSON.toJSONString(obj));
         }
         Assert.assertEquals(JSON.toJSONString(obj),JSON.toJSONString(list));
+    }
+
+    /**
+     * 测试签名验证
+     */
+    @Test
+    public void testSignatureCheck() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("123");
+        list.add("456");
+        list.add("789");
+        
+        String securityKey = "testKey";
+        String token = tokenHelper.getToken(list, securityKey);
+        
+        // 测试正确的签名验证
+        String sign = tokenHelper.checkSignature(token, securityKey);
+        Assert.assertNotNull(sign);
+        
+        // 测试错误的签名验证
+        try {
+            tokenHelper.checkSignature(token, "wrongKey");
+            Assert.fail("应该抛出异常");
+        } catch (InfoException e) {
+            // 预期异常
+        }
+    }
+
+    /**
+     * 测试内容长度验证
+     */
+    @Test
+    public void testContentLengthCheck() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("123");
+        list.add("456");
+        list.add("789");
+        
+        String securityKey = "testKey";
+        String token = tokenHelper.getToken(list, securityKey);
+        
+        // 设置内容长度为3，应该验证通过
+        tokenHelper.setContentLength(3);
+        List<String> result = tokenHelper.parseTokenWithNoSignatureCheck(token);
+        Assert.assertEquals(3, result.size());
+        
+        // 设置内容长度为4，应该验证失败
+        tokenHelper.setContentLength(4);
+        try {
+            tokenHelper.parseTokenWithNoSignatureCheck(token);
+            Assert.fail("应该抛出异常");
+        } catch (InfoException e) {
+            // 预期异常
+        }
+        
+        // 重置内容长度
+        tokenHelper.setContentLength(null);
+    }
+
+    /**
+     * 测试异常处理
+     */
+    @Test
+    public void testExceptionHandling() {
+        // 测试空token
+        try {
+            tokenHelper.parseTokenWithNoSignatureCheck("");
+            Assert.fail("应该抛出异常");
+        } catch (InfoException e) {
+            // 预期异常
+        }
+        
+        // 测试格式错误的token
+        try {
+            tokenHelper.parseTokenWithNoSignatureCheck("invalidToken");
+            Assert.fail("应该抛出异常");
+        } catch (InfoException e) {
+            // 预期异常
+        }
+    }
+
+    /**
+     * 测试不同的加密算法
+     */
+    @Test
+    public void testDifferentEncryptionAlgorithms() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("123");
+        list.add("456");
+        
+        String securityKey = "testKey";
+        
+        // 测试SHA-256
+        TokenHelper sha256Helper = new TokenHelper(MessageDigestUtils.SHAType.SHA256);
+        String token256 = sha256Helper.getToken(list, securityKey);
+        List<String> result256 = sha256Helper.parseToken(token256, (contents) -> securityKey, (contents) -> contents);
+        Assert.assertEquals(list, result256);
+        
+        // 测试SHA-512
+        TokenHelper sha512Helper = new TokenHelper(MessageDigestUtils.SHAType.SHA512);
+        String token512 = sha512Helper.getToken(list, securityKey);
+        List<String> result512 = sha512Helper.parseToken(token512, (contents) -> securityKey, (contents) -> contents);
+        Assert.assertEquals(list, result512);
+        
+        // 测试MD5
+        TokenHelper md5Helper = new TokenHelper("MD5");
+        String tokenMd5 = md5Helper.getToken(list, securityKey);
+        List<String> resultMd5 = md5Helper.parseToken(tokenMd5, (contents) -> securityKey, (contents) -> contents);
+        Assert.assertEquals(list, resultMd5);
     }
 
     /**
