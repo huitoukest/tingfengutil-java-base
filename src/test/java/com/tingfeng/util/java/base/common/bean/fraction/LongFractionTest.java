@@ -155,7 +155,7 @@ public class LongFractionTest {
         int multipleValue = RandomUtils.randomInt(100);
         LongFraction fraction = new LongFraction( multipleValue , baseValue * multipleValue).simpleFraction();
         System.out.println(fraction.getValue());
-        Assert.assertEquals(Math.abs(baseValue), fraction.getDenominator());
+        Assert.assertEquals(Math.abs(baseValue), fraction.getDenominator().intValue());
     }
 
     @Test

@@ -251,11 +251,20 @@ public class BeanUtils {
                     };
                 } else {
                     Method srcMethod = ReflectUtils.getMethod(sourceCls, ReflectUtils.getGetterName(name));
+                    if (srcMethod == null) {
+                        return null;
+                    }
                     srcMethod.setAccessible(true);
                     Field srcField = sourceFieldNameMap.get(name);
+                    if (srcField == null) {
+                        return null;
+                    }
                     srcField.setAccessible(true);
 
                     Method targetMethod = ReflectUtils.getMethod(targetCls, ReflectUtils.getSetterName(name));
+                    if (targetMethod == null) {
+                        return null;
+                    }
                     targetMethod.setAccessible(true);
                     return new BeanCopyFun() {
                         @Override
@@ -281,7 +290,9 @@ public class BeanUtils {
                         }
                     };
                 }
-            }).collect(Collectors.toMap(BeanCopyFun::getName, Function.identity()));
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(BeanCopyFun::getName, Function.identity()));
         }
         return map;
     }
@@ -520,6 +531,7 @@ public class BeanUtils {
 			columnNames.add("class");
             return Arrays.asList(descriptors).stream()
                     .filter(it -> !columnNames.contains(it.getName()))
+                    .filter(it -> it.getReadMethod() != null)
                     .map(it -> {
                         try {
                             return new Tuple2<String, Object>(it.getName(), it.getReadMethod().invoke(obj));

@@ -73,7 +73,7 @@ public class BinaryOperationUtils {
             throw new RuntimeException("indexOfPower must <= " + MAX_POW_VALUE);
         }
         if(pow < 0) {
-            return 1.0 / binaryPowValues.get(pow);
+            return 1.0 / binaryPowValues.get(Math.abs(pow));
         }
         return binaryPowValues.get(pow);
     }
@@ -85,7 +85,7 @@ public class BinaryOperationUtils {
      */
     public static long getFirstThanBinaryValue(long currentValue){
         Double value = binaryPowValues.stream().filter(it -> it >= currentValue).findFirst().orElse(null);
-        if(value == null){
+        if(value == null || value > Long.MAX_VALUE){
             return -1;
         }
         return value.longValue();

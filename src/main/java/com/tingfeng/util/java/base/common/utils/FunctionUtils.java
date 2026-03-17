@@ -31,7 +31,10 @@ public class FunctionUtils {
      */
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
-        return t -> seen.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+        return t -> {
+            Object key = keyExtractor.apply(t);
+            return key == null ? seen.putIfAbsent(new Object(), Boolean.TRUE) == null : seen.putIfAbsent(key, Boolean.TRUE) == null;
+        };
     }
 
 }

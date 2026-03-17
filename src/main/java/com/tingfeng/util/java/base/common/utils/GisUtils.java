@@ -62,9 +62,16 @@ public class GisUtils {
         double lngAR = angleToRadian(lngA);
         double lngBR = angleToRadian(lngB);
         double r = getRadius((latA + latB) / 2);
+        double dLng = Math.abs(lngAR - lngBR);
+        // 处理经度差超过180度的情况，使用最短路径
+        if (dLng > Math.PI) {
+            dLng = 2 * Math.PI - dLng;
+        }
         double cosValue = Math.sin(latAR) * Math.sin(latBR) + Math.cos(latAR) * Math.cos(latBR)
-                * Math.cos(lngAR - lngBR);
-        return r  * Math.acos(cosValue);
+                * Math.cos(dLng);
+        // 确保cosValue在[-1, 1]范围内，避免Math.acos返回NaN
+        cosValue = Math.max(-1, Math.min(1, cosValue));
+        return r * Math.acos(cosValue);
     }
 
 }

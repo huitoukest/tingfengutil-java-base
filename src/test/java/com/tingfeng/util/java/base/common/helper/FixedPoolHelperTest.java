@@ -10,8 +10,8 @@ public class FixedPoolHelperTest {
 
     @Test
     public void fixedPoolHelperTest() throws InterruptedException {
-        FixedPoolHelper<StringBuilder> fixedPoolHelper = new FixedPoolHelper(100,()->new StringBuilder());
-        TestUtils.printTime(100,5000,(index) ->{
+        FixedPoolHelper<StringBuilder> fixedPoolHelper = new FixedPoolHelper(10,()->new StringBuilder());
+        TestUtils.printTime(10,1000,(index) ->{
             String value = fixedPoolHelper.run(sb->{
                 try {
                     sb.setLength(0);
@@ -23,7 +23,7 @@ public class FixedPoolHelperTest {
                     throw new BaseException(e);
                 }
             });
-            if(index == 4000) {
+            if(index == 500) {
                 System.out.println(value);
             }
         });

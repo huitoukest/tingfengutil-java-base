@@ -23,7 +23,7 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     private final boolean consumerIfMatchWhenAdd;
 
     private LinkedList<List<T>> buffer = new LinkedList<>() ;
-    private List<T> currentBuffer = new ArrayList<>();;
+    private List<T> currentBuffer = new ArrayList<>();
     private volatile long lastConsumerTime = System.currentTimeMillis();
 
     /**
@@ -96,14 +96,16 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
             lastConsumerTime = System.currentTimeMillis();
         }
         while(!consumerIfMatchWhenAdd){
-            firstList = this.buffer.stream().findFirst().orElse(Collections.emptyList());
-            if(firstList.size() >= batchSize) {
-                consumerList = firstList;
-                this.buffer.removeFirst();
-                this.consumer.accept(consumerList);
-                lastConsumerTime = System.currentTimeMillis();
-            }else {
-                break;
+            synchronized(this.buffer) {
+                firstList = this.buffer.peekFirst();
+                if (firstList != null && firstList.size() >= batchSize) {
+                    consumerList = firstList;
+                    this.buffer.removeFirst();
+                    this.consumer.accept(consumerList);
+                    lastConsumerTime = System.currentTimeMillis();
+                } else {
+                    break;
+                }
             }
         }
     }

@@ -25,7 +25,7 @@ public class RegExpUtils {
      */
     public interface PatternStr{
          String integer = "^[\\-\\+]{0,1}[1-9][0-9]*$";
-         String floatValue = "(^[\\-\\+]{0,1}([1-9][0-9]*\\.[0-9]+|0\\.[0-9]+)$";
+         String floatValue = "^[\\-\\+]{0,1}([1-9][0-9]*\\.[0-9]+|0\\.[0-9]+)$";
          String intOrFloatNumber = "^[\\-\\+]([0-9]*$|^0+\\.[0-9]+$|^[1-9]+[0-9]*$|^[1-9]+[0-9]*.[0-9]+)$";
          String split = ",|，|;|；|、|\\.|。|-|_|\\(|\\)|\\[|\\]|\\{|\\}|\\\\|/| |　|\"";
          String blank = "\\s*|\t|\r|\n";

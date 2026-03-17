@@ -138,7 +138,7 @@ public class MessageDigestUtils {
      * @return
      */
     public static String toHashHexString(String algorithmName,byte[] bytes, byte[] salt){
-        return toHashHexString(algorithmName,bytes,salt);
+        return toHashHexString(algorithmName,bytes,salt,1);
     }
 
     /**

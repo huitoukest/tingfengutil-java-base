@@ -242,8 +242,17 @@ public class MathUtils {
      * @return
      */
     public static int lcm(int m, int n) {
+        // 根据防溢出策略：强制升级为 long 计算，天然避免溢出
         int gcdValue = gcd(m , n);
-        return m / gcdValue * n;
+        long divided = (long) m / gcdValue;
+        long result = divided * n;
+        
+        // 检查结果是否在 int 范围内
+        if (result > Integer.MAX_VALUE || result < Integer.MIN_VALUE) {
+            throw new ArithmeticException("最小公倍数计算溢出: " + result);
+        }
+        
+        return (int) result;
     }
 
     /**
@@ -264,13 +273,15 @@ public class MathUtils {
 
     /**
      * 求最小公倍数
-     * @param m
-     * @param n
-     * @return
+     * @param m 第一个整数
+     * @param n 第二个整数
+     * @return 最小公倍数
      */
     public static long lcm(long m, long n) {
+        // 根据防溢出策略：使用 Math.multiplyExact 检测溢出
         long gcdValue = gcd(m , n);
-        return m / gcdValue * n;
+        long divided = m / gcdValue;
+        return Math.multiplyExact(divided, n);
     }
 
     /**

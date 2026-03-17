@@ -15,8 +15,8 @@ public class ThrowableUtils {
             if(null != e){
                 if(null != e.getMessage() && e.getMessage().length() > 0 && !"null".equals(e.getMessage())){
                     return e.getMessage();
-                }else{
-                    return getErrorMsg(e,defaultMsg);
+                }else if(e.getCause() != null){
+                    return getErrorMsg(e.getCause(),defaultMsg);
                 }
             }
         }catch (Throwable e1){
@@ -35,7 +35,7 @@ public class ThrowableUtils {
     public static <T extends Throwable> T getThrowable(Throwable throwable,Class<T> exception){
         Throwable tmp = throwable;
         while (tmp != null){
-            if(tmp.getClass().getName().equals(exception.getName())){
+            if(exception.isAssignableFrom(tmp.getClass())){
                 return (T)tmp;
             }
             if(tmp.equals(tmp.getCause())){

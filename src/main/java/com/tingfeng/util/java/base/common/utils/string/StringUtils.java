@@ -155,9 +155,14 @@ public class StringUtils {
      * @return
      */
     public static String toLowerFirstChar(String srcString) {
+        if (srcString == null || srcString.isEmpty()) {
+            return srcString;
+        }
         return stringBuilderPool.run((sb) -> {
             sb.append(Character.toLowerCase(srcString.charAt(0)));
-            sb.append(srcString.substring(1));
+            if (srcString.length() > 1) {
+                sb.append(srcString.substring(1));
+            }
             return sb.toString();
         });
     }
@@ -272,7 +277,20 @@ public class StringUtils {
     }
 
     public static Boolean getBoolean(String value, Boolean emptyValue, Boolean defaultValue) {
-        return getValue(value, emptyValue, defaultValue, (str) -> Boolean.parseBoolean(str));
+        if (isEmpty(value)) {
+            return emptyValue;
+        }
+        try {
+            if ("true".equalsIgnoreCase(value)) {
+                return Boolean.TRUE;
+            } else if ("false".equalsIgnoreCase(value)) {
+                return Boolean.FALSE;
+            } else {
+                return defaultValue;
+            }
+        } catch (Exception e) {
+            return defaultValue;
+        }
     }
 
     public static Boolean getBoolean(String value, Boolean defaultValue) {
@@ -310,36 +328,27 @@ public class StringUtils {
     }
 
     /**
-     * 全角生成半角
+     * 半角字符变全角字符
      */
-    public static String toDbcCaseBySbcCase(String QJstr) {
-        String outStr = "";
-        String Tstr = "";
-        byte[] b = null;
-        for (int i = 0; i < QJstr.length(); i++) {
-            try {
-                Tstr = QJstr.substring(i, i + 1);
-                b = Tstr.getBytes("unicode");
-            } catch (java.io.UnsupportedEncodingException e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("UnsupportedEncodingException", e);
-                }
-            }
-            if (b[3] == -1) {
-                b[2] = (byte) (b[2] + 32);
-                b[3] = 0;
-                try {
-                    outStr = outStr + new String(b, "unicode");
-                } catch (java.io.UnsupportedEncodingException ex) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("UnsupportedEncodingException", ex);
-                    }
-                }
+    public static String toDbcCaseBySbcCase(String str) {
+        if (str == null || "".equals(str)) {
+            return "";
+        }
+        StringBuffer sb = new StringBuffer();
+
+        for (int i = 0; i < str.length(); i++) {
+            char c = str.charAt(i);
+
+            if (c >= 32 && c < 127) {
+                sb.append((char) (c + 65248));
+            } else if (c == 32) {
+                sb.append((char) 12288);
             } else {
-                outStr = outStr + Tstr;
+                sb.append(str.charAt(i));
             }
         }
-        return outStr;
+
+        return sb.toString();
     }
 
     /**
@@ -514,7 +523,15 @@ public class StringUtils {
      * @return
      */
     public static boolean isUpperCase(String str) {
-        return isMatch("^[A-Z]+$", str);
+        if (str == null || str.isEmpty()) {
+            return true;
+        }
+        for (int i = 0; i < str.length(); i++) {
+            if (!Character.isUpperCase(str.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -878,9 +895,12 @@ public class StringUtils {
      * @return 字符串的子串位置序列
      */
     public static List<Integer> getSubStringPositions(String str, String regExp) {
+        if (str == null || regExp == null) {
+            return Collections.emptyList();
+        }
         String[] sp = split(str, regExp);
         if (sp == null || sp.length < 1) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
         }
         int spIndex = 0;
         int lastIndex = 0;
@@ -888,10 +908,10 @@ public class StringUtils {
             lastIndex = sp[0].length();
             ++spIndex;
         }
-        List<Integer> positions = Collections.EMPTY_LIST;
+        List<Integer> positions = new ArrayList<>();
         Pattern p = Pattern.compile(regExp, Pattern.CASE_INSENSITIVE);
         Matcher matcher = p.matcher(str);
-        while (matcher.find()) {
+        while (matcher.find() && spIndex < sp.length) {
             positions.add(lastIndex + 1);
             lastIndex = lastIndex + matcher.group(0).length() + sp[++spIndex].length();
         }
@@ -910,18 +930,17 @@ public class StringUtils {
     // ★传入一个字符串，把符合pattern格式的字符串放入字符串Set
     // java.util.regex是一个用正则表达式所订制的模式来对字符串进行匹配工作的类库包
     public static Set<String> getStringsByPattern(String str, String regExp) {
+        if (str == null || regExp == null) {
+            return Collections.emptySet();
+        }
         Pattern p = Pattern.compile(regExp, Pattern.CASE_INSENSITIVE);
         Matcher matcher = p.matcher(str);
         // 范型
         Set<String> result = new HashSet<String>();// 目的是：相同的字符串只返回一个。。。 不重复元素
         // boolean find() 尝试在目标字符串里查找下一个匹配子串。
         while (matcher.find()) {
-            for (int i = 0; i < matcher.groupCount(); i++) { // int groupCount()
-                // 返回当前查找所获得的匹配组的数量。
-                // org.jeecgframework.core.util.LogUtil.info(matcher.group(i));
-                result.add(matcher.group(i));
-
-            }
+            // 添加整个匹配的字符串
+            result.add(matcher.group(0));
         }
         return result;
 
@@ -983,11 +1002,7 @@ public class StringUtils {
      */
     public static String appendValue(boolean freeMemoryThen, boolean isAppendNull, Object[] objects) {
         if (objects == null) {
-            if (isAppendNull) {
-                return String.valueOf("null");
-            } else {
-                return "";
-            }
+            return null;
         }
         return stringBuilderPool.run(sb -> {
             Stream.of(objects).forEach(it -> {
@@ -1023,6 +1038,9 @@ public class StringUtils {
      * @return
      */
     public static String append(Object... objects) {
+        if (objects == null) {
+            return null;
+        }
         return appendValue(false, objects);
     }
 

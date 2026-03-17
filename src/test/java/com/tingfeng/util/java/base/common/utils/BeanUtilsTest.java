@@ -4,14 +4,18 @@ import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.User;
 import com.tingfeng.util.java.base.common.bean.UserWechatServiceFansInfo;
 import com.tingfeng.util.java.base.common.bean.WechatServiceUserInfo;
+import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
 import lombok.Getter;
 import lombok.Setter;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.beans.BeanInfo;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class BeanUtilsTest {
 
@@ -139,5 +143,145 @@ public class BeanUtilsTest {
                 BeanUtils.copyProperties(new SaveParentDTO2(),saveParentDTO,false,"relationship");
             }
         });
+    }
+
+    @Test
+    public void testCopyListProperties() {
+        List<User> sourceList = new ArrayList<>();
+        User user1 = new User();
+        user1.setAge(20);
+        user1.setC(1L);
+        user1.userName = "User1";
+        sourceList.add(user1);
+
+        User user2 = new User();
+        user2.setAge(30);
+        user2.setC(2L);
+        user2.userName = "User2";
+        sourceList.add(user2);
+
+        List<User> targetList = BeanUtils.copyListProperties(sourceList, User.class);
+        Assert.assertEquals(2, targetList.size());
+        Assert.assertEquals(user1.getAge(), targetList.get(0).getAge());
+        Assert.assertEquals(user1.getC(), targetList.get(0).getC());
+        Assert.assertEquals(user1.userName, targetList.get(0).userName);
+        Assert.assertEquals(user2.getAge(), targetList.get(1).getAge());
+        Assert.assertEquals(user2.getC(), targetList.get(1).getC());
+        Assert.assertEquals(user2.userName, targetList.get(1).userName);
+    }
+
+    @Test
+    public void testCopyPropertiesWithPredicateAndMapper() {
+        User source = new User();
+        source.setAge(20);
+        source.setC(1L);
+        source.userName = "Source";
+
+        User target = new User();
+
+        // 测试带predicate和mapper的复制
+        Predicate<Tuple2<String, Object>> predicate = tuple -> {
+            String fieldName = tuple.get_1();
+            return !"userName".equals(fieldName);
+        };
+
+        Function<Tuple2<String, Object>, Object> mapper = tuple -> {
+            String fieldName = tuple.get_1();
+            Object value = tuple.get_2();
+            if ("age".equals(fieldName)) {
+                return (int) value + 10;
+            }
+            return value;
+        };
+
+        BeanUtils.copyProperties(target, source, predicate, mapper, Collections.emptyList());
+        Assert.assertEquals(30, target.getAge()); // 验证mapper生效
+        Assert.assertEquals(source.getC(), target.getC());
+        Assert.assertNull(target.userName); // 验证predicate生效
+    }
+
+    @Test
+    public void testGetBeanCopyFieldMap() {
+        Map<String, Tuple2<java.lang.reflect.Field, java.lang.reflect.Field>> fieldMap = BeanUtils.getBeanCopyFieldMap(User.class, User.class, true);
+        Assert.assertNotNull(fieldMap);
+        Assert.assertTrue(fieldMap.size() > 0);
+    }
+
+    @Test
+    public void testGetBeanCopyFunMap() {
+        Map<String, com.tingfeng.util.java.base.common.bean.BeanCopyFun> funMap = BeanUtils.getBeanCopyFunMap(User.class, User.class, true);
+        Assert.assertNotNull(funMap);
+        Assert.assertTrue(funMap.size() > 0);
+    }
+
+    @Test
+    public void testGetBeanInfo() {
+        BeanInfo beanInfo = BeanUtils.getBeanInfo(User.class);
+        Assert.assertNotNull(beanInfo);
+        PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
+        Assert.assertTrue(descriptors.length > 0);
+    }
+
+    @Test
+    public void testGetBeanCopyMethodMap() {
+        Map<String, Tuple2<Method, Method>> methodMap = BeanUtils.getBeanCopyMethodMap(User.class, User.class, true);
+        Assert.assertNotNull(methodMap);
+        Assert.assertTrue(methodMap.size() > 0);
+    }
+
+    @Test
+    public void testGetFieldNameByGetter() {
+        String fieldName1 = BeanUtils.getFieldNameByGetter("getAge");
+        Assert.assertEquals("age", fieldName1);
+
+        String fieldName2 = BeanUtils.getFieldNameByGetter("isOk");
+        Assert.assertEquals("ok", fieldName2);
+    }
+
+    @Test
+    public void testCreateBeanConverter() {
+        String[] fieldNames = {"age", "userName", "c"};
+        Function<String[], User> converter = BeanUtils.createBeanConverter(fieldNames, User.class, null);
+        Assert.assertNotNull(converter);
+
+        String[] values = {"25", "TestUser", "123"};
+        User user = converter.apply(values);
+        Assert.assertNotNull(user);
+        Assert.assertEquals(25, user.getAge() - 1000); // 因为getAge()返回age + 1000
+        Assert.assertEquals("TestUser", user.userName);
+        Assert.assertEquals(123L, user.getC().longValue());
+    }
+
+    @Test
+    public void testCopyPropertiesNotStrict() {
+        User source = new User();
+        source.setAge(20);
+        source.setC(1L);
+        source.userName = "Source";
+        source.updateDateTime = new Date();
+
+        User target = new User();
+        BeanUtils.copyPropertiesNotStrict(target, source, null, null, Collections.emptyList());
+        Assert.assertEquals(source.getAge(), target.getAge());
+        Assert.assertEquals(source.getC(), target.getC());
+        Assert.assertEquals(source.userName, target.userName);
+        Assert.assertEquals(source.updateDateTime, target.updateDateTime);
+    }
+
+    @Test
+    public void testToMapWithIgnoreProperties() {
+        User user = new User();
+        user.setAge(20);
+        user.setC(1L);
+        user.userName = "Test";
+        user.updateDateTime = new Date();
+
+        // 测试忽略某些属性
+        Map<String, Object> map = BeanUtils.toMap(user, User::getAge, User::getC);
+        Assert.assertNotNull(map);
+        Assert.assertFalse(map.containsKey("age"));
+        Assert.assertFalse(map.containsKey("c"));
+        Assert.assertTrue(map.containsKey("userName"));
+        Assert.assertTrue(map.containsKey("updateDateTime"));
     }
 }

@@ -1,6 +1,6 @@
 # 简介
 tingfengutil-java-base属于tingfengutil工具集合中的java工具包，并且以base为命名表示是只依赖于jdk的基础工具包。
-
+当前jdk版本: 1.8
 
 # 包结构和类简介
 

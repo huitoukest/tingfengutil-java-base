@@ -74,7 +74,7 @@ public class HtmlUtils {
      */
     public static String removeURL(String str) {
         if (str != null) {
-            str = str.toLowerCase().replaceAll("(http|www|com|cn|org|https|\\.)+", "");
+            str = str.replaceAll("(?i)(http|www|com|cn|org|https|\\.)+", "");
         }
         return str;
     }
@@ -127,7 +127,6 @@ public class HtmlUtils {
      * @return 目标字符串
      */
     public static String getInnerHTMLLabelAndString(String str) {
-        str = StringUtils.replaceByReg(str, ">([^<>]+)<", "><");
         str = StringUtils.replaceByReg(str, "^([^<>]+)<", "<");
         str = StringUtils.replaceByReg(str, ">([^<>]+)$", ">");
         return str;
@@ -151,7 +150,7 @@ public class HtmlUtils {
         String sf3 = "";
         for (; m.find(); ) {
             sa = p.split(str);
-            if (sa == null) {
+            if (sa == null || sa.length == 0) {
                 break;
             }
             sf = str.substring(sa[0].length(), str.indexOf("/>", sa[0].length()));
@@ -209,12 +208,8 @@ public class HtmlUtils {
                     spanEnd = spanEnd > 0 ? spanEnd : n;
                     name = tag.substring(1, spanEnd);
                     if (name.trim().length() > 0) {
-                        // 如果有结束符则为html标签
-                        spanEnd = str.indexOf("</" + name + ">", end);
-                        if (spanEnd > 0) {
-                            isTag = true;
-                            tags.add(name);
-                        }
+                        isTag = true;
+                        tags.add(name);
                     }
                 }
                 // 非html标签字符
@@ -311,6 +306,9 @@ public class HtmlUtils {
      * @return
      */
     public static String delHTMLTag(String htmlStr) {
+        if (htmlStr == null) {
+            return null;
+        }
         String regEx_script = "<script[^>]*?>[\\s\\S]*?<\\/script>"; //定义script的正则表达式
         String regEx_style = "<style[^>]*?>[\\s\\S]*?<\\/style>"; //定义style的正则表达式
         String regEx_html = "<[^>]+>"; //定义HTML标签的正则表达式
@@ -329,4 +327,4 @@ public class HtmlUtils {
 
         return htmlStr.trim(); //返回文本字符串
     }
-} 
+}

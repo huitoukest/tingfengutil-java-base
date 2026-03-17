@@ -83,7 +83,7 @@ public class ArrayUtils {
     public static void concatArray(Object[] target,List<Object[]> srcArray) {
 		int startPosition = 0;
 		for(int i = 0 ; i < srcArray.size() ; i++){
-			System.arraycopy(target,startPosition,srcArray.get(i),0,srcArray.get(i).length);
+			System.arraycopy(srcArray.get(i),0,target,startPosition,srcArray.get(i).length);
 			startPosition += srcArray.get(i).length;
 		}
 	}
