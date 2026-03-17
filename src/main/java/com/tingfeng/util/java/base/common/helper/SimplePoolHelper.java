@@ -80,6 +80,11 @@ public class SimplePoolHelper<T> implements AutoCloseable {
         }
     }
 
+    /**
+     * 释放资源
+     * 将资源返回空闲池，等待下一次使用
+     * @param t 要释放的资源
+     */
     public void release(T t){
         synchronized(SimplePoolHelper.this) {
             boolean re = useMembers.remove(t);
