@@ -15,7 +15,7 @@ public class GZipUtilsTest {
      */
     @Test
     public void testCompressBasic() {
-        String original = "Hello World! This is a test string for GZIP compression.";
+        String original = "Hello World! This is a test string for GZIP compression.1111111111111111111111111111222222222222222222222222222222222222222222222";
         byte[] input = original.getBytes();
         
         byte[] compressed = GZipUtils.compress(input);
@@ -271,7 +271,7 @@ public class GZipUtilsTest {
      */
     @Test
     public void testCompressionRatio() {
-        String original = "AAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMM";
+        String original = "AAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMMAAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMMAAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMMAAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMMAAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMM";
         byte[] input = original.getBytes();
         
         byte[] compressed = GZipUtils.compress(input);

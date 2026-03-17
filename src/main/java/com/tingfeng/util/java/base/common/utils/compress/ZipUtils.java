@@ -23,10 +23,8 @@ public class ZipUtils {
      * @return
      */
     public static byte[] compress(byte input[],int level) {
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Deflater compressor = new Deflater(level);
-        byte[] re = null;
-        try {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             compressor.setInput(input);
             compressor.finish();
             final byte[] buf = new byte[BUFFER_SIZE];
@@ -34,16 +32,12 @@ public class ZipUtils {
                 int count = compressor.deflate(buf);
                 bos.write(buf, 0, count);
             }
-            re = bos.toByteArray();
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             compressor.end();
-            try {
-                bos.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
-        return re;
     }
 
     /**
@@ -62,26 +56,19 @@ public class ZipUtils {
      * @throws DataFormatException
      */
     public static byte[] uncompress(byte[] input) throws DataFormatException{
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();
         Inflater deCompressor = new Inflater();
-        byte[] re = null;
-        try {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
             deCompressor.setInput(input);
             final byte[] buf = new byte[BUFFER_SIZE];
             while (!deCompressor.finished()) {
                 int count = deCompressor.inflate(buf);
                 bos.write(buf, 0, count);
             }
-            re = bos.toByteArray();
+            return bos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         } finally {
             deCompressor.end();
-            try {
-                bos.close();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
         }
-
-        return re;
     }
 }

@@ -13,56 +13,29 @@ public class GZipUtils {
     private static final int BUFFER_SIZE = 4096;
 
     public static byte[] compress(byte srcBytes[]) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        GZIPOutputStream gzip = null;
-        byte[] re = null;
-        try {
-            gzip = new GZIPOutputStream(out);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             GZIPOutputStream gzip = new GZIPOutputStream(out)) {
             gzip.write(srcBytes);
-            re = out.toByteArray();
+            // 必须调用 finish() 方法完成压缩，确保所有数据都被写入
+            gzip.finish();
+            return out.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }finally {
-            try {
-                out.close();
-                if (gzip != null) {
-                    gzip.close();
-                }
-            }catch (Throwable e){
-                throw new RuntimeException(e);
-            }
-
         }
-        return re;
     }
 
     public static byte[] uncompress(byte[] bytes) {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-        GZIPInputStream unGZip = null;
-        byte[] re = null;
-        try {
-            unGZip = new GZIPInputStream(in);
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream();
+             ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+             GZIPInputStream unGZip = new GZIPInputStream(in)) {
             byte[] buffer = new byte[BUFFER_SIZE];
             int n;
             while ((n = unGZip.read(buffer)) >= 0) {
                 out.write(buffer, 0, n);
             }
-            re = out.toByteArray();
+            return out.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }finally {
-            try {
-                out.close();
-                if (unGZip != null) {
-                    unGZip.close();
-                }
-            }catch (Throwable e){
-                throw new RuntimeException(e);
-            }
-
         }
-
-        return re;
     }
 }

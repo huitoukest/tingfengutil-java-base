@@ -16,7 +16,7 @@ public class ZipUtilsTest {
      */
     @Test
     public void testCompressBasic() {
-        String original = "Hello World! This is a test string for compression.";
+        String original = "Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.";
         byte[] input = original.getBytes();
         
         byte[] compressed = ZipUtils.compress(input);
@@ -298,7 +298,7 @@ public class ZipUtilsTest {
      */
     @Test
     public void testCompressionRatio() throws DataFormatException {
-        String original = "AAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMM";
+        String original = "AAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMMAAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMMAAAAABBBBBCCCCCDDDDDEEEEEFFFFFGGGGGHHHHHIIIIIJJJJJKKKKKLLLLLMMMMM";
         byte[] input = original.getBytes();
         
         byte[] compressed = ZipUtils.compress(input);
@@ -314,7 +314,7 @@ public class ZipUtilsTest {
      */
     @Test
     public void testCompressAllLevels() throws DataFormatException {
-        String original = "Test data for all compression levels.";
+        String original = "Test data for all compression levels.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.Hello World! This is a test string for compression.";
         byte[] input = original.getBytes();
         
         for (int level = 0; level <= 9; level++) {
