@@ -9,11 +9,17 @@ import org.junit.Test;
 import java.util.*;
 import java.util.stream.Collectors;
 
+/**
+ * StringTemplateHelper 类的单元测试
+ * 测试模板解析、参数替换、自定义标签等功能
+ *
+ * @author huitoukest
+ */
 public class StringTemplateHelperTest {
     
 
-    /*
-     * 测试生成模板字符串的功能
+    /**
+     * 测试基本的模板字符串替换功能
      */
     @Test
     public void generatorTest1(){
@@ -132,5 +138,95 @@ public class StringTemplateHelperTest {
         params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
         System.out.println(JSON.toJSONString(params));
         Assert.assertTrue(CollectionUtils.eq(Arrays.asList("b","c","d","${a","${b").stream().collect(Collectors.toSet()), params));
+    }
+
+    /**
+     * 测试自定义模板标签
+     */
+    @Test
+    public void testCustomTemplateTags() {
+        String content = "Hello {{name}}, your age is {{age}}";
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "John");
+        params.put("age", 30);
+        String expecStr = "Hello John, your age is 30";
+        StringTemplateHelper helper = new StringTemplateHelper("{{", "}}", content);
+        Assert.assertTrue(expecStr.equals(helper.generate(params)));
+    }
+
+    /**
+     * 测试不同类型的参数值
+     */
+    @Test
+    public void testDifferentParamTypes() {
+        String content = "String: ${str}, Integer: ${int}, Double: ${double}, Boolean: ${bool}, Object: ${obj}";
+        Map<String, Object> params = new HashMap<>();
+        params.put("str", "test");
+        params.put("int", 42);
+        params.put("double", 3.14);
+        params.put("bool", true);
+        params.put("obj", new Object() {
+            @Override
+            public String toString() {
+                return "CustomObject";
+            }
+        });
+        String expecStr = "String: test, Integer: 42, Double: 3.14, Boolean: true, Object: CustomObject";
+        StringTemplateHelper helper = new StringTemplateHelper(content);
+        Assert.assertTrue(expecStr.equals(helper.generate(params)));
+    }
+
+    /**
+     * 测试缺失参数的处理
+     */
+    @Test
+    public void testMissingParams() {
+        String content = "Hello ${name}, your age is ${age}";
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "John");
+        // 故意不提供 age 参数
+        String expecStr = "Hello John, your age is ${age}";
+        StringTemplateHelper helper = new StringTemplateHelper(content);
+        Assert.assertTrue(expecStr.equals(helper.generate(params)));
+    }
+
+    /**
+     * 测试 null 参数值的处理
+     */
+    @Test
+    public void testNullParams() {
+        String content = "Hello ${name}, your age is ${age}";
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "John");
+        params.put("age", null); // 提供 null 值
+        String expecStr = "Hello John, your age is ${age}";
+        StringTemplateHelper helper = new StringTemplateHelper(content);
+        Assert.assertTrue(expecStr.equals(helper.generate(params)));
+    }
+
+    /**
+     * 测试空模板内容
+     */
+    @Test
+    public void testEmptyContent() {
+        String content = "";
+        Map<String, Object> params = new HashMap<>();
+        params.put("name", "John");
+        String expecStr = "";
+        StringTemplateHelper helper = new StringTemplateHelper(content);
+        Assert.assertTrue(expecStr.equals(helper.generate(params)));
+    }
+
+    /**
+     * 测试空参数字典
+     */
+    @Test
+    public void testEmptyParams() {
+        String content = "Hello ${name}, your age is ${age}";
+        Map<String, Object> params = new HashMap<>();
+        // 空参数字典
+        String expecStr = "Hello ${name}, your age is ${age}";
+        StringTemplateHelper helper = new StringTemplateHelper(content);
+        Assert.assertTrue(expecStr.equals(helper.generate(params)));
     }
 }

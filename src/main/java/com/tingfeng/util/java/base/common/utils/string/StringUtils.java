@@ -1156,10 +1156,13 @@ public class StringUtils {
 
     /**
      * 返回当前str的char[]数组，而不是创建一个新的char[]
-     * @param str
-     * @return
+     * @param str 字符串
+     * @return 字符数组
      */
     public static char[] getCharArray(String str){
+        if(str == null) {
+            return null;
+        }
         try {
             if(STRING_VALUE_FIELD == null) {
                 return str.toCharArray();
@@ -1309,16 +1312,24 @@ public class StringUtils {
 
     /**
      * 在source的指定区间查找source
-     * @param source
-     * @param target
-     * @param fromIndex
-     * @param endIndex
-     * @return
+     * @param source 源字符串
+     * @param target 目标字符串
+     * @param fromIndex 开始搜索的索引
+     * @param endIndex 结束搜索的索引
+     * @return 目标字符串在源字符串中的位置，未找到返回-1
      */
     public static int indexOf(String source,String target, int fromIndex, int endIndex) {
+        if(source == null || target == null) {
+            return -1;
+        }
         char[] sourceValue = StringUtils.getCharArray(source);
         char[] targetValue = StringUtils.getCharArray(target);
-        return indexOf(sourceValue, 0, endIndex + 1,
+        if(sourceValue == null || targetValue == null) {
+            return -1;
+        }
+        // 确保 sourceCount 不超过 sourceValue.length
+        int sourceCount = Math.min(endIndex + 1, sourceValue.length);
+        return indexOf(sourceValue, 0, sourceCount,
                 targetValue, 0, targetValue.length, fromIndex);
     }
 
@@ -1415,7 +1426,13 @@ public class StringUtils {
      * @param   endIndex   搜索区间的结束索引
      */
     public static int lastIndexOf(String source,String target, int startIndex,int endIndex) {
+        if(source == null || target == null) {
+            return -1;
+        }
         char[] sourceValue = StringUtils.getCharArray(source);
+        if(sourceValue == null) {
+            return -1;
+        }
         int offsetIndex =  lastIndexOf(sourceValue, startIndex, endIndex - startIndex + 1,
                 target, endIndex - startIndex);
         //默认返回的索引是相对于偏移量的，所以这里需要通过偏移量来恢复索引值
