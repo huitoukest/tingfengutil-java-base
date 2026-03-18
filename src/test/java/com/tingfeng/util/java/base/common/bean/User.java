@@ -86,4 +86,12 @@ public class User extends BaseUser{
     public void setMap(Map<String, Object> map) {
         this.map = map;
     }
+    
+    public String getUserName() {
+        return userName;
+    }
+    
+    public void setUserName(String userName) {
+        this.userName = userName;
+    }
 }

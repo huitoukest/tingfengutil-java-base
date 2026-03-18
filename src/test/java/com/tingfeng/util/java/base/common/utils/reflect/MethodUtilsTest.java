@@ -55,7 +55,7 @@ public class MethodUtilsTest {
      * 辅助方法用于测试
      */
     private String callHelperMethod() {
-        return MethodUtils.getCurrentMethodName();
+        return MethodUtils.getCurrentMethodName(3);
     }
 
     /**
@@ -71,7 +71,7 @@ public class MethodUtilsTest {
      * 辅助方法用于测试简单方法名
      */
     private String callHelperMethodSimple() {
-        return MethodUtils.getCurrentSimpleMethodName();
+        return MethodUtils.getCurrentSimpleMethodName(3);
     }
 
     /**
@@ -138,7 +138,7 @@ public class MethodUtilsTest {
      * 另一个测试方法
      */
     private void anotherTestMethod() {
-        String methodName2 = MethodUtils.getCurrentMethodName();
+        String methodName2 = MethodUtils.getCurrentSimpleMethodName();
         Assert.assertNotEquals("不同方法应该返回不同的方法名", 
             "testGetCurrentMethodNameDifferentTests", methodName2);
         Assert.assertEquals("方法名应该是当前方法名", "anotherTestMethod", methodName2);
@@ -149,7 +149,7 @@ public class MethodUtilsTest {
      */
     @Test
     public void testGetCurrentMethodNameStaticMethod() {
-        String methodName = MethodUtils.getCurrentMethodName();
+        String methodName = MethodUtils.getCurrentSimpleMethodName();
         Assert.assertEquals("静态方法调用应该返回正确的方法名", 
             "testGetCurrentMethodNameStaticMethod", methodName);
     }

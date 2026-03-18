@@ -41,8 +41,8 @@ public class LocalDateUtils implements DateFormat{
      *
      * @param startDate 格式 '2018-01-25'
      * @param endDate 格式 '2018-01-25'
-     * @param containsSelf 是否包含自己
-     * @return
+     * @param containsSelf 是否包含起始和结束日期
+     * @return 包含所有日期的列表
      */
     public static List<LocalDate> getBetweenDate(LocalDate startDate, LocalDate endDate,boolean containsSelf) {
         assert !endDate.isBefore(startDate);
@@ -53,16 +53,16 @@ public class LocalDateUtils implements DateFormat{
             if(re.size() > 1) {
                 re = re.subList(1, re.size() - 1);
             }else {
-                re = Collections.EMPTY_LIST;
+                re = Collections.emptyList();
             }
         }
         return re;
     }
 
     /**
-     * 获取结束的时间,默认23.59.59.999毫秒
-     * @param toLocalTime
-     * @return
+     * 获取一天结束的时间,默认23:59:59.999
+     * @param toLocalTime 输入的时间
+     * @return 设置为当天结束时间的LocalTime对象
      */
     public static LocalTime getDayEnd(LocalTime toLocalTime) {
         return toLocalTime.withHour(23)
@@ -72,9 +72,9 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
-     * 获取一天的开始时间,默认0.0.0.000毫秒
-     * @param time
-     * @return
+     * 获取一天的开始时间,默认00:00:00.000
+     * @param time 输入的时间
+     * @return 设置为当天开始时间的LocalDateTime对象
      */
     public static LocalDateTime getDayStart(LocalDateTime time) {
         return time.withHour(0)
@@ -84,9 +84,9 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
-     * 获取一天的结束时间 默认23.59.59.999毫秒
-     * @param time
-     * @return
+     * 获取一天的结束时间 默认23:59:59.999
+     * @param time 输入的时间
+     * @return 设置为当天结束时间的LocalDateTime对象
      */
     public static LocalDateTime getDayEnd(LocalDateTime time) {
         return time.withHour(23)
@@ -99,7 +99,7 @@ public class LocalDateUtils implements DateFormat{
      * 传入开始结束年月，计算中间的月份，
      * @param startMonthValue 开始月份值, 如202001
      * @param endMonthValue 结束月份值, 如202315
-     * @return
+     * @return 包含所有月份值的列表
      */
     public static List<Integer> getMonthValues(int startMonthValue,int endMonthValue){
         int startYear = startMonthValue / 100;
@@ -123,8 +123,8 @@ public class LocalDateUtils implements DateFormat{
 
     /**
      * 获取月份的开始时间
-     * @param localDateTime
-     * @return
+     * @param localDateTime 输入的日期时间
+     * @return 该月第一天的开始时间（00:00:00.000）
      */
     public static LocalDateTime getMonthBeginDateTime(LocalDateTime localDateTime) {
         return getDayStart(localDateTime.withDayOfMonth(1));
@@ -132,35 +132,35 @@ public class LocalDateUtils implements DateFormat{
 
     /**
      * 获取月份的结束时间
-     * @param localDateTime
-     * @return
+     * @param localDateTime 输入的日期时间
+     * @return 该月最后一天的结束时间（23:59:59.999）
      */
     public static LocalDateTime getMonthEndDateTime(LocalDateTime localDateTime){
         return getDayEnd(localDateTime.plusMonths(1).withDayOfMonth(1).plusDays(-1));
     }
 
     /**
-     * 获取毫秒数
-     * @param localDateTime
-     * @return
+     * 获取指定日期时间的毫秒数
+     * @param localDateTime 输入的日期时间
+     * @return 从纪元开始的毫秒数
      */
     public static long getTime(LocalDateTime localDateTime){
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     /**
-     * 获取毫秒数
-     * @param localDateTime
-     * @return
+     * 获取指定日期时间的毫秒数
+     * @param localDateTime 输入的日期时间
+     * @return 从纪元开始的毫秒数
      */
     public static long getMills(LocalDateTime localDateTime){
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     /**
-     * 获取毫秒数
-     * @param localDate
-     * @return
+     * 获取指定日期的毫秒数（当天开始时间）
+     * @param localDate 输入的日期
+     * @return 从纪元开始的毫秒数
      */
     public static long getTime(LocalDate localDate){
         return localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -168,9 +168,9 @@ public class LocalDateUtils implements DateFormat{
 
 
     /**
-     * 获取毫秒数
-     * @param localDate
-     * @return
+     * 获取指定日期的毫秒数（当天开始时间）
+     * @param localDate 输入的日期
+     * @return 从纪元开始的毫秒数
      */
     public static long getMills(LocalDate localDate){
         return localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
@@ -179,18 +179,19 @@ public class LocalDateUtils implements DateFormat{
     /**
      * 默认格式化 yyyy-MM-dd
      *
-     * @param date
-     * @return
+     * @param date 输入的日期
+     * @return 格式化后的日期字符串
      */
     public static String getDateString(LocalDate date) {
         return getDateString(date, FORMAT_YYYYMMDD_THROUGH_LINE);
     }
 
     /**
-     * 默认格式化 yyyy-MM-dd
+     * 按指定格式格式化日期
      *
-     * @param date
-     * @return
+     * @param date 输入的日期
+     * @param format 日期格式
+     * @return 格式化后的日期字符串，如果输入为null则返回null
      */
     public static String getDateString(LocalDate date,String format) {
         if(date == null){
@@ -202,18 +203,19 @@ public class LocalDateUtils implements DateFormat{
     /**
      * 默认格式化 yyyy-MM-dd HH:mm:ss
      *
-     * @param date
-     * @return
+     * @param date 输入的日期时间
+     * @return 格式化后的日期时间字符串
      */
     public static String getDateString(LocalDateTime date) {
         return getDateString(date, FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
     }
 
     /**
-     * 默认格式化 yyyy-MM-dd HH:mm:ss
+     * 按指定格式格式化日期时间
      *
-     * @param date
-     * @return
+     * @param date 输入的日期时间
+     * @param format 日期时间格式
+     * @return 格式化后的日期时间字符串，如果输入为null则返回null
      */
     public static String getDateString(LocalDateTime date,String format) {
         if(date == null){
@@ -225,17 +227,18 @@ public class LocalDateUtils implements DateFormat{
     /**
      * 默认格式化 HH:mm:ss
      *
-     * @param dateTime
-     * @return
+     * @param dateTime 输入的日期时间
+     * @return 格式化后的时间字符串
      */
     public static String getTimeString(LocalDateTime dateTime) {
         return getTimeString(dateTime, FORMAT_HHMMSS_THROUGH_LINE);
     }
 
     /**
-     * 默认格式化 HH:mm:ss
-     * @param dateTime
-     * @return
+     * 按指定格式格式化时间
+     * @param dateTime 输入的日期时间
+     * @param format 时间格式
+     * @return 格式化后的时间字符串，如果输入为null则返回null
      */
     public static String getTimeString(LocalDateTime dateTime,String format) {
         if(dateTime == null){
@@ -245,9 +248,9 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
-     * 日期时间转换
-     * @param localDateTime
-     * @return
+     * 将LocalDateTime转换为Date
+     * @param localDateTime 输入的日期时间
+     * @return 转换后的Date对象，如果输入为null则返回null
      */
     public static Date toDate(LocalDateTime localDateTime){
         if(localDateTime == null){
@@ -259,9 +262,9 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
-     * 日期转换
-     * @param localDate
-     * @return
+     * 将LocalDate转换为Date
+     * @param localDate 输入的日期
+     * @return 转换后的Date对象，如果输入为null则返回null
      */
     public static Date toDate(LocalDate localDate){
         if(localDate == null){
@@ -274,8 +277,8 @@ public class LocalDateUtils implements DateFormat{
 
     /**
      * 解析数值类型的日期 , 如 20200101 , 8位数字
-     * @param dateNumber
-     * @return
+     * @param dateNumber 8位数字的日期，格式为yyyyMMdd
+     * @return 解析后的LocalDate对象
      */
     public static LocalDate getDate(int dateNumber){
         int year = dateNumber / 10000;
@@ -286,41 +289,46 @@ public class LocalDateUtils implements DateFormat{
 
     /**
      * 获取日期对应的数值 如 20200101 , 8位数字
-     * @param localDate
-     * @return
+     * @param localDate 输入的日期
+     * @return 8位数字的日期，格式为yyyyMMdd
      */
     public static int getDateNumber(LocalDate localDate){
         return localDate.getYear() * 10000 + localDate.getMonthValue() * 100 + localDate.getDayOfMonth();
     }
 
+    /**
+     * 获取日期时间对应的数值 如 20200101 , 8位数字
+     * @param localDatetime 输入的日期时间
+     * @return 8位数字的日期，格式为yyyyMMdd
+     */
     public static int getDateNumber(LocalDateTime localDatetime){
         return localDatetime.getYear() * 10000 + localDatetime.getMonthValue() * 100 + localDatetime.getDayOfMonth();
     }
 
 
     /**
-     * 解析未日期-时间
+     * 解析字符串为日期-时间，默认启用自动格式转换
      * @param str 输入的时间信息
-     * @return
+     * @return 解析后的LocalDateTime对象，如果解析失败则返回null
      */
     public static LocalDateTime getLocalDateTime(String str){
         return getLocalDateTime(str, true);
     }
 
     /**
-     * 解析未日期-时间
+     * 解析字符串为日期，默认启用自动格式转换
      * @param str 输入的时间信息
-     * @return
+     * @return 解析后的LocalDate对象，如果解析失败则返回null
      */
     public static LocalDate getLocalDate(String str){
         return getLocalDate(str, true);
     }
 
     /**
-     * isAutoConvert是false时返回,"yyyy-MM-dd HH:mm:ss"支持的格式
-     * @param str
+     * 解析字符串为日期-时间
+     * @param str 输入的时间字符串
      * @param isAutoConvert 是否根据输入的值,自动猜测时间格式并转换 ,支持:DateFormat中所列出的常量格式类型的自动猜测转换
-     * @return 日期-时间
+     * @return 解析后的LocalDateTime对象，如果解析失败则返回null
      */
     public static LocalDateTime getLocalDateTime(String str,boolean isAutoConvert){
         if(isAutoConvert) {
@@ -359,10 +367,10 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
-     * isAutoConvert是false时返回,"yyyy-MM-dd HH:mm:ss"支持的格式
-     * @param str
+     * 解析字符串为日期
+     * @param str 输入的时间字符串
      * @param isAutoConvert 是否根据输入的值,自动猜测时间格式并转换 ,支持:DateFormat中所列出的常量格式类型的自动猜测转换
-     * @return 日期
+     * @return 解析后的LocalDate对象，如果解析失败则返回null
      */
     public static LocalDate getLocalDate(String str,boolean isAutoConvert){
         return Optional.ofNullable(getLocalDateTime(str, isAutoConvert)).map(LocalDateTime::toLocalDate).orElse(null);

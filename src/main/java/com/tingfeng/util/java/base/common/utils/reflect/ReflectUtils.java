@@ -474,15 +474,22 @@ public class ReflectUtils {
             String methodName = getSetterName(attr);
             // 第一个参数表示方法名称，setAge、setName,第二个参数表示类型，如int.class,String.class
             Method method = getMethod(obj.getClass(),methodName,type);
-            if (method == null) {
-                return false;
+            if (method != null) {
+                // 调用方法
+                method.invoke(obj, value);
+                return true;
+            } else {
+                // 如果找不到setter方法，尝试直接设置字段值
+                Field field = getField(obj.getClass(), attr, true);
+                if (field != null) {
+                    field.set(obj, value);
+                    return true;
+                }
             }
-            // 调用方法
-            method.invoke(obj, value);
-            return true;
         } catch (Exception e) {
             return false;
         }
+        return false;
     }
 
     /**
@@ -581,6 +588,12 @@ public class ReflectUtils {
             Method method = getMethod(obj.getClass(),getGetterName(attr));
             if (method != null) {
                 return method.invoke(obj);
+            } else {
+                // 如果找不到getter方法，尝试直接访问字段
+                Field field = getField(obj.getClass(), attr, true);
+                if (field != null) {
+                    return field.get(obj);
+                }
             }
         } catch (Exception e) {
             return null;
@@ -624,11 +637,15 @@ public class ReflectUtils {
      * @return
      */
     public static String getSetterName(String fieldName) {
-        // 单词首字母大写
+        // 根据业务需求生成setter方法名
         boolean hasIs = fieldName.startsWith("is");
-        String str = formatGetterOrSetterFieldName(fieldName);
-        if (!hasIs) {
-            str = "set" + str;
+        String str;
+        if (hasIs && fieldName.length() > 2) {
+            // 对于以"is"开头的布尔属性，保留"is"前缀，将整个属性名首字母大写，然后添加"set"前缀
+            str = "set" + Character.toUpperCase(fieldName.charAt(0)) + fieldName.substring(1);
+        } else {
+            // 对于普通属性，直接添加"set"前缀
+            str = "set" + formatGetterOrSetterFieldName(fieldName);
         }
         return str;
     }

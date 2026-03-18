@@ -26,11 +26,12 @@ public class ClassUtils {
     private static final Log logger = LogFactory.getLog(ClassUtils.class);
 
     /**
-     * 取得某个类的所有子类或者实现类类
-     * @param c Class对象，否则返回Empty List
+     * 获取指定接口的所有实现类或指定类的所有子类
+     * @param c Class对象，必须是接口类型，否则返回空列表
+     * @return 实现类或子类的Class对象列表
      * */
     public static List<Class<?>> getAllClassByInterface(Class<?> c) {
-            List<Class<?>>  returnClassList = Collections.EMPTY_LIST;
+            List<Class<?>>  returnClassList = Collections.emptyList();
             if(c.isInterface()) {
                 // 获取当前的包名
                 String packageName = c.getPackage().getName();
@@ -55,9 +56,8 @@ public class ClassUtils {
 
     /**
      * 从包package中获取所有的Class,自动查找当前classpath下的文件或者jar包中的class
-     * 默认递归查找包下面的子文件夹
-     * @param packageName
-     * @return
+     * @param packageName 包名
+     * @return 包中所有Class对象的列表
      */
     public static List<Class<?>> getClasses(String packageName){
         //是否循环迭代
@@ -67,9 +67,9 @@ public class ClassUtils {
 
     /**
      * 从包package中获取所有的Class,自动查找当前classpath下的文件或者jar包中的class
-     * @param packageName
+     * @param packageName 包名
      * @param recursive 是否递归查找包下面的子文件夹
-     * @return
+     * @return 包中所有Class对象的列表
      */
     public static List<Class<?>> getClasses(String packageName,boolean recursive){
         //第一个class类的集合
@@ -107,14 +107,14 @@ public class ClassUtils {
 
     /**
      * 查找一个指定jarFile指定packageName下的class文件
-     * @param jarFile
-     * @param packageName
+     * @param jarFile JAR文件对象
+     * @param packageName 包名
      * @param recursive 是否运行递归查找子包
-     * @return EMPTY_LIST or 这classes List
+     * @return 包含找到的Class对象的列表，如果没有找到则返回空列表
      */
     public static List<Class<?>> findClassesByJar(JarFile jarFile,String packageName,final boolean recursive){
        if(null == jarFile || StringUtils.isEmpty(packageName)) {
-            return Collections.EMPTY_LIST;
+            return Collections.emptyList();
        }
        String packageDirName = packageName.replace("/",".");
        List<Class<?>> classes = new ArrayList<>();
@@ -160,10 +160,10 @@ public class ClassUtils {
     /**
      * 以文件的形式来获取包下的所有Class,即指定rootPackagePath下的
      * packageName包下的所有class文件,不支持jar包
-     * @param packageName
-     * @param rootPackagePath
+     * @param packageName 包名
+     * @param rootPackagePath 根包路径
      * @param recursive 是否递归查找子文件夹
-     * @return 如果此路径是一个文件或者没有找到相关的class，则返回空List
+     * @return 包含找到的Class对象的列表，如果没有找到则返回空列表
      */
     public static List<Class<?>> findClassesByPath(String packageName, String rootPackagePath, final boolean recursive){
         //获取此包的目录 建立一个File
