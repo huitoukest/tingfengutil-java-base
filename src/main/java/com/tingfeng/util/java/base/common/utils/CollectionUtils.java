@@ -36,25 +36,22 @@ public class CollectionUtils {
      * @return
      */
     public static <T> List<T> getList(String sourceString, String regex, ConvertI<String, T> convert) {
-        List<T> list = new ArrayList<T>();
-        sourceString = sourceString.trim();
-        if (sourceString.length() < 1) {
-            return list;
+        if (StringUtils.isEmpty(sourceString)) {
+            return Collections.emptyList();
         }
         try {
-            String[] ss = sourceString.split(regex);
-            for (String s : ss) {
-                T t = null;
-                try {
-                    t = convert.apply(s);
-                } catch (FormatFlagsConversionMismatchException e) {
-                }
-                list.add(t);
-            }
+            return Arrays.stream(sourceString.trim().split(regex))
+                    .map(s -> {
+                        try {
+                            return convert.apply(s);
+                        } catch (FormatFlagsConversionMismatchException e) {
+                            return null;
+                        }
+                    })
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new BaseException(e);
         }
-        return list;
     }
 
     /**
@@ -311,9 +308,9 @@ public class CollectionUtils {
     public static <T> List<T> mergeToList(Collection<T>... collections) {
         List<T> list = new ArrayList<>();
         if (collections != null) {
-            for (Collection<T> collection : collections) {
-                list.addAll(collection);
-            }
+            Arrays.stream(collections)
+                  .filter(Objects::nonNull)
+                  .forEach(list::addAll);
         }
         return list;
     }

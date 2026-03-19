@@ -9,7 +9,6 @@ import java.util.stream.IntStream;
 
 /**
  * @Author wangGang
- * @Description //TODO
  * @Date 2019-04-10 15:38
  **/
 public class CollectionUtilsTest {
