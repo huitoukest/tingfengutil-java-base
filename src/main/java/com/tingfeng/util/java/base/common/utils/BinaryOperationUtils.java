@@ -28,18 +28,12 @@ public class BinaryOperationUtils {
             return Collections.emptyList();
         }
         List<Integer> numbers = new ArrayList<>();
-        int  i = 0;
-        while(true){
-            Double value = getBinaryValueByPow(i);
-            if( value <= parentNum){
-                i ++;
-                int intValue = value.intValue();
-                if((intValue & parentNum) == intValue){
-                    numbers.add(intValue);
-                }
-            }else{
-                break;
+        int value = 1;
+        while(value <= parentNum){
+            if((value & parentNum) == value){
+                numbers.add(value);
             }
+            value <<= 1;
         }
         return numbers;
     }
@@ -79,15 +73,21 @@ public class BinaryOperationUtils {
     }
 
     /**
-     * 获取第一个比currentValue打的2的n次幂的值，否则返回-1;
+     * 获取第一个比currentValue大的2的n次幂的值，否则返回-1;
      * @param currentValue
      * @return
      */
     public static long getFirstThanBinaryValue(long currentValue){
-        Double value = binaryPowValues.stream().filter(it -> it >= currentValue).findFirst().orElse(null);
-        if(value == null || value > Long.MAX_VALUE){
+        if (currentValue <= 0) {
+            return 1;
+        }
+        if (currentValue > (1L << 62)) {
             return -1;
         }
-        return value.longValue();
+        long value = 1;
+        while (value < currentValue) {
+            value <<= 1;
+        }
+        return value;
     }
 }
