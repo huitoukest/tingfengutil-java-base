@@ -23,10 +23,10 @@ public class StringUtilsTest {
 
     @Test
     public void testAppend(){
-        Assert.assertEquals("", StringUtils.appendValue(false, null));
-        Assert.assertEquals("null", StringUtils.appendValue(true, null));
-        Assert.assertEquals("123123", StringUtils.appendValue(false, new Object[]{null, null, "123123"}));
-        Assert.assertEquals("123123", StringUtils.appendValue(true, new Object[]{null, "123123", null}));
+        Assert.assertEquals(null, StringUtils.appendValue(false, null));
+        Assert.assertEquals(StringUtils.STR_NULL_OBJ, StringUtils.appendValue(true, null));
+        Assert.assertEquals("123123", StringUtils.appendValue(false, null, null, "123123"));
+        Assert.assertEquals("null123123null", StringUtils.appendValue(true, null, "123123", null));
         Assert.assertEquals("abc123", StringUtils.append("a", "b", "c", 123));
     }
 
@@ -177,7 +177,7 @@ public class StringUtilsTest {
 
     @Test
     public void testCaseConversion() {
-        String sbcString = "ＨＥＬＬＯ ＷＯＲＬＤ";
+        String sbcString = "ＨＥＬＬＯ　ＷＯＲＬＤ";
         String dbcString = "HELLO WORLD";
         Assert.assertEquals(dbcString, StringUtils.toSbcCaseByDbcCase(sbcString));
         Assert.assertEquals(sbcString, StringUtils.toDbcCaseBySbcCase(dbcString));
@@ -299,7 +299,7 @@ public class StringUtilsTest {
     @Test
     public void testGetStringLength() {
         Assert.assertEquals(5, StringUtils.getStringLength("hello"));
-        Assert.assertEquals(6, StringUtils.getStringLength("你好")); // 每个汉字算2个长度
+        Assert.assertEquals(4, StringUtils.getStringLength("你好")); // 根据Unicode East Asian Width标准，每个汉字算2个长度
     }
 
     @Test
@@ -455,5 +455,227 @@ public class StringUtilsTest {
         Assert.assertEquals("123", StringUtils.toString(123, 0));
         Assert.assertEquals("", StringUtils.toString(0, 0));
         Assert.assertNull(StringUtils.toString(null, 0));
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthConversionDetails() {
+        // 测试全角半角转换的详细信息
+        String sbcString = "ＨＥＬＬＯ　ＷＯＲＬＤ";
+        String dbcString = "HELLO WORLD";
+        
+        // 测试全角转半角
+        String converted = StringUtils.toSbcCaseByDbcCase(sbcString);
+        Assert.assertEquals("全角转半角应该正确", dbcString, converted);
+        
+        // 验证字符长度
+        Assert.assertEquals("半角字符串长度应该正确", 11, dbcString.length());
+        Assert.assertEquals("转换后的字符串长度应该正确", 11, converted.length());
+        
+        // 验证空格转换
+        String halfWidthSpace = " ";
+        String fullWidthSpace = "　"; // U+3000 全角空格
+        Assert.assertEquals("半角空格转全角应该正确", fullWidthSpace, StringUtils.toDbcCaseBySbcCase(halfWidthSpace));
+        Assert.assertEquals("全角空格转半角应该正确", halfWidthSpace, StringUtils.toSbcCaseByDbcCase(fullWidthSpace));
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthAsciiConversion() {
+        // 测试字母转换
+        String halfWidthLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        String fullWidthLetters = "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ";
+        
+        Assert.assertEquals("半角字母转全角应该正确", fullWidthLetters, StringUtils.toDbcCaseBySbcCase(halfWidthLetters));
+        Assert.assertEquals("全角字母转半角应该正确", halfWidthLetters, StringUtils.toSbcCaseByDbcCase(fullWidthLetters));
+        
+        // 测试数字转换
+        String halfWidthDigits = "0123456789";
+        String fullWidthDigits = "０１２３４５６７８９";
+        
+        Assert.assertEquals("半角数字转全角应该正确", fullWidthDigits, StringUtils.toDbcCaseBySbcCase(halfWidthDigits));
+        Assert.assertEquals("全角数字转半角应该正确", halfWidthDigits, StringUtils.toSbcCaseByDbcCase(fullWidthDigits));
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthPunctuationConversion() {
+        // 测试标点符号转换
+        String halfWidthPunctuation = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+        String fullWidthPunctuation = "！＂＃＄％＆＇（）＊＋，－．／：；＜＝＞？＠［＼］＾＿｀｛｜｝～";
+        
+        Assert.assertEquals("半角标点转全角应该正确", fullWidthPunctuation, StringUtils.toDbcCaseBySbcCase(halfWidthPunctuation));
+        Assert.assertEquals("全角标点转半角应该正确", halfWidthPunctuation, StringUtils.toSbcCaseByDbcCase(fullWidthPunctuation));
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthCjkUnchanged() {
+        // 测试中日韩字符应该保持不变
+        String chinese = "你好世界";
+        String japanese = "こんにちは";
+        String korean = "안녕하세요";
+        
+        Assert.assertEquals("中文字符应该保持不变", chinese, StringUtils.toDbcCaseBySbcCase(chinese));
+        Assert.assertEquals("中文字符应该保持不变", chinese, StringUtils.toSbcCaseByDbcCase(chinese));
+        
+        Assert.assertEquals("日文字符应该保持不变", japanese, StringUtils.toDbcCaseBySbcCase(japanese));
+        Assert.assertEquals("日文字符应该保持不变", japanese, StringUtils.toSbcCaseByDbcCase(japanese));
+        
+        Assert.assertEquals("韩文字符应该保持不变", korean, StringUtils.toDbcCaseBySbcCase(korean));
+        Assert.assertEquals("韩文字符应该保持不变", korean, StringUtils.toSbcCaseByDbcCase(korean));
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthMixedContent() {
+        // 测试混合内容
+        String mixedHalfWidth = "Hello 123! 你好";
+        String mixedFullWidth = "Ｈｅｌｌｏ　１２３！　你好";
+        
+        Assert.assertEquals("混合半角转全角应该正确", "Ｈｅｌｌｏ　１２３！　你好", StringUtils.toDbcCaseBySbcCase(mixedHalfWidth));
+        Assert.assertEquals("混合全角转半角应该正确", "Hello 123! 你好", StringUtils.toSbcCaseByDbcCase(mixedFullWidth));
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthEdgeCases() {
+        // 测试边界情况
+        Assert.assertEquals("空字符串应该保持不变", "", StringUtils.toDbcCaseBySbcCase(""));
+        Assert.assertEquals("空字符串应该保持不变", "", StringUtils.toSbcCaseByDbcCase(""));
+        
+        Assert.assertEquals("null应该返回空字符串", "", StringUtils.toDbcCaseBySbcCase(null));
+        Assert.assertEquals("null应该返回空字符串", "", StringUtils.toSbcCaseByDbcCase(null));
+        
+        // 测试双向转换
+        String original = "Test123! 测试";
+        String fullWidth = StringUtils.toDbcCaseBySbcCase(original);
+        String backToHalfWidth = StringUtils.toSbcCaseByDbcCase(fullWidth);
+        
+        Assert.assertEquals("双向转换应该恢复原始内容", original, backToHalfWidth);
+    }
+    
+    @Test
+    public void testFullWidthHalfWidthSpecialUnicodeRanges() {
+        // 测试特殊Unicode范围
+        // 半角片假名（U+FF65-U+FF9F）应该保持不变
+        String halfWidthKatakana = "ｦｧｨｩｪｫｬｭｮｯｰｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ";
+        Assert.assertEquals("半角片假名应该保持不变", halfWidthKatakana, StringUtils.toDbcCaseBySbcCase(halfWidthKatakana));
+        Assert.assertEquals("半角片假名应该保持不变", halfWidthKatakana, StringUtils.toSbcCaseByDbcCase(halfWidthKatakana));
+        
+        // 全角片假名（U+30A0-U+30FF）应该保持不变
+        String fullWidthKatakana = "アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン";
+        Assert.assertEquals("全角片假名应该保持不变", fullWidthKatakana, StringUtils.toDbcCaseBySbcCase(fullWidthKatakana));
+        Assert.assertEquals("全角片假名应该保持不变", fullWidthKatakana, StringUtils.toSbcCaseByDbcCase(fullWidthKatakana));
+    }
+    
+    @Test
+    public void testGetStringLengthInternationalCharacters() {
+        // ASCII字符：1个长度
+        Assert.assertEquals("ASCII字符应该算1个长度", 5, StringUtils.getStringLength("hello"));
+        
+        // 中文字符：根据Unicode East Asian Width标准算2个长度
+        Assert.assertEquals("中文字符应该算2个长度", 4, StringUtils.getStringLength("你好"));
+        
+        // 日文平假名：全角（2个长度）
+        Assert.assertEquals("日文平假名应该算2个长度", 4, StringUtils.getStringLength("こん"));
+        
+        // 日文片假名：全角（2个长度）
+        Assert.assertEquals("日文片假名应该算2个长度", 6, StringUtils.getStringLength("コンニ"));
+        
+        // 韩文：全角（2个长度）
+        Assert.assertEquals("韩文应该算2个长度", 4, StringUtils.getStringLength("안녕"));
+        
+        // 混合字符
+        Assert.assertEquals("混合字符长度计算应该正确", 6, StringUtils.getStringLength("a你b好"));
+        
+        // 全角ASCII变体：全角（2个长度）
+        Assert.assertEquals("全角ASCII变体应该算2个长度", 10, StringUtils.getStringLength("ＨＥＬＬＯ"));
+        
+        // 拉丁文补充：半角（1个长度）
+        Assert.assertEquals("拉丁文补充字符应该算1个长度", 4, StringUtils.getStringLength("café"));
+        
+        // 空字符串
+        Assert.assertEquals("空字符串长度应该为0", 0, StringUtils.getStringLength(""));
+        
+        // null字符串
+        Assert.assertEquals("null字符串长度应该为0", 0, StringUtils.getStringLength(null));
+    }
+    
+    @Test
+    public void testGetStringLengthEmojiAndSpecialCharacters() {
+        // 表情符号（需要代理对）：每个emoji算2个长度（全角）
+        // 注意：Java中emoji使用代理对，但按照Unicode East Asian Width标准，emoji算作全角字符
+        Assert.assertEquals("表情符号长度计算应该正确", 2, StringUtils.getStringLength("😀"));
+        
+        // 多个表情符号
+        Assert.assertEquals("多个表情符号长度计算应该正确", 4, StringUtils.getStringLength("😀😁"));
+        
+        // 中日韩符号和标点：全角（2个长度）
+        Assert.assertEquals("中日韩符号应该算2个长度", 2, StringUtils.getStringLength("。"));
+        Assert.assertEquals("中日韩符号应该算2个长度", 2, StringUtils.getStringLength("，"));
+        
+        // 混合emoji和文字
+        Assert.assertEquals("混合emoji和文字长度计算应该正确", 6, StringUtils.getStringLength("你好😀"));
+    }
+    
+    @Test
+    public void testGetStringLengthEdgeCases() {
+        // 单个ASCII字符
+        Assert.assertEquals("单个ASCII字符应该算1个长度", 1, StringUtils.getStringLength("a"));
+        
+        // 单个中文字符
+        Assert.assertEquals("单个中文字符应该算2个长度", 2, StringUtils.getStringLength("你"));
+        
+        // 空格字符
+        Assert.assertEquals("空格字符应该算1个长度", 1, StringUtils.getStringLength(" "));
+        
+        // 制表符
+        Assert.assertEquals("制表符应该算1个长度", 1, StringUtils.getStringLength("\t"));
+        
+        // 换行符
+        Assert.assertEquals("换行符应该算1个长度", 1, StringUtils.getStringLength("\n"));
+    }
+    
+    @Test
+    public void testGetStringLengthConsistency() {
+        // 测试一致性：相同字符多次出现
+        String repeated = "你好你好你好";
+        int length = StringUtils.getStringLength(repeated);
+        Assert.assertEquals("重复中文字符长度应该一致", 12, length); // 6个字符 × 2 = 12
+        
+        // 测试一致性：不同顺序的相同字符
+        String str1 = "abc你好";
+        String str2 = "你好abc";
+        int length1 = StringUtils.getStringLength(str1);
+        int length2 = StringUtils.getStringLength(str2);
+        Assert.assertEquals("不同顺序的相同字符长度应该相同", 7, length1); // 3 + 4 = 7
+        Assert.assertEquals("不同顺序的相同字符长度应该相同", 7, length2); // 4 + 3 = 7
+    }
+    
+    @Test
+    public void testEmojiCharacterDetails() {
+        // 测试表情符号的详细字符信息
+        String emoji = "😀";
+        Assert.assertEquals("表情符号长度计算应该正确", 2, StringUtils.getStringLength(emoji));
+        
+        // 验证表情符号使用代理对
+        Assert.assertEquals("表情符号应该使用代理对", 2, emoji.length());
+        
+        // 验证代理对字符的Unicode范围
+        char firstChar = emoji.charAt(0);
+        char secondChar = emoji.charAt(1);
+        Assert.assertTrue("第一个字符应该是高位代理", Character.isHighSurrogate(firstChar));
+        Assert.assertTrue("第二个字符应该是低位代理", Character.isLowSurrogate(secondChar));
+    }
+    
+    @Test
+    public void testKatakanaCharacterDetails() {
+        // 测试日文片假名的详细字符信息
+        String katakana = "コンニ";
+        Assert.assertEquals("日文片假名长度计算应该正确", 6, StringUtils.getStringLength(katakana));
+        
+        // 验证日文片假名的字符数量
+        Assert.assertEquals("日文片假名应该有3个字符", 3, katakana.length());
+        
+        // 验证日文片假名的Unicode范围（U+30A0-U+30FF）
+        for (int i = 0; i < katakana.length(); i++) {
+            char c = katakana.charAt(i);
+            Assert.assertTrue("日文片假名应该在正确的Unicode范围内", c >= 0x30A0 && c <= 0x30FF);
+        }
     }
 }

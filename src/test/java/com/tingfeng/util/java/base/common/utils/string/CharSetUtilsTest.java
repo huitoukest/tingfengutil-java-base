@@ -145,10 +145,11 @@ public class CharSetUtilsTest {
     @Test
     public void testConvertToUTF8FromGBKToUTF8() throws UnsupportedEncodingException {
         String content = "测试";
-        byte[] gbkBytes = content.getBytes("GBK");
-        String gbkContent = new String(gbkBytes, "GBK");
+        // 将UTF-8字符串转换为GBK编码的字节数组
+        byte[] gbkBytes = content.getBytes( "UTF-8");
+        // 使用fixISO88591Encoding方法将ISO-8859-1编码的内容转换回正确的GBK编码
+        String result = CharSetUtils.convertToUTF8(new String(gbkBytes, "GBK"), "GBK");
         
-        String result = CharSetUtils.convertToUTF8(gbkContent, "GBK");
         Assert.assertEquals("GBK到UTF-8的转换应该正确", content, result);
     }
 

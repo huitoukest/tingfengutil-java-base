@@ -31,7 +31,7 @@ import java.util.stream.Stream;
  */
 public class StringUtils {
     private static Field STRING_VALUE_FIELD = null;
-    private static final Log logger = LogFactory.getLog(StringUtils.class);
+    public static String STR_NULL_OBJ = String.valueOf(((Object) null));
     private final static int BUFFER_SIZE = 4096;
     /**
      * 默认的StringBuilder的数量
@@ -316,19 +316,25 @@ public class StringUtils {
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
 
-            if (c >= 65281 && c < 65373) {
-                sb.append((char) (c - 65248));
+            // 根据Unicode East Asian Width规范进行转换
+            if (c >= 0xFF01 && c <= 0xFF5E) {
+                // 全角ASCII字符变体转换为半角：减0xFEE0
+                sb.append((char) (c - 0xFEE0));
+            } else if (c == 0x3000) {
+                // 全角空格(U+3000)转换为半角空格(U+0020)
+                sb.append((char) 0x0020);
             } else {
-                sb.append(str.charAt(i));
+                // 其他字符保持不变（汉字、日文假名、韩文等全角字符本身不转换）
+                sb.append(c);
             }
         }
 
         return sb.toString();
-
     }
 
     /**
      * 半角字符变全角字符
+     * 根据Unicode East Asian Width规范进行转换
      */
     public static String toDbcCaseBySbcCase(String str) {
         if (str == null || "".equals(str)) {
@@ -339,12 +345,16 @@ public class StringUtils {
         for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
 
-            if (c >= 32 && c < 127) {
-                sb.append((char) (c + 65248));
-            } else if (c == 32) {
-                sb.append((char) 12288);
+            // 根据Unicode East Asian Width规范进行转换
+            if (c >= 0x0021 && c <= 0x007E) {
+                // 半角ASCII字符转换为全角：加0xFEE0
+                sb.append((char) (c + 0xFEE0));
+            } else if (c == 0x0020) {
+                // 半角空格(U+0020)转换为全角空格(U+3000)
+                sb.append((char) 0x3000);
             } else {
-                sb.append(str.charAt(i));
+                // 其他字符保持不变（汉字、日文假名、韩文等全角字符本身不转换）
+                sb.append(c);
             }
         }
 
@@ -779,12 +789,116 @@ public class StringUtils {
     public static int getStringLength(String srcStr) {
         int return_value = 0;
         if (srcStr != null) {
-            char[] theChars = getCharArray(srcStr);
-            for (int i = 0; i < theChars.length; i++) {
-                return_value += (theChars[i] <= 255) ? 1 : 2;
+            int i = 0;
+            while (i < srcStr.length()) {
+                int codePoint = srcStr.codePointAt(i);
+                
+                // 处理代理对（如emoji表情符号）
+                if (Character.isSupplementaryCodePoint(codePoint)) {
+                    // 补充平面字符（如emoji）通常算作2个宽度（全角）
+                    return_value += 2;
+                    i += 2; // 跳过整个代理对
+                } else {
+                    char c = (char) codePoint;
+                    return_value += getEastAsianWidth(c);
+                    i++;
+                }
             }
         }
         return return_value;
+    }
+    
+    /**
+     * 根据Unicode East Asian Width (UAX #11) 标准计算字符宽度
+     * 遵循国际编码规范，正确处理各种Unicode字符的显示宽度
+     * 
+     * @param c 字符
+     * @return 字符宽度（半角为1，全角为2）
+     */
+    private static int getEastAsianWidth(char c) {
+        // ASCII控制字符和基本拉丁字母：半角（1）
+        if (c <= 0x007F) {
+            return 1;
+        }
+        
+        // 拉丁文补充：半角（1）
+        if (c >= 0x0080 && c <= 0x00FF) {
+            return 1;
+        }
+        
+        // CJK统一表意符号（中日韩统一表意文字）：全角（2）
+        if (c >= 0x4E00 && c <= 0x9FFF) {
+            return 2;
+        }
+        
+        // CJK扩展A区：全角（2）
+        if (c >= 0x3400 && c <= 0x4DBF) {
+            return 2;
+        }
+        
+        // 半角和全角形式：根据具体范围判断
+        if (c >= 0xFF00 && c <= 0xFFEF) {
+            // 全角ASCII变体：全角（2）
+            if (c >= 0xFF01 && c <= 0xFF5E) {
+                return 2;
+            }
+            // 半角片假名：半角（1）
+            if (c >= 0xFF65 && c <= 0xFF9F) {
+                return 1;
+            }
+            // 全角片假名：全角（2）
+            if (c >= 0xFF61 && c <= 0xFF64) {
+                return 2;
+            }
+        }
+        
+        // 韩文音节：全角（2）
+        if (c >= 0xAC00 && c <= 0xD7AF) {
+            return 2;
+        }
+        
+        // 韩文字母：全角（2）
+        if (c >= 0x1100 && c <= 0x11FF) {
+            return 2;
+        }
+        
+        // 日文平假名：全角（2）
+        if (c >= 0x3040 && c <= 0x309F) {
+            return 2;
+        }
+        
+        // 日文片假名：全角（2）
+        if (c >= 0x30A0 && c <= 0x30FF) {
+            return 2;
+        }
+        
+        // 中日韩符号和标点：全角（2）
+        if (c >= 0x3000 && c <= 0x303F) {
+            return 2;
+        }
+        
+        // 中日韩部首补充：全角（2）
+        if (c >= 0x2E80 && c <= 0x2EFF) {
+            return 2;
+        }
+        
+        // 中日韩笔画：全角（2）
+        if (c >= 0x31C0 && c <= 0x31EF) {
+            return 2;
+        }
+        
+        // 中日韩兼容字符：全角（2）
+        if (c >= 0xF900 && c <= 0xFAFF) {
+            return 2;
+        }
+        
+        // 中日韩兼容表意文字补充：全角（2）
+        if (c >= 0x2F800 && c <= 0x2FA1F) {
+            return 2;
+        }
+        
+        // 默认：半角（1）
+        return 1;
     }
 
 
@@ -913,7 +1027,12 @@ public class StringUtils {
         Matcher matcher = p.matcher(str);
         while (matcher.find() && spIndex < sp.length) {
             positions.add(lastIndex + 1);
-            lastIndex = lastIndex + matcher.group(0).length() + sp[++spIndex].length();
+            lastIndex = lastIndex + matcher.group(0).length();
+            if (spIndex + 1 < sp.length) {
+                lastIndex = lastIndex + sp[++spIndex].length();
+            } else {
+                spIndex++;
+            }
         }
         return positions;
     }
@@ -1002,13 +1121,16 @@ public class StringUtils {
      */
     public static String appendValue(boolean freeMemoryThen, boolean isAppendNull, Object[] objects) {
         if (objects == null) {
+            if(isAppendNull){
+                return STR_NULL_OBJ;
+            }
             return null;
         }
         return stringBuilderPool.run(sb -> {
             Stream.of(objects).forEach(it -> {
-                if (isAppendNull) {
-                    sb.append(it);
-                } else if (!isAppendNull && it != null) {
+                if (it == null && isAppendNull) {
+                    sb.append(STR_NULL_OBJ);
+                } else if (it != null) {
                     sb.append(it);
                 }
             });
@@ -1026,8 +1148,8 @@ public class StringUtils {
      * @param isAppendNull 是否将null值也append到字符串中，默认为false
      * @return
      */
-    public static String appendValue(boolean isAppendNull, Object[] objects) {
-        return appendValue(false, false, objects);
+    public static String appendValue(boolean isAppendNull, Object... objects) {
+        return appendValue(false, isAppendNull, objects);
     }
 
     /**

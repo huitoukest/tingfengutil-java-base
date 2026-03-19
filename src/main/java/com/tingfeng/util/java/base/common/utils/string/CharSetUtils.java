@@ -40,9 +40,11 @@ public class CharSetUtils {
 	 * @throws UnsupportedEncodingException
 	 */
 	public static String convertToUTF8(String content,String chartType) throws UnsupportedEncodingException{
-		byte[] newContent = content.getBytes(chartType);
-		String tmpContent = new String(newContent,Constants.CharSet.UTF8);
-		return tmpContent;
+		// 将content用错误编码转换回字节数组
+		byte[] bytes = content.getBytes(chartType);
+		// 再用正确的编码解码成字符串
+		String correctContent = new String(bytes, "UTF-8");
+		return correctContent;
 	}
 	
 }
