@@ -21,7 +21,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -222,10 +221,8 @@ public class BeanUtils {
             List<Field> fieldsT = ReflectUtils.getFields(targetCls, false, false, true, true);
 
             Map<String, Tuple2<Method, Method>> propertyDescriptorMap = getBeanCopyPropertyDescriptorMap(targetCls, sourceCls);
-            Set<String> hasSetterProp = propertyDescriptorMap.keySet();
             Map<String, Field> sourceFieldNameMap = fieldsS.stream()
                     .peek(it -> it.setAccessible(true))
-                    .filter(it -> !hasSetterProp.contains(it.getName()))
                     .collect(Collectors.toMap(Field::getName, Function.identity(), (a, b) -> b));
             return fieldsT.stream().map(targetField -> {
                 targetField.setAccessible(true);
@@ -250,22 +247,12 @@ public class BeanUtils {
                         }
                     };
                 } else {
-                    Method srcMethod = ReflectUtils.getMethod(sourceCls, ReflectUtils.getGetterName(name));
-                    if (srcMethod == null) {
-                        return null;
-                    }
-                    srcMethod.setAccessible(true);
+                    // 处理没有getter/setter方法的公共字段
                     Field srcField = sourceFieldNameMap.get(name);
                     if (srcField == null) {
                         return null;
                     }
                     srcField.setAccessible(true);
-
-                    Method targetMethod = ReflectUtils.getMethod(targetCls, ReflectUtils.getSetterName(name));
-                    if (targetMethod == null) {
-                        return null;
-                    }
-                    targetMethod.setAccessible(true);
                     return new BeanCopyFun() {
                         @Override
                         public String getName() {
@@ -273,18 +260,12 @@ public class BeanUtils {
                         }
 
                         @Override
-                        public Object read(Object srcObj) throws IllegalAccessException, InvocationTargetException, IllegalArgumentException {
-                            if (srcMethod != null) {
-                                return srcMethod.invoke(srcObj);
-                            }
+                        public Object read(Object srcObj) throws IllegalAccessException {
                             return srcField.get(srcObj);
                         }
 
                         @Override
-                        public Object write(Object targetObj, Object value) throws IllegalAccessException, InvocationTargetException, IllegalArgumentException {
-                            if (targetMethod != null) {
-                                return targetMethod.invoke(targetObj, value);
-                            }
+                        public Object write(Object targetObj, Object value) throws IllegalAccessException {
                             targetField.set(targetObj, value);
                             return null;
                         }

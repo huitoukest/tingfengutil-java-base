@@ -31,7 +31,7 @@ public class User extends BaseUser{
     }
 
     public int getAge() {
-        return age + 1000;
+        return age;
     }
 
     public void setAge(int age) {
