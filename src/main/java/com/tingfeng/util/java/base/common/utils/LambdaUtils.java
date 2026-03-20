@@ -32,5 +32,29 @@ public class LambdaUtils {
         }
     }
 
+    /**
+     * 从Function获取声明该方法的类
+     * @param function 函数式接口
+     * @param <T> 类类型
+     * @return 类对象
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> Class<T> getDeclaringClass(Function<T, ?> function) {
+        try {
+            // 通过反射获取SerializedLambda对象
+            Method writeReplace = function.getClass().getDeclaredMethod("writeReplace");
+            writeReplace.setAccessible(true);
+            SerializedLambda serializedLambda = (SerializedLambda) writeReplace.invoke(function);
 
+            // 获取实现类名（斜杠格式），需要转换为点格式
+            String implClassName = serializedLambda.getImplClass().replace('/', '.');
+
+            // 加载类
+            Class<?> clazz = Class.forName(implClassName);
+
+            return (Class<T>) clazz;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to extract class from function", e);
+        }
+    }
 }
