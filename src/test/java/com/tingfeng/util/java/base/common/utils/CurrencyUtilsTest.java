@@ -3,148 +3,150 @@ package com.tingfeng.util.java.base.common.utils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+
 /**
  * 货币处理工具类测试
  */
 public class CurrencyUtilsTest {
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 整数
+     * 测试将数字转换为中国大写字符串 - 整数
      */
     @Test
     public void testToChinaUpperInteger() throws Exception {
         String result = CurrencyUtils.toChinaUpper("123");
-        Assert.assertEquals("123应该转换为壹佰贰拾叁圆整", "壹佰贰拾叁圆整", result);
+        assertEquals("123应该转换为壹佰贰拾叁元整", "壹佰贰拾叁元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 带小数
+     * 测试将数字转换为中国大写字符串 - 带小数
      */
     @Test
     public void testToChinaUpperWithDecimal() throws Exception {
         String result = CurrencyUtils.toChinaUpper("123.45");
-        Assert.assertEquals("123.45应该转换为壹佰贰拾叁圆肆角伍分", "壹佰贰拾叁圆肆角伍分", result);
+        assertEquals("123.45应该转换为壹佰贰拾叁元肆角伍分", "壹佰贰拾叁元肆角伍分", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 只有角
+     * 测试将数字转换为中国大写字符串 - 只有角
      */
     @Test
     public void testToChinaUpperWithJiao() throws Exception {
         String result = CurrencyUtils.toChinaUpper("123.4");
-        Assert.assertEquals("123.4应该转换为壹佰贰拾叁圆肆角", "壹佰贰拾叁圆肆角", result);
+        assertEquals("123.4应该转换为壹佰贰拾叁元肆角", "壹佰贰拾叁元肆角", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 零
+     * 测试将数字转换为中国大写字符串 - 零
      */
     @Test
     public void testToChinaUpperZero() throws Exception {
         String result = CurrencyUtils.toChinaUpper("0");
-        Assert.assertEquals("0应该转换为零圆整", "零圆整", result);
+        assertEquals("0应该转换为零元整", "零元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 小数点后只有零
+     * 测试将数字转换为中国大写字符串 - 小数点后只有零
      */
     @Test
     public void testToChinaUpperZeroDecimal() throws Exception {
         String result = CurrencyUtils.toChinaUpper("123.00");
-        Assert.assertEquals("123.00应该转换为壹佰贰拾叁圆整", "壹佰贰拾叁圆整", result);
+        assertEquals("123.00应该转换为壹佰贰拾叁元整", "壹佰贰拾叁元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 负数
+     * 测试将数字转换为中国大写字符串 - 负数
      */
     @Test
     public void testToChinaUpperNegative() throws Exception {
         String result = CurrencyUtils.toChinaUpper("-123");
-        Assert.assertEquals("-123应该转换为负壹佰贰拾叁圆整", "负壹佰贰拾叁圆整", result);
+        assertEquals("-123应该转换为负壹佰贰拾叁元整", "负壹佰贰拾叁元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 带前导零
+     * 测试将数字转换为中国大写字符串 - 带前导零
      */
     @Test
     public void testToChinaUpperWithLeadingZeros() throws Exception {
         String result = CurrencyUtils.toChinaUpper("00123");
-        Assert.assertEquals("00123应该转换为壹佰贰拾叁圆整", "壹佰贰拾叁圆整", result);
+        assertEquals("00123应该转换为壹佰贰拾叁元整", "壹佰贰拾叁元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 大数字
+     * 测试将数字转换为中国大写字符串 - 大数字
      */
     @Test
     public void testToChinaUpperLargeNumber() throws Exception {
         String result = CurrencyUtils.toChinaUpper("100000000");
-        Assert.assertEquals("100000000应该转换为壹亿圆整", "壹亿圆整", result);
+        assertEquals("100000000应该转换为壹亿元整", "壹亿元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 万位
+     * 测试将数字转换为中国大写字符串 - 万位
      */
     @Test
     public void testToChinaUpperWan() throws Exception {
         String result = CurrencyUtils.toChinaUpper("10000");
-        Assert.assertEquals("10000应该转换为壹万圆整", "壹万圆整", result);
+        assertEquals("10000应该转换为壹万元整", "壹万元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 千位
+     * 测试将数字转换为中国大写字符串 - 千位
      */
     @Test
     public void testToChinaUpperQian() throws Exception {
         String result = CurrencyUtils.toChinaUpper("1000");
-        Assert.assertEquals("1000应该转换为壹仟圆整", "壹仟圆整", result);
+        assertEquals("1000应该转换为壹仟元整", "壹仟元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 佰位
+     * 测试将数字转换为中国大写字符串 - 佰位
      */
     @Test
     public void testToChinaUpperBai() throws Exception {
         String result = CurrencyUtils.toChinaUpper("100");
-        Assert.assertEquals("100应该转换为壹佰圆整", "壹佰圆整", result);
+        assertEquals("100应该转换为壹佰元整", "壹佰元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 拾位
+     * 测试将数字转换为中国大写字符串 - 拾位
      */
     @Test
     public void testToChinaUpperShi() throws Exception {
         String result = CurrencyUtils.toChinaUpper("10");
-        Assert.assertEquals("10应该转换为壹拾圆整", "壹拾圆整", result);
+        assertEquals("10应该转换为壹拾元整", "壹拾元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 个位
+     * 测试将数字转换为中国大写字符串 - 个位
      */
     @Test
     public void testToChinaUpperOne() throws Exception {
         String result = CurrencyUtils.toChinaUpper("1");
-        Assert.assertEquals("1应该转换为壹圆整", "壹圆整", result);
+        assertEquals("1应该转换为壹元整", "壹元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 包含零的数字
+     * 测试将数字转换为中国大写字符串 - 包含零的数字
      */
     @Test
     public void testToChinaUpperWithZeros() throws Exception {
         String result = CurrencyUtils.toChinaUpper("10101");
-        Assert.assertEquals("10101应该转换为壹万零壹佰零壹圆整", "壹万零壹佰零壹圆整", result);
+        assertEquals("10101应该转换为壹万零壹佰零壹元整", "壹万零壹佰零壹元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 亿万组合
+     * 测试将数字转换为中国大写字符串 - 亿万组合
      */
     @Test
     public void testToChinaUpperYiWan() throws Exception {
         String result = CurrencyUtils.toChinaUpper("100000001");
-        Assert.assertEquals("100000001应该转换为壹亿零壹圆整", "壹亿零壹圆整", result);
+        assertEquals("100000001应该转换为壹亿零壹元整", "壹亿零壹元整", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 格式错误
+     * 测试将数字转换为中国大写字符串 - 格式错误
      */
     @Test(expected = Exception.class)
     public void testToChinaUpperInvalidFormat() throws Exception {
@@ -152,7 +154,7 @@ public class CurrencyUtilsTest {
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 空字符串
+     * 测试将数字转换为中国大写字符串 - 空字符串
      */
     @Test(expected = Exception.class)
     public void testToChinaUpperEmptyString() throws Exception {
@@ -160,7 +162,7 @@ public class CurrencyUtilsTest {
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 只有负号
+     * 测试将数字转换为中国大写字符串 - 只有负号
      */
     @Test(expected = Exception.class)
     public void testToChinaUpperOnlyMinus() throws Exception {
@@ -173,7 +175,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringDefaultInteger() {
         String result = CurrencyUtils.formatMoneyString(123.0, "default");
-        Assert.assertEquals("123.0应该格式化为123", "123", result);
+        assertEquals("123.0应该格式化为123", "123", result);
     }
 
     /**
@@ -182,7 +184,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringDefaultDecimal() {
         String result = CurrencyUtils.formatMoneyString(123.45, "default");
-        Assert.assertEquals("123.45应该保持原样", "123.45", result);
+        assertEquals("123.45应该保持原样", "123.45", result);
     }
 
     /**
@@ -191,7 +193,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringDefaultZero() {
         String result = CurrencyUtils.formatMoneyString(0.0, "default");
-        Assert.assertEquals("0.0应该格式化为空字符串", "", result);
+        assertEquals("0.0应该格式化为空字符串", "", result);
     }
 
     /**
@@ -200,7 +202,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringCustomFormat() {
         String result = CurrencyUtils.formatMoneyString(1234.5, "#,###.00");
-        Assert.assertEquals("1234.5应该格式化为1,234.50", "1,234.50", result);
+        assertEquals("1234.5应该格式化为1,234.50", "1,234.50", result);
     }
 
     /**
@@ -209,7 +211,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringTwoDecimal() {
         String result = CurrencyUtils.formatMoneyString(123.456, "#.00");
-        Assert.assertEquals("123.456应该格式化为123.46（四舍五入）", "123.46", result);
+        assertEquals("123.456应该格式化为123.46（四舍五入）", "123.46", result);
     }
 
     /**
@@ -218,7 +220,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringOneDecimal() {
         String result = CurrencyUtils.formatMoneyString(123.456, "#.0");
-        Assert.assertEquals("123.456应该格式化为123.5（四舍五入）", "123.5", result);
+        assertEquals("123.456应该格式化为123.5（四舍五入）", "123.5", result);
     }
 
     /**
@@ -227,7 +229,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringNoDecimal() {
         String result = CurrencyUtils.formatMoneyString(123.999, "#");
-        Assert.assertEquals("123.999应该格式化为124（四舍五入）", "124", result);
+        assertEquals("123.999应该格式化为124（四舍五入）", "124", result);
     }
 
     /**
@@ -236,7 +238,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringNullStyle() {
         String result = CurrencyUtils.formatMoneyString(123.45, null);
-        Assert.assertEquals("null样式应该返回字符串表示", "123.45", result);
+        assertEquals("null样式应该返回字符串表示", "123.45", result);
     }
 
     /**
@@ -245,7 +247,7 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringNegative() {
         String result = CurrencyUtils.formatMoneyString(-123.45, "#.00");
-        Assert.assertEquals("-123.45应该格式化为-123.45", "-123.45", result);
+        assertEquals("-123.45应该格式化为-123.45", "-123.45", result);
     }
 
     /**
@@ -254,33 +256,70 @@ public class CurrencyUtilsTest {
     @Test
     public void testFormatMoneyStringLargeNumber() {
         String result = CurrencyUtils.formatMoneyString(123456789.12, "#,###.00");
-        Assert.assertEquals("123456789.12应该格式化为123,456,789.12", "123,456,789.12", result);
+        assertEquals("123456789.12应该格式化为123,456,789.12", "123,456,789.12", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 复杂案例1
+     * 测试将数字转换为中国大写字符串 - 复杂案例1
      */
     @Test
     public void testToChinaUpperComplexCase1() throws Exception {
         String result = CurrencyUtils.toChinaUpper("100100.01");
-        Assert.assertEquals("100100.01应该转换为壹拾万零壹佰圆零壹分", "壹拾万零壹佰圆零壹分", result);
+        assertEquals("100100.01应该转换为壹拾万零壹佰元零壹分", "壹拾万零壹佰元零壹分", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 复杂案例2
+     * 测试将数字转换为中国大写字符串 - 复杂案例2
      */
     @Test
     public void testToChinaUpperComplexCase2() throws Exception {
         String result = CurrencyUtils.toChinaUpper("100010.10");
-        Assert.assertEquals("100010.10应该转换为壹拾万零壹拾圆壹角", "壹拾万零壹拾圆壹角", result);
+        assertEquals("100010.10应该转换为壹拾万零壹拾元壹角", "壹拾万零壹拾元壹角", result);
     }
 
     /**
-     * 测试将数字转换为中国人民币大写字符串 - 复杂案例3
+     * 测试将数字转换为中国大写字符串 - 复杂案例3
      */
     @Test
     public void testToChinaUpperComplexCase3() throws Exception {
         String result = CurrencyUtils.toChinaUpper("100001.11");
-        Assert.assertEquals("100001.11应该转换为壹拾万零壹圆壹角壹分", "壹拾万零壹圆壹角壹分", result);
+        assertEquals("100001.11应该转换为壹拾万零壹元壹角壹分", "壹拾万零壹元壹角壹分", result);
+    }
+
+    // 建议添加到单元测试中
+    @Test
+    public void testYuanConversion() throws Exception {
+        assertEquals("壹亿零壹元整", CurrencyUtils.toChinaUpper("100000001"));  // 核心用例
+        assertEquals("壹亿元整", CurrencyUtils.toChinaUpper("100000000"));      // 整亿
+        assertEquals("壹万零壹元整", CurrencyUtils.toChinaUpper("10001"));        // 万节边界
+        assertEquals("壹亿零壹万元整", CurrencyUtils.toChinaUpper("100010000"));   // 亿+万
+        assertEquals("壹亿贰仟叁佰肆拾伍万陆仟柒佰捌拾玖元整",
+                CurrencyUtils.toChinaUpper("123456789"));  // 完整测试
+    }
+    
+    /**
+     * 测试带自定义前缀和元单位的人民币大写转换
+     */
+    @Test
+    public void testToChinaUpperWithPrefixAndUnit() throws Exception {
+        // 使用自定义前缀和元单位
+        String result = CurrencyUtils.toChinaUpper("123", "人民币", "圆");
+        assertEquals("123使用自定义前缀和单位应该转换为人民币壹佰贰拾叁圆整", "人民币壹佰贰拾叁圆整", result);
+        
+        // 使用"圆"作为单位
+        result = CurrencyUtils.toChinaUpper("456.78", "人民币", "圆");
+        assertEquals("456.78使用圆单位应该转换为人民币肆佰伍拾陆圆柒角捌分", "人民币肆佰伍拾陆圆柒角捌分", result);
+        
+        // 使用"元"作为单位
+        result = CurrencyUtils.toChinaUpper("456.78", "人民币", "元");
+        assertEquals("456.78使用元单位应该转换为人民币肆佰伍拾陆元柒角捌分", "人民币肆佰伍拾陆元柒角捌分", result);
+        
+        // 使用空前缀
+        result = CurrencyUtils.toChinaUpper("123", "", "元");
+        assertEquals("123使用空前缀应该转换为壹佰贰拾叁元整", "壹佰贰拾叁元整", result);
+        
+        // 使用自定义前缀
+        result = CurrencyUtils.toChinaUpper("123", "大写:", "元");
+        assertEquals("123使用自定义前缀应该转换为大写:壹佰贰拾叁元整", "大写:壹佰贰拾叁元整", result);
     }
 }
