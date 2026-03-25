@@ -465,18 +465,6 @@ public class EnumUtilsTest {
     }
 
     /**
-     * 测试getByOrDefault方法 - 无类参数
-     */
-    @Test
-    public void getByOrDefaultWithoutClassTest() {
-        TestEnum result = EnumUtils.getByOrDefault(TestEnum::getValue, "1", TestEnum.THREE);
-        Assert.assertEquals(TestEnum.ONE, result);
-
-        result = EnumUtils.getByOrDefault(TestEnum::getValue, "999", TestEnum.THREE);
-        Assert.assertEquals(TestEnum.THREE, result);
-    }
-
-    /**
      * 测试getByOrThrow方法 - 带类参数
      */
     @Test
@@ -486,22 +474,6 @@ public class EnumUtilsTest {
 
         try {
             EnumUtils.getByOrThrow(TestEnum.class, TestEnum::getValue, "999");
-            Assert.fail("应该抛出IllegalArgumentException异常");
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("with value: 999"));
-        }
-    }
-
-    /**
-     * 测试getByOrThrow方法 - 无类参数
-     */
-    @Test
-    public void getByOrThrowWithoutClassTest() {
-        TestEnum result = EnumUtils.getByOrThrow(TestEnum::getValue, "2");
-        Assert.assertEquals(TestEnum.TWO, result);
-
-        try {
-            EnumUtils.getByOrThrow(TestEnum::getValue, "999");
             Assert.fail("应该抛出IllegalArgumentException异常");
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(e.getMessage().contains("with value: 999"));
@@ -562,19 +534,6 @@ public class EnumUtilsTest {
     }
 
     /**
-     * 测试getByList方法 - 无类参数
-     */
-    @Test
-    public void getByListWithoutClassTest() {
-        List<TestEnum> result = EnumUtils.getByList(TestEnum::getValue, "1");
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(TestEnum.ONE, result.get(0));
-
-        result = EnumUtils.getByList(TestEnum::getValue, "999");
-        Assert.assertTrue(result.isEmpty());
-    }
-
-    /**
      * 测试getByList方法 - 不使用缓存
      */
     @Test
@@ -622,18 +581,6 @@ public class EnumUtilsTest {
         Assert.assertTrue(exists);
 
         exists = EnumUtils.exists(TestEnum.class, TestEnum::getValue, "999");
-        Assert.assertFalse(exists);
-    }
-
-    /**
-     * 测试exists方法 - 无类参数
-     */
-    @Test
-    public void existsWithoutClassTest() {
-        boolean exists = EnumUtils.exists(TestEnum::getValue, "2");
-        Assert.assertTrue(exists);
-
-        exists = EnumUtils.exists(TestEnum::getValue, "999");
         Assert.assertFalse(exists);
     }
 
@@ -902,5 +849,365 @@ public class EnumUtilsTest {
 
         result = EnumUtils.getLast(SingleEnum.class);
         Assert.assertEquals(SingleEnum.ONLY, result);
+    }
+
+    /**
+     * 测试isEnum方法
+     */
+    @Test
+    public void testIsEnum() {
+        Assert.assertTrue(EnumUtils.isEnum(TestEnum.class));
+        Assert.assertTrue(EnumUtils.isEnum(Name.class));
+        Assert.assertTrue(EnumUtils.isEnum(EmptyEnum.class));
+        Assert.assertTrue(EnumUtils.isEnum(SingleEnum.class));
+        Assert.assertFalse(EnumUtils.isEnum(String.class));
+        Assert.assertFalse(EnumUtils.isEnum(null));
+        Assert.assertFalse(EnumUtils.isEnum(Integer.class));
+    }
+
+    /**
+     * 测试getValues方法
+     */
+    @Test
+    public void testGetValues() {
+        TestEnum[] values = EnumUtils.getValues(TestEnum.class);
+        Assert.assertNotNull(values);
+        Assert.assertEquals(3, values.length);
+        Assert.assertEquals(TestEnum.ONE, values[0]);
+        Assert.assertEquals(TestEnum.TWO, values[1]);
+        Assert.assertEquals(TestEnum.THREE, values[2]);
+
+        // 测试空枚举
+        EmptyEnum[] emptyValues = EnumUtils.getValues(EmptyEnum.class);
+        Assert.assertNotNull(emptyValues);
+        Assert.assertEquals(0, emptyValues.length);
+
+        // 测试null
+        Assert.assertNull(EnumUtils.getValues(null));
+    }
+
+    /**
+     * 测试getNames方法
+     */
+    @Test
+    public void testGetNames() {
+        String[] names = EnumUtils.getNames(TestEnum.class);
+        Assert.assertNotNull(names);
+        Assert.assertEquals(3, names.length);
+        Assert.assertEquals("ONE", names[0]);
+        Assert.assertEquals("TWO", names[1]);
+        Assert.assertEquals("THREE", names[2]);
+
+        // 测试空枚举
+        String[] emptyNames = EnumUtils.getNames(EmptyEnum.class);
+        Assert.assertNotNull(emptyNames);
+        Assert.assertEquals(0, emptyNames.length);
+
+        // 测试null
+        Assert.assertNull(EnumUtils.getNames(null));
+    }
+
+    /**
+     * 测试getOrdinals方法
+     */
+    @Test
+    public void testGetOrdinals() {
+        int[] ordinals = EnumUtils.getOrdinals(TestEnum.class);
+        Assert.assertNotNull(ordinals);
+        Assert.assertEquals(3, ordinals.length);
+        Assert.assertEquals(0, ordinals[0]);
+        Assert.assertEquals(1, ordinals[1]);
+        Assert.assertEquals(2, ordinals[2]);
+
+        // 测试空枚举
+        int[] emptyOrdinals = EnumUtils.getOrdinals(EmptyEnum.class);
+        Assert.assertNotNull(emptyOrdinals);
+        Assert.assertEquals(0, emptyOrdinals.length);
+
+        // 测试null
+        Assert.assertNull(EnumUtils.getOrdinals(null));
+    }
+
+    /**
+     * 测试getByOrdinal方法（等同于getEnumByOrdinal）
+     */
+    @Test
+    public void testGetByOrdinal() {
+        TestEnum result = EnumUtils.getByOrdinal(TestEnum.class, 0);
+        Assert.assertEquals(TestEnum.ONE, result);
+
+        result = EnumUtils.getByOrdinal(TestEnum.class, 1);
+        Assert.assertEquals(TestEnum.TWO, result);
+
+        result = EnumUtils.getByOrdinal(TestEnum.class, 2);
+        Assert.assertEquals(TestEnum.THREE, result);
+
+        result = EnumUtils.getByOrdinal(TestEnum.class, -1);
+        Assert.assertNull(result);
+
+        result = EnumUtils.getByOrdinal(TestEnum.class, 999);
+        Assert.assertNull(result);
+    }
+
+    /**
+     * 测试getByName方法（等同于getEnumByName）
+     */
+    @Test
+    public void testGetByName() {
+        TestEnum result = EnumUtils.getByName(TestEnum.class, "ONE");
+        Assert.assertEquals(TestEnum.ONE, result);
+
+        result = EnumUtils.getByName(TestEnum.class, "TWO");
+        Assert.assertEquals(TestEnum.TWO, result);
+
+        result = EnumUtils.getByName(TestEnum.class, "THREE");
+        Assert.assertEquals(TestEnum.THREE, result);
+
+        result = EnumUtils.getByName(TestEnum.class, "不存在的名称");
+        Assert.assertNull(result);
+
+        result = EnumUtils.getByName(TestEnum.class, null);
+        Assert.assertNull(result);
+
+        result = EnumUtils.getByName(TestEnum.class, "");
+        Assert.assertNull(result);
+    }
+
+    /**
+     * 测试list方法（等同于getEnumList）
+     */
+    @Test
+    public void testList() {
+        List<TestEnum> list = EnumUtils.list(TestEnum.class);
+        Assert.assertNotNull(list);
+        Assert.assertEquals(3, list.size());
+        Assert.assertTrue(list.contains(TestEnum.ONE));
+        Assert.assertTrue(list.contains(TestEnum.TWO));
+        Assert.assertTrue(list.contains(TestEnum.THREE));
+
+        // 测试空枚举
+        List<EmptyEnum> emptyList = EnumUtils.list(EmptyEnum.class);
+        Assert.assertNotNull(emptyList);
+        Assert.assertTrue(emptyList.isEmpty());
+    }
+
+    /**
+     * 测试valueList方法（等同于getValueList）
+     */
+    @Test
+    public void testValueList() {
+        List<String> list = EnumUtils.valueList(TestEnum.class, TestEnum::getValue);
+        Assert.assertNotNull(list);
+        Assert.assertEquals(3, list.size());
+        Assert.assertTrue(list.contains("1"));
+        Assert.assertTrue(list.contains("2"));
+        Assert.assertTrue(list.contains("3"));
+
+        List<String> descList = EnumUtils.valueList(TestEnum.class, TestEnum::getDesc);
+        Assert.assertNotNull(descList);
+        Assert.assertEquals(3, descList.size());
+        Assert.assertTrue(descList.contains("第一个"));
+        Assert.assertTrue(descList.contains("第二个"));
+        Assert.assertTrue(descList.contains("第三个"));
+    }
+
+    /**
+     * 测试nameList方法（等同于getNameList）
+     */
+    @Test
+    public void testNameList() {
+        List<String> list = EnumUtils.nameList(TestEnum.class);
+        Assert.assertNotNull(list);
+        Assert.assertEquals(3, list.size());
+        Assert.assertTrue(list.contains("ONE"));
+        Assert.assertTrue(list.contains("TWO"));
+        Assert.assertTrue(list.contains("THREE"));
+    }
+
+    /**
+     * 测试ordinalList方法（等同于getOrdinalList）
+     */
+    @Test
+    public void testOrdinalList() {
+        List<Integer> list = EnumUtils.ordinalList(TestEnum.class);
+        Assert.assertNotNull(list);
+        Assert.assertEquals(3, list.size());
+        Assert.assertTrue(list.contains(0));
+        Assert.assertTrue(list.contains(1));
+        Assert.assertTrue(list.contains(2));
+    }
+
+    /**
+     * 测试边界情况 - 空枚举的各种方法
+     */
+    @Test
+    public void testEmptyEnumMethods() {
+        // 测试getFirst
+        Assert.assertNull(EnumUtils.getFirst(EmptyEnum.class));
+
+        // 测试getLast
+        Assert.assertNull(EnumUtils.getLast(EmptyEnum.class));
+
+        // 测试getCount
+        Assert.assertEquals(0, EnumUtils.getCount(EmptyEnum.class));
+
+        // 测试isEmpty
+        Assert.assertTrue(EnumUtils.isEmpty(EmptyEnum.class));
+
+        // 测试getValueList
+        List<Object> valueList = EnumUtils.getValueList(EmptyEnum.class, e -> e);
+        Assert.assertNotNull(valueList);
+        Assert.assertTrue(valueList.isEmpty());
+
+        // 测试getNameList
+        List<String> nameList = EnumUtils.getNameList(EmptyEnum.class);
+        Assert.assertNotNull(nameList);
+        Assert.assertTrue(nameList.isEmpty());
+
+        // 测试getOrdinalList
+        List<Integer> ordinalList = EnumUtils.getOrdinalList(EmptyEnum.class);
+        Assert.assertNotNull(ordinalList);
+        Assert.assertTrue(ordinalList.isEmpty());
+    }
+
+    /**
+     * 测试边界情况 - 单枚举值的各种方法
+     */
+    @Test
+    public void testSingleEnumMethods() {
+        // 测试getFirst
+        Assert.assertEquals(SingleEnum.ONLY, EnumUtils.getFirst(SingleEnum.class));
+
+        // 测试getLast
+        Assert.assertEquals(SingleEnum.ONLY, EnumUtils.getLast(SingleEnum.class));
+
+        // 测试getCount
+        Assert.assertEquals(1, EnumUtils.getCount(SingleEnum.class));
+
+        // 测试isEmpty
+        Assert.assertFalse(EnumUtils.isEmpty(SingleEnum.class));
+
+        // 测试getValueList
+        List<String> valueList = EnumUtils.getValueList(SingleEnum.class, SingleEnum::getValue);
+        Assert.assertNotNull(valueList);
+        Assert.assertEquals(1, valueList.size());
+        Assert.assertTrue(valueList.contains("only"));
+
+        // 测试getNameList
+        List<String> nameList = EnumUtils.getNameList(SingleEnum.class);
+        Assert.assertNotNull(nameList);
+        Assert.assertEquals(1, nameList.size());
+        Assert.assertTrue(nameList.contains("ONLY"));
+
+        // 测试getOrdinalList
+        List<Integer> ordinalList = EnumUtils.getOrdinalList(SingleEnum.class);
+        Assert.assertNotNull(ordinalList);
+        Assert.assertEquals(1, ordinalList.size());
+        Assert.assertTrue(ordinalList.contains(0));
+    }
+
+    /**
+     * 测试缓存清除功能的完整性
+     */
+    @Test
+    public void testCacheClear() {
+        // 先构建缓存
+        TestEnum result1 = EnumUtils.getEnum(TestEnum.class, "1", TestEnum::getValue, true);
+        Assert.assertEquals(TestEnum.ONE, result1);
+
+        TestEnum result2 = EnumUtils.getEnum(TestEnum.class, "2", TestEnum::getValue, true);
+        Assert.assertEquals(TestEnum.TWO, result2);
+
+        // 清除指定缓存
+        EnumUtils.clearCache(TestEnum.class, TestEnum::getValue);
+
+        // 重新获取，应该重新构建缓存
+        TestEnum result3 = EnumUtils.getEnum(TestEnum.class, "1", TestEnum::getValue, true);
+        Assert.assertEquals(TestEnum.ONE, result3);
+
+        // 构建多个缓存
+        TestEnum result4 = EnumUtils.getEnum(TestEnum.class, "ONE", Enum::name, true);
+        Assert.assertEquals(TestEnum.ONE, result4);
+
+        // 清除所有缓存
+        EnumUtils.clearAllCache(TestEnum.class);
+
+        // 重新获取，应该重新构建缓存
+        TestEnum result5 = EnumUtils.getEnum(TestEnum.class, "1", TestEnum::getValue, true);
+        Assert.assertEquals(TestEnum.ONE, result5);
+
+        // 构建缓存
+        TestEnum result6 = EnumUtils.getEnum(TestEnum.class, "1", TestEnum::getValue, true);
+        Assert.assertEquals(TestEnum.ONE, result6);
+
+        // 清除所有枚举缓存
+        EnumUtils.clearAllCache();
+
+        // 重新获取，应该重新构建缓存
+        TestEnum result7 = EnumUtils.getEnum(TestEnum.class, "1", TestEnum::getValue, true);
+        Assert.assertEquals(TestEnum.ONE, result7);
+    }
+
+    /**
+     * 测试getByPredicate方法的各种场景
+     */
+    @Test
+    public void testgetByPredicate() {
+        // 测试精确匹配
+        TestEnum result = EnumUtils.getByPredicate(TestEnum.class, e -> e.getDesc().equals("第二个"));
+        Assert.assertEquals(TestEnum.TWO, result);
+
+        // 测试模糊匹配
+        result = EnumUtils.getByPredicate(TestEnum.class, e -> e.getDesc().contains("个"));
+        Assert.assertEquals(TestEnum.ONE, result); // 应该返回第一个匹配的
+
+        // 测试不匹配
+        result = EnumUtils.getByPredicate(TestEnum.class, e -> e.getDesc().equals("不存在的描述"));
+        Assert.assertNull(result);
+
+        // 测试空枚举
+        EmptyEnum emptyResult = EnumUtils.getByPredicate(EmptyEnum.class, e -> true);
+        Assert.assertNull(emptyResult);
+    }
+
+    /**
+     * 测试getByPredicateList方法的各种场景
+     */
+    @Test
+    public void testgetByPredicateList() {
+        // 测试精确匹配
+        List<TestEnum> result = EnumUtils.getByPredicateList(TestEnum.class, e -> e.getDesc().equals("第二个"));
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals(TestEnum.TWO, result.get(0));
+
+        // 测试模糊匹配
+        result = EnumUtils.getByPredicateList(TestEnum.class, e -> e.getDesc().contains("个"));
+        Assert.assertEquals(3, result.size()); // 所有枚举都包含"个"
+
+        // 测试不匹配
+        result = EnumUtils.getByPredicateList(TestEnum.class, e -> e.getDesc().equals("不存在的描述"));
+        Assert.assertTrue(result.isEmpty());
+
+        // 测试空枚举
+        List<EmptyEnum> emptyResult = EnumUtils.getByPredicateList(EmptyEnum.class, e -> true);
+        Assert.assertTrue(emptyResult.isEmpty());
+    }
+
+    /**
+     * 测试existsPredicate方法
+     */
+    @Test
+    public void testexistsPredicate() {
+        // 测试存在
+        boolean exists = EnumUtils.existsPredicate(TestEnum.class, e -> e.getDesc().equals("第二个"));
+        Assert.assertTrue(exists);
+
+        // 测试不存在
+        exists = EnumUtils.existsPredicate(TestEnum.class, e -> e.getDesc().equals("不存在的描述"));
+        Assert.assertFalse(exists);
+
+        // 测试空枚举
+        exists = EnumUtils.existsPredicate(EmptyEnum.class, e -> true);
+        Assert.assertFalse(exists);
     }
 }

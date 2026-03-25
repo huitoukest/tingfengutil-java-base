@@ -15,7 +15,7 @@ public class RegExpUtils {
      * 这里只缓存最常用的Pattern compile 的flag是0的情况，即只缓存默认的情况.
      * 经过实际测试，当编译的正则表达式长度大于10位时，或者复杂度变高时，采用此缓存的性能会更具优势。
      */
-    private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(150);
+    private static final  SimpleCacheHelper<String,Pattern> patternCache = new SimpleCacheHelper<>(300);
     /**
      * 默认的Pattern compile 的flag
      */

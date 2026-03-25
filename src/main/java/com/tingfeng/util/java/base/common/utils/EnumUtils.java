@@ -307,7 +307,7 @@ public class EnumUtils {
      * @return 包含所有枚举值的列表
      */
     public static <V, E extends Enum<?> & IEnum<V>> List<V> getValueListByValue(Class<E> enumClass) {
-        return getValueList(enumClass, IEnum::getValue);
+        return getValueList(enumClass, e -> e.getValue());
     }
 
     /**
