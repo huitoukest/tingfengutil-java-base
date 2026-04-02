@@ -17,7 +17,7 @@ public class MessageDigestUtilsTest {
      * 测试MD5加密
      */
     @Test
-    public void testMD5() {
+    public void testMd5() {
         String content = "i m a sample";
         byte[] result = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("MD5结果不能为空", result);
@@ -28,7 +28,7 @@ public class MessageDigestUtilsTest {
      * 测试MD5加密 - 空字符串
      */
     @Test
-    public void testMD5Empty() {
+    public void testMd5Empty() {
         String content = "";
         byte[] result = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("MD5结果不能为空", result);
@@ -39,7 +39,7 @@ public class MessageDigestUtilsTest {
      * 测试MD5加密 - 中文内容
      */
     @Test
-    public void testMD5Chinese() {
+    public void testMd5Chinese() {
         String content = "中文测试内容";
         byte[] result = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("MD5结果不能为空", result);
@@ -50,9 +50,9 @@ public class MessageDigestUtilsTest {
      * 测试SHA-256加密
      */
     @Test
-    public void testSHA256() {
+    public void testSha256() {
         String content = "test content";
-        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA256, content.getBytes(StandardCharsets.UTF_8));
+        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("SHA-256结果不能为空", result);
         Assert.assertEquals("SHA-256结果长度应该为32字节", 32, result.length);
     }
@@ -61,9 +61,9 @@ public class MessageDigestUtilsTest {
      * 测试SHA-512加密
      */
     @Test
-    public void testSHA512() {
+    public void testSha512() {
         String content = "test content";
-        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA512, content.getBytes(StandardCharsets.UTF_8));
+        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA512, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("SHA-512结果不能为空", result);
         Assert.assertEquals("SHA-512结果长度应该为64字节", 64, result.length);
     }
@@ -72,9 +72,9 @@ public class MessageDigestUtilsTest {
      * 测试SHA-1加密
      */
     @Test
-    public void testSHA1() {
+    public void testSha1() {
         String content = "test content";
-        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA1, content.getBytes(StandardCharsets.UTF_8));
+        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA1, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("SHA-1结果不能为空", result);
         Assert.assertEquals("SHA-1结果长度应该为20字节", 20, result.length);
     }
@@ -86,7 +86,7 @@ public class MessageDigestUtilsTest {
     public void testHashWithSalt() {
         String content = "test content";
         String salt = "salt";
-        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA256, content.getBytes(StandardCharsets.UTF_8), salt);
+        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, content.getBytes(StandardCharsets.UTF_8), salt);
         Assert.assertNotNull("带salt的hash结果不能为空", result);
         Assert.assertEquals("SHA-256结果长度应该为32字节", 32, result.length);
     }
@@ -99,7 +99,7 @@ public class MessageDigestUtilsTest {
         String content = "test content";
         byte[] salt = "salt".getBytes(StandardCharsets.UTF_8);
         int iterations = 1000;
-        
+
         byte[] result = MessageDigestUtils.hash("SHA-256", content.getBytes(StandardCharsets.UTF_8), salt, iterations);
         Assert.assertNotNull("多次迭代hash结果不能为空", result);
         Assert.assertEquals("SHA-256结果长度应该为32字节", 32, result.length);
@@ -111,7 +111,7 @@ public class MessageDigestUtilsTest {
     @Test
     public void testMacSha256() {
         String content = "test content";
-        byte[] result = MessageDigestUtils.macSha(MessageDigestUtils.SHAType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8));
+        byte[] result = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("MAC SHA-256结果不能为空", result);
         Assert.assertEquals("MAC SHA-256结果长度应该为32字节", 32, result.length);
     }
@@ -122,7 +122,7 @@ public class MessageDigestUtilsTest {
     @Test
     public void testMacSha512() {
         String content = "test content";
-        byte[] result = MessageDigestUtils.macSha(MessageDigestUtils.SHAType.SHAMAC512, content.getBytes(StandardCharsets.UTF_8));
+        byte[] result = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC512, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertNotNull("MAC SHA-512结果不能为空", result);
         Assert.assertEquals("MAC SHA-512结果长度应该为64字节", 64, result.length);
     }
@@ -134,7 +134,7 @@ public class MessageDigestUtilsTest {
     public void testMacShaWithKey() {
         String content = "test content";
         byte[] secretKey = "secret".getBytes(StandardCharsets.UTF_8);
-        byte[] result = MessageDigestUtils.macSha(MessageDigestUtils.SHAType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8), secretKey);
+        byte[] result = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8), secretKey);
         Assert.assertNotNull("带密钥的MAC结果不能为空", result);
         Assert.assertEquals("MAC SHA-256结果长度应该为32字节", 32, result.length);
     }
@@ -160,7 +160,7 @@ public class MessageDigestUtilsTest {
         byte[] content = "test content".getBytes(StandardCharsets.UTF_8);
         byte[] salt = "salt".getBytes(StandardCharsets.UTF_8);
         int iterations = 1;
-        
+
         String result = MessageDigestUtils.toHashHexString(algorithm, content, salt, iterations);
         Assert.assertNotNull("结果不能为空", result);
         Assert.assertEquals("MD5 hash十六进制字符串长度应该为32", 32, result.length());
@@ -175,7 +175,7 @@ public class MessageDigestUtilsTest {
         String algorithm = "MD5";
         String content = "test content";
         String salt = "salt";
-        
+
         String result = MessageDigestUtils.toHashHexString(algorithm, content, salt);
         Assert.assertNotNull("结果不能为空", result);
         Assert.assertEquals("MD5 hash十六进制字符串长度应该为32", 32, result.length());
@@ -189,7 +189,7 @@ public class MessageDigestUtilsTest {
     public void testDigestInputStream() {
         String content = "test content for input stream";
         InputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
-        
+
         byte[] result = MessageDigestUtils.digest("MD5", inputStream);
         Assert.assertNotNull("digest结果不能为空", result);
         Assert.assertEquals("MD5 digest结果长度应该为16字节", 16, result.length);
@@ -199,10 +199,10 @@ public class MessageDigestUtilsTest {
      * 测试md5方法 - 输入流
      */
     @Test
-    public void testMD5InputStream() {
+    public void testMd5InputStream() {
         String content = "test content for input stream";
         InputStream inputStream = new ByteArrayInputStream(content.getBytes(StandardCharsets.UTF_8));
-        
+
         byte[] result = MessageDigestUtils.md5(inputStream);
         Assert.assertNotNull("MD5结果不能为空", result);
         Assert.assertEquals("MD5结果长度应该为16字节", 16, result.length);
@@ -215,12 +215,12 @@ public class MessageDigestUtilsTest {
     public void testDigestWithFiller() {
         String algorithm = "MD5";
         byte[] content = "test content".getBytes(StandardCharsets.UTF_8);
-        
+
         byte[] result = MessageDigestUtils.digest(algorithm, digest -> {
             digest.update(content);
             return null;
         });
-        
+
         Assert.assertNotNull("digest结果不能为空", result);
         Assert.assertEquals("MD5 digest结果长度应该为16字节", 16, result.length);
     }
@@ -233,7 +233,7 @@ public class MessageDigestUtilsTest {
         String content = "test content";
         byte[] result1 = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
         byte[] result2 = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
-        
+
         Assert.assertArrayEquals("相同内容应该产生相同的hash", result1, result2);
     }
 
@@ -246,7 +246,7 @@ public class MessageDigestUtilsTest {
         String content2 = "test content 2";
         byte[] result1 = MessageDigestUtils.md5(content1.getBytes(StandardCharsets.UTF_8));
         byte[] result2 = MessageDigestUtils.md5(content2.getBytes(StandardCharsets.UTF_8));
-        
+
         Assert.assertFalse("不同内容应该产生不同的hash", java.util.Arrays.equals(result1, result2));
     }
 
@@ -293,16 +293,16 @@ public class MessageDigestUtilsTest {
      * 测试性能 - MD5
      */
     @Test
-    public void testMD5Performance() {
+    public void testMd5Performance() {
         String content = "test content for performance";
         byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        
+
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
             MessageDigestUtils.md5(bytes);
         }
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         Assert.assertTrue("10000次MD5加密应该在合理时间内完成", duration < 1000);
     }
@@ -311,16 +311,16 @@ public class MessageDigestUtilsTest {
      * 测试性能 - SHA-256
      */
     @Test
-    public void testSHA256Performance() {
+    public void testSha256Performance() {
         String content = "test content for performance";
         byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-        
+
         long startTime = System.currentTimeMillis();
         for (int i = 0; i < 10000; i++) {
-            MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA256, bytes);
+            MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, bytes);
         }
         long endTime = System.currentTimeMillis();
-        
+
         long duration = endTime - startTime;
         Assert.assertTrue("10000次SHA-256加密应该在合理时间内完成", duration < 2000);
     }
@@ -333,7 +333,7 @@ public class MessageDigestUtilsTest {
         byte[] bytes1 = {(byte) 0x00};
         String result1 = MessageDigestUtils.toHexString(bytes1);
         Assert.assertEquals("0x00应该转换为00", "00", result1);
-        
+
         byte[] bytes2 = {(byte) 0xFF};
         String result2 = MessageDigestUtils.toHexString(bytes2);
         Assert.assertEquals("0xFF应该转换为ff", "ff", result2);
@@ -346,11 +346,11 @@ public class MessageDigestUtilsTest {
     public void testHashConsistency() {
         String content = "test content";
         String salt = "salt";
-        
+
         String result1 = MessageDigestUtils.toHashHexString("SHA-256", content, salt);
         String result2 = MessageDigestUtils.toHashHexString("SHA-256", content, salt);
         String result3 = MessageDigestUtils.toHashHexString("SHA-256", content, salt);
-        
+
         Assert.assertEquals("多次调用应该产生相同的结果", result1, result2);
         Assert.assertEquals("多次调用应该产生相同的结果", result2, result3);
     }
@@ -361,17 +361,58 @@ public class MessageDigestUtilsTest {
     @Test
     public void testDifferentAlgorithmLengths() {
         String content = "test content";
-        
+
         byte[] md5Result = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
         Assert.assertEquals("MD5长度应该是16字节", 16, md5Result.length);
-        
-        byte[] sha1Result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA1, content.getBytes(StandardCharsets.UTF_8));
+
+        byte[] sha1Result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA1, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertEquals("SHA-1长度应该是20字节", 20, sha1Result.length);
-        
-        byte[] sha256Result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA256, content.getBytes(StandardCharsets.UTF_8));
+
+        byte[] sha256Result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertEquals("SHA-256长度应该是32字节", 32, sha256Result.length);
-        
-        byte[] sha512Result = MessageDigestUtils.sha(MessageDigestUtils.SHAType.SHA512, content.getBytes(StandardCharsets.UTF_8));
+
+        byte[] sha512Result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA512, content.getBytes(StandardCharsets.UTF_8));
         Assert.assertEquals("SHA-512长度应该是64字节", 64, sha512Result.length);
+    }
+
+    /**
+     * 测试macSha方法 - 自动生成密钥
+     */
+    @Test
+    public void testMacShaAutoKey() {
+        String content = "test content";
+        byte[] result1 = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8));
+        byte[] result2 = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8));
+        Assert.assertNotNull("MAC结果不能为空", result1);
+        Assert.assertEquals("MAC SHA-256结果长度应该为32字节", 32, result1.length);
+        // 自动生成密钥每次结果不同
+        Assert.assertFalse("自动生成密钥的MAC结果应该不同", java.util.Arrays.equals(result1, result2));
+    }
+
+    /**
+     * 测试macSha方法 - 指定密钥
+     */
+    @Test
+    public void testMacShaFixedKey() {
+        String content = "test content";
+        byte[] secretKey = "fixed-secret-key".getBytes(StandardCharsets.UTF_8);
+        byte[] result1 = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8), secretKey);
+        byte[] result2 = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256, content.getBytes(StandardCharsets.UTF_8), secretKey);
+        Assert.assertNotNull("MAC结果不能为空", result1);
+        Assert.assertEquals("MAC SHA-256结果长度应该为32字节", 32, result1.length);
+        // 指定相同密钥结果应该相同
+        Assert.assertArrayEquals("相同密钥的MAC结果应该相同", result1, result2);
+    }
+
+    /**
+     * 测试sha方法 - 字符串盐值
+     */
+    @Test
+    public void testShaStringSalt() {
+        String content = "test content";
+        String salt = "salt-value";
+        byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, content, salt);
+        Assert.assertNotNull("带盐值的SHA结果不能为空", result);
+        Assert.assertEquals("SHA-256结果长度应该为32字节", 32, result.length);
     }
 }

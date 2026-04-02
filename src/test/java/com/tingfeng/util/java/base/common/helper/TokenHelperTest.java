@@ -165,13 +165,13 @@ public class TokenHelperTest {
         String securityKey = "testKey";
         
         // 测试SHA-256
-        TokenHelper sha256Helper = new TokenHelper(MessageDigestUtils.SHAType.SHA256);
+        TokenHelper sha256Helper = new TokenHelper(MessageDigestUtils.DigestType.SHA256);
         String token256 = sha256Helper.getToken(list, securityKey);
         List<String> result256 = sha256Helper.parseToken(token256, (contents) -> securityKey, (contents) -> contents);
         Assert.assertEquals(list, result256);
         
         // 测试SHA-512
-        TokenHelper sha512Helper = new TokenHelper(MessageDigestUtils.SHAType.SHA512);
+        TokenHelper sha512Helper = new TokenHelper(MessageDigestUtils.DigestType.SHA512);
         String token512 = sha512Helper.getToken(list, securityKey);
         List<String> result512 = sha512Helper.parseToken(token512, (contents) -> securityKey, (contents) -> contents);
         Assert.assertEquals(list, result512);

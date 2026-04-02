@@ -47,10 +47,10 @@ public class TokenHelper {
     private  RuntimeException signErrorException = null;
 
     public TokenHelper(){
-        this(MessageDigestUtils.SHAType.SHA256);
+        this(MessageDigestUtils.DigestType.SHA256);
     }
 
-    public TokenHelper(MessageDigestUtils.SHAType shaType){
+    public TokenHelper(MessageDigestUtils.DigestType shaType){
            this(shaType.getValue());
     }
     /**
@@ -64,7 +64,7 @@ public class TokenHelper {
         if(encryptAction != null){
             this.encryptAction = encryptAction;
         }else{
-            this.encryptAction = (str) -> MessageDigestUtils.SHA(MessageDigestUtils.SHAType.SHA256, str.getBytes(Charset.forName("utf-8")));
+            this.encryptAction = (str) -> MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, str.getBytes(Charset.forName("utf-8")));
         }
     }
 

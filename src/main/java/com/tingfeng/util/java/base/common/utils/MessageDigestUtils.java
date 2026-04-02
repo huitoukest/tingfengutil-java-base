@@ -2,7 +2,6 @@ package com.tingfeng.util.java.base.common.utils;
 
 
 import com.tingfeng.util.java.base.common.helper.FixedPoolHelper;
-import com.tingfeng.util.java.base.common.helper.SimplePoolHelper;
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 
 import javax.crypto.KeyGenerator;
@@ -11,82 +10,135 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * 消息摘要与MAC加密工具类
+ * 支持MD5、SHA系列算法的字节数组和字符串摘要计算
+ * 支持HMAC系列算法的消息认证码计算
+ */
 public class MessageDigestUtils {
+    /** 流式处理默认缓冲区大小（4KB） */
     private static final int DEFAULT_BUFFER_SIZE = 4096;
+    /** MessageDigest池最大容量 */
     private static final int DEFAULT_MAX_MESSAGE_DIGEST_SIZE = 16;
-    private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    /** Mac池最大容量 */
+    private static final int DEFAULT_MAX_MAC_SIZE = 16;
+    /** KeyGenerator池最大容量 */
+    private static final int DEFAULT_MAX_KEY_GENERATOR_SIZE = 8;
+    /** 十六进制字符映射表 */
+    private static final char[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    /** MessageDigest实例池缓存 */
+    private static final Map<String, FixedPoolHelper<MessageDigest>> MESSAGE_DIGEST_POOL = new HashMap<>();
+    /** Mac实例池缓存 */
+    private static final Map<String, FixedPoolHelper<Mac>> MAC_POOL = new HashMap<>();
+    /** KeyGenerator实例池缓存 */
+    private static final Map<String, FixedPoolHelper<KeyGenerator>> KEY_GENERATOR_POOL = new HashMap<>();
+
     /**
-     * 用来缓存MessageDigest的资源
+     * 摘要算法类型枚举
      */
-    private static Map<String, FixedPoolHelper<MessageDigest>> messageDigestMap = new HashMap<>();
-    @Deprecated
-    public enum  SHAType{
-        SHA512("SHA-512"),SHAMAC512("HmacSHA512"),SHA256("SHA-256"),SHAMAC256("HmacSHA256"),
-        SHA1("SHA-1"),MD5("MD5");
-        String value;
-        SHAType(String value){
+    public enum DigestType {
+        SHA512("SHA-512"),
+        SHAMAC512("HmacSHA512"),
+        SHA256("SHA-256"),
+        SHAMAC256("HmacSHA256"),
+        SHA1("SHA-1"),
+        MD5("MD5");
+
+        private final String value;
+
+        DigestType(String value) {
             this.value = value;
         }
-        public String getValue(){
-            return this.value;
-        }
-    }
-    public enum  DigestType{
-        SHA512("SHA-512"),SHAMAC512("HmacSHA512"),SHA256("SHA-256"),SHAMAC256("HmacSHA256"),
-        SHA1("SHA-1"),MD5("MD5");
-        String value;
-        DigestType(String value){
-            this.value = value;
-        }
-        public String getValue(){
+
+        public String getValue() {
             return this.value;
         }
     }
 
     public static void main(String[] args) {
-        System.out.println("MD5: " + toHexString(MD5("i m a sample".getBytes())));
-        System.out.println("SHA-512: " + toHexString(SHA(SHAType.SHA256,"i m a sample".getBytes())));
-        System.out.println("HmacSHA512：" + toHexString(MACSHA(SHAType.SHAMAC256,"i m a sample".getBytes())));
-        System.out.println("HmacSHA512：" + toHexString(MACSHA(SHAType.SHAMAC256,"i m a sample".getBytes(),"123456".getBytes())));
-    }
-    
-    /**
-     * 返回的MessageDigest是单实例复用的，是线程不安全的,需要手动同步
-     * @param type
-     * @return
-     */
-    private static FixedPoolHelper<MessageDigest> getMessageDigest(String type){
-        FixedPoolHelper<MessageDigest> simplePoolHelper = messageDigestMap.get(type);
-        if(simplePoolHelper == null) {
-            synchronized (type.intern()) {
-                simplePoolHelper = messageDigestMap.get(type);
-                if (null == simplePoolHelper) {
-                    simplePoolHelper = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE, () -> MessageDigest.getInstance(type));
-                    messageDigestMap.put(type, simplePoolHelper);
-                }
-            }
-        }
-        return simplePoolHelper;
+        System.out.println("MD5: " + toHexString(md5("i m a sample".getBytes())));
+        System.out.println("SHA-256: " + toHexString(sha(DigestType.SHA256, "i m a sample".getBytes())));
+        System.out.println("HmacSHA256：" + toHexString(macSha(DigestType.SHAMAC256, "i m a sample".getBytes())));
+        System.out.println("HmacSHA256：" + toHexString(macSha(DigestType.SHAMAC256, "i m a sample".getBytes(), "123456".getBytes(StandardCharsets.UTF_8))));
     }
 
     /**
-     *
-     * @param algorithmName 加密的格式
-     * @param bytes 加密的内容
-     * @param salt salt
-     * @param hashIterations hash的次数
-     * @return
+     * 获取MessageDigest实例池（线程不安全，需外部同步）
+     * @param algorithm 算法名称，如"SHA-256"、"MD5"等
+     * @return MessageDigest实例池
      */
-    public static byte[] hash(String algorithmName,byte[] bytes, byte[] salt, int hashIterations){
-        FixedPoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
-        return simplePoolHelper.run(digest->{
+    private static FixedPoolHelper<MessageDigest> getMessageDigestPool(String algorithm) {
+        FixedPoolHelper<MessageDigest> pool = MESSAGE_DIGEST_POOL.get(algorithm);
+        if (pool == null) {
+            synchronized (algorithm.intern()) {
+                pool = MESSAGE_DIGEST_POOL.get(algorithm);
+                if (null == pool) {
+                    pool = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE,
+                            () -> MessageDigest.getInstance(algorithm));
+                    MESSAGE_DIGEST_POOL.put(algorithm, pool);
+                }
+            }
+        }
+        return pool;
+    }
+
+    /**
+     * 获取Mac实例池（线程不安全，需外部同步）
+     * @param algorithm 算法名称，如"HmacSHA256"等
+     * @return Mac实例池
+     */
+    private static FixedPoolHelper<Mac> getMacPool(String algorithm) {
+        FixedPoolHelper<Mac> pool = MAC_POOL.get(algorithm);
+        if (pool == null) {
+            synchronized (algorithm.intern()) {
+                pool = MAC_POOL.get(algorithm);
+                if (null == pool) {
+                    pool = new FixedPoolHelper<>(DEFAULT_MAX_MAC_SIZE,
+                            () -> Mac.getInstance(algorithm));
+                    MAC_POOL.put(algorithm, pool);
+                }
+            }
+        }
+        return pool;
+    }
+
+    /**
+     * 获取KeyGenerator实例池（线程不安全，需外部同步）
+     * @param algorithm 算法名称，如"HmacSHA256"等
+     * @return KeyGenerator实例池
+     */
+    private static FixedPoolHelper<KeyGenerator> getKeyGeneratorPool(String algorithm) {
+        FixedPoolHelper<KeyGenerator> pool = KEY_GENERATOR_POOL.get(algorithm);
+        if (pool == null) {
+            synchronized (algorithm.intern()) {
+                pool = KEY_GENERATOR_POOL.get(algorithm);
+                if (null == pool) {
+                    pool = new FixedPoolHelper<>(DEFAULT_MAX_KEY_GENERATOR_SIZE,
+                            () -> KeyGenerator.getInstance(algorithm));
+                    KEY_GENERATOR_POOL.put(algorithm, pool);
+                }
+            }
+        }
+        return pool;
+    }
+
+    /**
+     * 多轮迭代哈希计算
+     * @param algorithmName 算法名称
+     * @param bytes 待哈希的字节数组
+     * @param salt 盐值（可选）
+     * @param hashIterations 迭代次数
+     * @return 哈希后的字节数组
+     */
+    public static byte[] hash(String algorithmName, byte[] bytes, byte[] salt, int hashIterations) {
+        FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
+        return pool.run(digest -> {
             digest.reset();
             if (salt != null) {
                 digest.update(salt);
@@ -103,58 +155,60 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 默认hash 1次数
-     * @param algorithmName 加密的格式
-     * @param content 加密的内容
-     * @param salt salt
-     * @return
+     * 默认单轮迭代哈希计算
+     * @param algorithmName 算法名称
+     * @param content 待哈希的字符串内容
+     * @param salt 盐值字符串（可选）
+     * @return 哈希后的字节数组
      */
-    public static byte[] hash(String algorithmName,String content, String salt){
-        byte[] saltByte = null;
-        if(null != salt){
-            saltByte = salt.getBytes(Charset.forName("utf-8"));
+    public static byte[] hash(String algorithmName, String content, String salt) {
+        byte[] saltBytes = null;
+        if (null != salt) {
+            saltBytes = salt.getBytes(StandardCharsets.UTF_8);
         }
-        return hash(algorithmName,content.getBytes(Charset.forName("utf-8")),saltByte,1);
+        return hash(algorithmName, content.getBytes(StandardCharsets.UTF_8), saltBytes, 1);
     }
 
     /**
-     *
-     * @param algorithmName 加密的格式
-     * @param bytes 加密的内容
-     * @param salt salt
-     * @param hashIterations hash的次数
-     * @return
+     * 多轮迭代哈希计算并转换为十六进制字符串
+     * @param algorithmName 算法名称
+     * @param bytes 待哈希的字节数组
+     * @param salt 盐值（可选）
+     * @param hashIterations 迭代次数
+     * @return 十六进制字符串
      */
-    public static String toHashHexString(String algorithmName,byte[] bytes, byte[] salt, int hashIterations){
-           byte[] hashBytes = hash(algorithmName,bytes,salt,hashIterations);
-           return toHexString(hashBytes);
+    public static String toHashHexString(String algorithmName, byte[] bytes, byte[] salt, int hashIterations) {
+        byte[] hashBytes = hash(algorithmName, bytes, salt, hashIterations);
+        return toHexString(hashBytes);
     }
 
     /**
-     *
-     * @param algorithmName 加密的格式
-     * @param bytes 加密的内容
-     * @param salt salt
-     * @return
+     * 单轮迭代哈希计算并转换为十六进制字符串
+     * @param algorithmName 算法名称
+     * @param bytes 待哈希的字节数组
+     * @param salt 盐值（可选）
+     * @return 十六进制字符串
      */
-    public static String toHashHexString(String algorithmName,byte[] bytes, byte[] salt){
-        return toHashHexString(algorithmName,bytes,salt,1);
+    public static String toHashHexString(String algorithmName, byte[] bytes, byte[] salt) {
+        return toHashHexString(algorithmName, bytes, salt, 1);
     }
 
     /**
-     *
-     * @param algorithmName 加密的格式
-     * @param content 加密的内容
-     * @param salt salt
-     * @return
+     * 单轮迭代哈希计算并转换为十六进制字符串
+     * @param algorithmName 算法名称
+     * @param content 待哈希的字符串内容
+     * @param salt 盐值字符串（可选）
+     * @return 十六进制字符串
      */
-    public static String toHashHexString(String algorithmName,String content, String salt){
-        return toHashHexString(algorithmName,content.getBytes(Charset.forName("utf-8")),salt.getBytes(Charset.forName("utf-8")));
+    public static String toHashHexString(String algorithmName, String content, String salt) {
+        byte[] saltBytes = salt != null ? salt.getBytes(StandardCharsets.UTF_8) : null;
+        return toHashHexString(algorithmName, content.getBytes(StandardCharsets.UTF_8), saltBytes);
     }
 
     /**
-     * 转义为16进制字符串
-     * @return
+     * 字节数组转换为十六进制字符串
+     * @param bytes 字节数组
+     * @return 十六进制字符串
      */
     public static String toHexString(byte[] bytes) {
         char[] encodedChars = toHex(bytes);
@@ -162,245 +216,142 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 摘录自shiro中的转16精制的算法
-     * @param data
-     * @return
+     * 字节数组转换为十六进制字符数组（摘录自Apache Shiro）
+     * @param data 字节数组
+     * @return 十六进制字符数组
      */
     public static char[] toHex(byte[] data) {
-        int l = data.length;
-        char[] out = new char[l << 1];
-        int i = 0;
+        int len = data.length;
+        char[] out = new char[len << 1];
+        int j = 0;
 
-        for(int var4 = 0; i < l; ++i) {
-            out[var4++] = DIGITS[(240 & data[i]) >>> 4];
-            out[var4++] = DIGITS[15 & data[i]];
+        for (int i = 0; i < len; i++) {
+            out[j++] = DIGITS[(data[i] >> 4) & 0x0F];
+            out[j++] = DIGITS[data[i] & 0x0F];
         }
 
         return out;
     }
+
     /**
-     * 1.消息摘要算法，MD家族，有MD2 MD4 MD5，其中MD4 JDK不支持
-     *
-     * @param plainText
-     * @return
-     */
-    @Deprecated
-    public static byte[] MD5(byte[] plainText) {
-        return digest(SHAType.MD5.getValue(),plainText);
-    }
-    /**
-     * 1.消息摘要算法，MD家族，有MD2 MD4 MD5，其中MD4 JDK不支持
-     *
-     * @param plainText
-     * @return
+     * MD5消息摘要计算（小文件）
+     * @param plainText 待计算的字节数组
+     * @return 摘要结果字节数组
      */
     public static byte[] md5(byte[] plainText) {
-        return digest(SHAType.MD5.getValue(),plainText);
-    }
-    /**
-     * 2.SHA Security Hash Algorithm 安全散列算法，固定长度摘要信息 SHA-1 SHA-2( SHA-224
-     * SHA-256 SHA-384 SHA-512) 使用的依然是MessageDigest类，JDK不支持224
-     *
-     * @param plainText
-     * @return
-     */
-    @Deprecated
-    public static byte[] SHA(SHAType shaType,byte[] plainText) {
-        return digest(shaType.getValue(),plainText);
+        return digest(DigestType.MD5.getValue(), plainText);
     }
 
     /**
-     * 2.SHA Security Hash Algorithm 安全散列算法，固定长度摘要信息 SHA-1 SHA-2( SHA-224
-     * SHA-256 SHA-384 SHA-512) 使用的依然是MessageDigest类，JDK不支持224
-     *
-     * @param plainText
-     * @return
+     * SHA系列消息摘要计算（小文件）
+     * @param digestType 摘要算法类型
+     * @param plainText 待计算的字节数组
+     * @return 摘要结果字节数组
      */
-    public static byte[] sha(SHAType shaType,byte[] plainText) {
-        return digest(shaType.getValue(),plainText);
+    public static byte[] sha(DigestType digestType, byte[] plainText) {
+        return digest(digestType.getValue(), plainText);
     }
 
     /**
-     * apply to small file
-     * @param algorithmName
-     * @param plainText
-     * @return
+     * 私有的摘要计算方法（小文件）
+     * @param algorithmName 算法名称
+     * @param plainText 待计算的字节数组
+     * @return 摘要结果字节数组
      */
-    private static byte[] digest(String algorithmName,byte[] plainText){
-        FixedPoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
-        return simplePoolHelper.run(digest->{
+    private static byte[] digest(String algorithmName, byte[] plainText) {
+        FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
+        return pool.run(digest -> {
             digest.reset();
             return digest.digest(plainText);
         });
     }
 
     /**
-     * apply to small file
-     * @param shaType
-     * @param plainText
-     * @param salt
-     * @return
+     * 带盐值的SHA摘要计算（小文件）
+     * @param digestType 摘要算法类型
+     * @param plainText 待计算的字节数组
+     * @param salt 盐值字符串
+     * @return 摘要结果字节数组
      */
-    @Deprecated
-    public static byte[] SHA(SHAType shaType,byte[] plainText,String salt) {
-        return hash(shaType.getValue(),plainText,salt.getBytes(),1);
+    public static byte[] sha(DigestType digestType, byte[] plainText, String salt) {
+        return hash(digestType.getValue(), plainText, salt.getBytes(StandardCharsets.UTF_8), 1);
     }
 
     /**
-     * apply to small file
-     * @param shaType
-     * @param plainText
-     * @param salt
-     * @return
+     * 带盐值的SHA摘要计算（小文件）
+     * @param digestType 摘要算法类型
+     * @param plainText 明文字符串
+     * @param salt 盐值字符串
+     * @return 摘要结果字节数组
      */
-    public static byte[] sha(SHAType shaType,byte[] plainText,String salt) {
-        return hash(shaType.getValue(),plainText,salt.getBytes(),1);
+    public static byte[] sha(DigestType digestType, String plainText, String salt) {
+        return hash(digestType.getValue(), plainText.getBytes(StandardCharsets.UTF_8),
+                     salt.getBytes(StandardCharsets.UTF_8), 1);
     }
 
     /**
-     * apply to small file
-     * @param shaType
-     * @param plainText
-     * @param salt
-     * @return
+     * MAC消息认证码计算（自动生成密钥）
+     * MAC算法是含有密钥的散列函数算法，兼容MD和SHA的特性
+     * @param digestType MAC算法类型
+     * @param plainText 待计算的字节数组
+     * @return 认证码结果字节数组
      */
-    public static byte[] sha(SHAType shaType,String plainText,String salt) {
-        return hash(shaType.getValue(),plainText.getBytes(),salt.getBytes(),1);
+    public static byte[] macSha(DigestType digestType, byte[] plainText) {
+        byte[] secretBytes = generatorMacSecretKey(digestType.getValue());
+        return macSha(digestType.getValue(), plainText, secretBytes);
     }
 
     /**
-     * 3.MAC(Message Authentication Code) 消息认证码算法，是含有密钥散列函数算法。
-     * 兼容了MD和SHA的特性。
-     * 加密过程三步走，与后面要介绍的对称加密和非对称加密是相似的
-     * 1) 传入算法，实例化一个加密器
-     * 2) 传入密钥，初始化加密器
-     * 3) 调用doFinal方法进行加密
-     * @param plainText
-     * @return
+     * MAC消息认证码计算（使用指定密钥）
+     * @param digestType MAC算法类型
+     * @param plainText 待计算的字节数组
+     * @param secretBytes 密钥字节数组
+     * @return 认证码结果字节数组
      */
-    @Deprecated
-    public static byte[] MACSHA(SHAType shaType,byte[] plainText) {
-
-        try {
-            byte[] secretBytes = generatorMACSecretKey(shaType);
-            SecretKey key = restoreMACSecretKey(shaType,secretBytes);
-            Mac mac = Mac.getInstance(shaType.getValue());
-            mac.init(key);
-            return mac.doFinal(plainText);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
+    public static byte[] macSha(DigestType digestType, byte[] plainText, byte[] secretBytes) {
+        return macSha(digestType.getValue(), plainText, secretBytes);
     }
 
     /**
-     * 3.MAC(Message Authentication Code) 消息认证码算法，是含有密钥散列函数算法。
-     * 兼容了MD和SHA的特性。
-     * 加密过程三步走，与后面要介绍的对称加密和非对称加密是相似的
-     * 1) 传入算法，实例化一个加密器
-     * 2) 传入密钥，初始化加密器
-     * 3) 调用doFinal方法进行加密
-     * @param plainText
-     * @return
+     * MAC消息认证码计算（内部方法，使用算法名称）
+     * @param algorithm 算法名称
+     * @param plainText 待计算的字节数组
+     * @param secretBytes 密钥字节数组
+     * @return 认证码结果字节数组
      */
-    public static byte[] macSha(SHAType shaType,byte[] plainText) {
-
-        try {
-            byte[] secretBytes = generatorMACSecretKey(shaType);
-            SecretKey key = restoreMACSecretKey(shaType,secretBytes);
-            Mac mac = Mac.getInstance(shaType.getValue());
-            mac.init(key);
-            return mac.doFinal(plainText);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
+    private static byte[] macSha(String algorithm, byte[] plainText, byte[] secretBytes) {
+        FixedPoolHelper<Mac> pool = getMacPool(algorithm);
+        return pool.run(mac -> {
+            try {
+                SecretKey key = new SecretKeySpec(secretBytes, algorithm);
+                mac.init(key);
+                return mac.doFinal(plainText);
+            } catch (InvalidKeyException e) {
+                throw new RuntimeException("Invalid key for MAC algorithm: " + algorithm, e);
+            }
+        });
     }
 
     /**
-     * apply to small file
-     * @param shaType
-     * @param plainText
-     * @param secretBytes
-     * @return
+     * 生成MAC算法的随机密钥
+     * @param algorithm MAC算法名称
+     * @return 密钥字节数组
      */
-    @Deprecated
-    public static byte[] MACSHA(SHAType shaType,byte[] plainText,byte[] secretBytes) {
-        try {
-            SecretKey key = restoreMACSecretKey(shaType,secretBytes);
-            Mac mac = Mac.getInstance(shaType.getValue());
-            mac.init(key);
-            return mac.doFinal(plainText);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
+    private static byte[] generatorMacSecretKey(String algorithm) {
+        FixedPoolHelper<KeyGenerator> pool = getKeyGeneratorPool(algorithm);
+        return pool.run(keyGenerator -> keyGenerator.generateKey().getEncoded());
     }
 
     /**
-     * apply to small file
-     * @param shaType
-     * @param plainText
-     * @param secretBytes
-     * @return
+     * 流式摘要计算（使用回调函数填充内容）
+     * 适用于大文件处理，流结束时不会关闭输入流
+     * @param algorithmName 算法名称
+     * @param contentFiller 内容填充回调函数，用于调用 digest.update 方法填充数据
+     * @return 摘要结果字节数组
      */
-    public static byte[] macSha(SHAType shaType,byte[] plainText,byte[] secretBytes) {
-        try {
-            SecretKey key = restoreMACSecretKey(shaType,secretBytes);
-            Mac mac = Mac.getInstance(shaType.getValue());
-            mac.init(key);
-            return mac.doFinal(plainText);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * MAC生成随机密钥 两步走 1.创建一个KeyGenerator 2.调用KeyGenerator.generateKey方法
-     *
-     * @return
-     */
-    private static byte[] generatorMACSecretKey(SHAType shaType) {
-        KeyGenerator keyGenerator;
-        try {
-            keyGenerator = KeyGenerator.getInstance(shaType.getValue());
-            SecretKey key = keyGenerator.generateKey();
-            return key.getEncoded();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 还原密钥
-     *
-     * @param secretBytes
-     * @return
-     */
-    @Deprecated
-    private static SecretKey restoreMACSecretKey(SHAType shaType,byte[] secretBytes) {
-        SecretKey key = new SecretKeySpec(secretBytes, shaType.getValue());
-        return key;
-    }
-
-    /**
-     * 还原密钥
-     *
-     * @param secretBytes
-     * @return
-     */
-    private static SecretKey restoreMacSecretKey(SHAType shaType,byte[] secretBytes) {
-        SecretKey key = new SecretKeySpec(secretBytes, shaType.getValue());
-        return key;
-    }
-
-    /**
-     * 流式处理
-     * apply to big file, when end won't close the stream
-     * @param algorithmName
-     * @param contentFiller ,to use  digest.update method fill content
-     * @return
-     */
-    public static byte[] digest(String algorithmName, FunctionROne<byte[],MessageDigest> contentFiller){
-        FixedPoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
-        return simplePoolHelper.run(digest->{
+    public static byte[] digest(String algorithmName, FunctionROne<byte[], MessageDigest> contentFiller) {
+        FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
+        return pool.run(digest -> {
             digest.reset();
             contentFiller.run(digest);
             return digest.digest();
@@ -408,15 +359,15 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 流式处理
-     * apply to big file, when end won't close the stream
-     * @param algorithmName
-     * @param inputStream
-     * @return
+     * 流式摘要计算（从输入流读取数据）
+     * 适用于大文件处理，流结束时不会关闭输入流
+     * @param algorithmName 算法名称
+     * @param inputStream 输入流
+     * @return 摘要结果字节数组
      */
-    public static byte[] digest(String algorithmName, InputStream inputStream){
-        FixedPoolHelper<MessageDigest> simplePoolHelper = getMessageDigest(algorithmName);
-        return simplePoolHelper.run(digest->{
+    public static byte[] digest(String algorithmName, InputStream inputStream) {
+        FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
+        return pool.run(digest -> {
             digest.reset();
             byte[] buffer = new byte[DEFAULT_BUFFER_SIZE];
             int length;
@@ -424,19 +375,20 @@ public class MessageDigestUtils {
                 while ((length = inputStream.read(buffer)) != -1) {
                     digest.update(buffer, 0, length);
                 }
-            }catch (IOException e){
-                throw new com.tingfeng.util.java.base.common.exception.io.IOException (e);
+            } catch (IOException e) {
+                throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
             }
             return digest.digest();
         });
     }
 
     /**
-     * apply to big file, when end won't close the stream
-     * @param inputStream
-     * @return
+     * MD5流式摘要计算（从输入流读取数据）
+     * 适用于大文件处理，流结束时不会关闭输入流
+     * @param inputStream 输入流
+     * @return 摘要结果字节数组
      */
-    public static byte[] md5(InputStream inputStream){
-        return digest(SHAType.MD5.getValue(), inputStream);
+    public static byte[] md5(InputStream inputStream) {
+        return digest(DigestType.MD5.getValue(), inputStream);
     }
 }
