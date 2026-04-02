@@ -12,7 +12,7 @@ import com.tingfeng.util.java.base.common.exception.OverPoolWaitTimeException;
 import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
 /**
  * 任务池工具
- * @author WangGang
+ * @author huitoukest
  *
  * @param <T> T 就是pool实际打开或者释放的资源本身，比如常见的jdbc的数据库的连接对象
  */

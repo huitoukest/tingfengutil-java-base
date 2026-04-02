@@ -9,46 +9,47 @@ import java.util.stream.IntStream;
  * @author huitoukest
  **/
 public class MathUtils {
+    /** 最大支持进制数 */
     private static final int MAX_RADIX = 256;
-    /**
-     * 初始化 62 进制数据，索引位置代表字符的数值，比如 A代表10，z代表61等
-     */
-    private static final char[] chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
-    private static int DEFAULT_MAX_RADIX = 62;
+    /** 默认最大进制数（62进制） */
+    private static final int DEFAULT_MAX_RADIX = 62;
+    /** 十进制基数常量 */
+    private static final int RADIX_TEN = 10;
+    /** 初始化62进制数据，索引位置代表字符的数值，比如A代表10，z代表61等 */
+    private static final char[] CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".toCharArray();
+    /** StringBuilder初始容量 */
+    private static final int INITIAL_STRING_BUILDER_CAPACITY = 32;
+    /** ASCII映射数组大小（0-255） */
+    private static final int ASCII_MAP_SIZE = 256;
 
     /**
-     * 两个指定进制数的相加
-     * @param valueA
-     * @param valueB
-     * @param radixValues  进制采用的基数数组
+     * 两个指定进制数的相加（自动计算字符映射）
+     * @param valueA 第一个数值的字符数组
+     * @param valueB 第二个数值的字符数组
+     * @param radixValues 进制采用的基数数组
      */
     public static char[] addPositiveInteger(char[] valueA,char[] valueB,char[] radixValues) {
-        int[] valueCharMaps = getValueCharMaps(radixValues);
-        return addPositiveInteger(valueA,valueB,radixValues,valueCharMaps);
+        return addPositiveInteger(valueA, valueB, radixValues, getValueCharMaps(radixValues));
     }
 
     /**
-     * 两个指定进制数的相加
-     * @param valueA
-     * @param valueB
-     * @param radixValues   进制采用的基数数组,索引映射为char字符
+     * 两个指定进制数的相加（使用预计算的字符映射）
+     * @param valueA 第一个数值的字符数组
+     * @param valueB 第二个数值的字符数组
+     * @param radixValues 进制采用的基数数组,索引映射为char字符
      * @param valueCharMaps 字符到值得映射，使用字符的ascii码的值作为索引，值就是其真实代表的值
      */
     public static char[] addPositiveInteger(char[] valueA,char[] valueB,char[] radixValues,int[] valueCharMaps){
         int radix = radixValues.length;
         char[] minChars = valueA;
         char[] maxChars = valueB;
-        /**
-         * 保证maxChars更长
-         */
+        // 保证maxChars更长
         if(valueA.length > valueB.length){
             maxChars = valueA;
             minChars = valueB;
         }
         int[] result = new int[maxChars.length];
-        /**
-         * 逐个相加
-         */
+        // 逐个相加
         int tmpIndex = maxChars.length - minChars.length;
         for(int i = 0,j = 0 ; i < maxChars.length  ; i++){
             if(i < tmpIndex){
@@ -58,9 +59,7 @@ public class MathUtils {
                 j ++;
             }
         }
-        /**
-         * 处理进位
-         */
+        // 处理进位
         int upper = 0;
         for(int i = maxChars.length - 1; i >= 0 ; i --){
             upper += result[i];
@@ -79,9 +78,7 @@ public class MathUtils {
             resultChars[i] = radixValues[result[i - 1]];
         }
         resultChars[0] = radixValues[upper];
-        /**
-         * 除去首位的0
-         */
+        // 除去首位的0
         int startIndex = IntStream.range(0,resultIndex -1).filter(it -> resultChars[it] != radixValues[0] ).findFirst().orElse(-1);
         if(startIndex < 0){
             return new char[]{};
@@ -95,11 +92,12 @@ public class MathUtils {
     }
 
     /**
-     * @param radixValues
-     * @return
+     * 根据进制基数数组生成字符到数值的映射表
+     * @param radixValues 进制基数数组，索引为字符位置，值为对应数值
+     * @return 字符到数值的映射数组，使用ASCII码作为索引
      */
     public static int[] getValueCharMaps(char[] radixValues) {
-           int[] valueCharMaps = new int[256];
+           int[] valueCharMaps = new int[ASCII_MAP_SIZE];
            for(int i = 0 ; i < radixValues.length ; i ++){
                valueCharMaps[radixValues[i]] = i;
            }
@@ -107,75 +105,70 @@ public class MathUtils {
     }
 
     /**
-     * @param str
-     * @param srcRadix
-     * @param toRadix
-     * @return
+     * 任意进制字符串转换为另一种进制字符串（使用默认62进制字符集）
+     * @param str 待转换的字符串
+     * @param srcRadix 源进制
+     * @param toRadix 目标进制
+     * @return 转换后的字符串
      */
     public static String toRadix(String str,int srcRadix,int toRadix) {
         if(toRadix > DEFAULT_MAX_RADIX){
             throw new RuntimeException("default max radix is " + DEFAULT_MAX_RADIX);
         }
-        return toRadix(str,chars,srcRadix,toRadix);
+        return toRadix(str,CHARS,srcRadix,toRadix);
     }
 
 
     /**
-     * 默认十进制转为其余进制
-     * @param str
-     * @param toRadix
-     * @return
+     * 十进制字符串转换为指定进制字符串（使用默认62进制字符集）
+     * @param str 十进制字符串
+     * @param toRadix 目标进制
+     * @return 转换后的字符串
      */
     public static String toRadix(String str,int toRadix) {
-        return toRadix(str,10,toRadix);
+        return toRadix(str,RADIX_TEN,toRadix);
     }
 
     /**
-     * 默认十进制转为其余进制
-     * @param str
-     * @param radixValues
-     * @return
+     * 十进制字符串转换为指定进制字符串
+     * @param str 十进制字符串
+     * @param radixValues 目标进制字符集
+     * @return 转换后的字符串
      */
     public static String toRadix(String str,char[] radixValues) {
-        return toRadix(str,radixValues,10,radixValues.length);
+        return toRadix(str,radixValues,RADIX_TEN,radixValues.length);
     }
 
     /**
-     * 十进制的数据转为其它指定进制,指定进制计数的值
-     * @param str
-     * @param radixValues 目标进制基数
-     * @param srcRadix 来源数据的进制数
+     * 任意进制数据转换为另一种进制
+     * @param str 待转换的字符串
+     * @param radixValues 目标进制字符集
+     * @param srcRadix 源进制
      * @param toRadix 目标进制
-     * @return
+     * @return 转换后的字符串
      */
     public static String toRadix(String str,char[] radixValues,int srcRadix,int toRadix) {
         toRadix = Math.min(radixValues.length,toRadix);
         if(srcRadix == toRadix){
             return str;
         }
-        if(toRadix == 10){
+        if(toRadix == RADIX_TEN){
             return toDecimal(str,radixValues,srcRadix).toString();
         }
         if(toRadix > MAX_RADIX){
             throw new RuntimeException("max radix is " + MAX_RADIX);
         }
-        BigInteger number = null;
-        if(srcRadix != 10){
+        BigInteger number;
+        if(srcRadix != RADIX_TEN){
             number = toDecimal(str,radixValues,srcRadix);
         }else {
             number = new BigInteger(str);
         }
-        StringBuilder sb = new StringBuilder(32);
-        BigInteger radixInt = new BigInteger(String.valueOf(toRadix));
-        /**
-         * 余数
-         */
-        int remainder = 0;
+        StringBuilder sb = new StringBuilder(INITIAL_STRING_BUILDER_CAPACITY);
+        BigInteger radixInt = BigInteger.valueOf(toRadix);
+        // 使用除留余数法进行进制转换
         while (number.compareTo(BigInteger.ZERO) > 0) {
-            /**
-             * 用求余数的方法来实现
-             */
-            remainder = number.mod(radixInt).intValue();
+            int remainder = number.mod(radixInt).intValue();
             sb.append(radixValues[remainder]);
             number = number.divide(radixInt);
         }
@@ -184,46 +177,52 @@ public class MathUtils {
     }
 
     /**
-     *
-     * @param  str  数字的内容,其进制值等同于baseChars的长度
-     * @return 默认解码为10进制数据
+     * 将任意进制字符串解码为十进制BigInteger（使用指定字符集）
+     * @param str 数字字符串，其进制由radixValues长度决定
+     * @param radixValues 进制字符集
+     * @return 十进制BigInteger
      */
     public static BigInteger toDecimal(String str,char[] radixValues) {
         return toDecimal(str,radixValues,radixValues.length);
     }
 
     /**
-     *
-     * @param  str  数字的内容,其进制值等同于baseChars的长度
-     * @return 默认解码为10进制数据
+     * 将任意进制字符串解码为十进制BigInteger
+     * @param str 数字字符串，其进制值等同于baseChars的长度
+     * @param radixValues 进制字符集
+     * @param srcRadix 源进制
+     * @return 十进制BigInteger
      */
     public static BigInteger toDecimal(String str,char[] radixValues,int srcRadix) {
         int[] valueCharMaps = getValueCharMaps(radixValues);
         int radix = Math.min(radixValues.length,srcRadix);
-        /**
-         * 将 0 开头的字符串进行替换
-         */
-        str = str.replace("^0*", "");
 
         if(radix > MAX_RADIX){
             throw new RuntimeException("max radix is " + MAX_RADIX);
         }
-        BigInteger result = new BigInteger("0");
-        BigInteger baseValue = new BigInteger("1");
-        BigInteger radixInt = new BigInteger(String.valueOf(radix));
-        for (int i = str.length() - 1; i >= 0 ; i--) {
-            int positionValue = valueCharMaps[str.charAt(i)];
-            result = result.add(baseValue.multiply(new BigInteger(String.valueOf(positionValue))));
+        // 去掉前导0，手动遍历找到第一个非0字符的位置
+        int startIndex = 0;
+        while (startIndex < str.length() - 1 && str.charAt(startIndex) == '0') {
+            startIndex++;
+        }
+        String trimmed = str.substring(startIndex);
+
+        BigInteger result = BigInteger.ZERO;
+        BigInteger baseValue = BigInteger.ONE;
+        BigInteger radixInt = BigInteger.valueOf(radix);
+        for (int i = trimmed.length() - 1; i >= 0 ; i--) {
+            int positionValue = valueCharMaps[trimmed.charAt(i)];
+            result = result.add(baseValue.multiply(BigInteger.valueOf(positionValue)));
             baseValue = baseValue.multiply(radixInt);
         }
         return result;
     }
 
     /**
-     * 最大公约数
-     * @param a
-     * @param b
-     * @return
+     * 求两个整数的最大公约数（欧几里得算法）
+     * @param a 第一个整数
+     * @param b 第二个整数
+     * @return 最大公约数
      */
     public static int gcd(int a, int b){
         int r;
@@ -236,10 +235,10 @@ public class MathUtils {
     }
 
     /**
-     * 求最小公倍数
-     * @param m
-     * @param n
-     * @return
+     * 求两个整数的最小公倍数
+     * @param m 第一个整数
+     * @param n 第二个整数
+     * @return 最小公倍数
      */
     public static int lcm(int m, int n) {
         // 根据防溢出策略：强制升级为 long 计算，天然避免溢出
@@ -256,10 +255,10 @@ public class MathUtils {
     }
 
     /**
-     * 最大公约数
-     * @param a
-     * @param b
-     * @return
+     * 求两个长整数的最大公约数（欧几里得算法）
+     * @param a 第一个长整数
+     * @param b 第二个长整数
+     * @return 最大公约数
      */
     public static long gcd(long a, long b){
         long r;
@@ -272,9 +271,9 @@ public class MathUtils {
     }
 
     /**
-     * 求最小公倍数
-     * @param m 第一个整数
-     * @param n 第二个整数
+     * 求两个长整数的最小公倍数
+     * @param m 第一个长整数
+     * @param n 第二个长整数
      * @return 最小公倍数
      */
     public static long lcm(long m, long n) {
@@ -285,20 +284,20 @@ public class MathUtils {
     }
 
     /**
-     * 最大公约数
-     * @param a
-     * @param b
-     * @return
+     * 求两个大整数的最大公约数
+     * @param a 第一个大整数
+     * @param b 第二个大整数
+     * @return 最大公约数
      */
     public static BigInteger gcd(BigInteger a, BigInteger b) {
         return a.gcd(b);
     }
 
     /**
-     * 求最小公倍数
-     * @param a
-     * @param b
-     * @return
+     * 求两个大整数的最小公倍数
+     * @param a 第一个大整数
+     * @param b 第二个大整数
+     * @return 最小公倍数
      */
     public static BigInteger lcm(BigInteger a, BigInteger b) {
         BigInteger gcdValue = gcd(a , b);

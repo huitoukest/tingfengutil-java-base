@@ -7,8 +7,7 @@ import org.junit.Test;
 import java.nio.charset.Charset;
 
 /**
- * @Author wangGang
- * @Description //TODO
+ * @Author huitoukest
  * @Date 2019-06-05 14:01
  **/
 public class Base64UtilsTest {

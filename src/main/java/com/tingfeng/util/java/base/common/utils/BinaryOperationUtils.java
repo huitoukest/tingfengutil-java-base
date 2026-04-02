@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * 二进制数相关操作工具
- * @author wanggang
+ * @author huitoukest
  */
 public class BinaryOperationUtils {
     private static final int MAX_POW_VALUE = 64;

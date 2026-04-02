@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.common.helper;
 
 /**
  * 每秒的频率控制类
- * @author wanggang
+ * @author huitoukest
  */
 public abstract class BaseFrequencyHelper {
     /**

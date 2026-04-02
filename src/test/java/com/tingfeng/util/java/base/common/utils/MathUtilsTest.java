@@ -6,8 +6,7 @@ import java.math.BigInteger;
 import java.nio.charset.Charset;
 
 /**
- * @Author wangGang
- * @Description //TODO
+ * @Author huitoukest
  * @Date 2019-05-08 17:16
  **/
 public class MathUtilsTest {

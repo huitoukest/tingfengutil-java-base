@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
- * @Author wangGang
+ * @Author huitoukest
  * @Date 2019-04-10 15:38
  **/
 public class CollectionUtilsTest {
