@@ -16,7 +16,7 @@ public class RandomUtilsTest extends BaseTest {
     @Test
     public void testRandom(){
         Set<String> value = new HashSet<>();
-        printTime(50,1000000,(index->{
+        printTime(50,100000,(index->{
                 String random = RandomUtils.randomString(15);
                 if(index % 100000 == 0) {
                     System.out.println(random);
