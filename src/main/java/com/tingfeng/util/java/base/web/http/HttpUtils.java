@@ -77,7 +77,7 @@ public class HttpUtils {
                 if(statusList != null && !statusList.isEmpty()){
                     String status = statusList.get(0);
                     if(null != status){
-                        Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PatternStr.httpStatus);
+                        Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PatternStr.HTTP_STATUS);
                         Matcher m = pattern.matcher(status);
                         if(m.find()) {
                             status = m.group(1);
