@@ -1,25 +1,37 @@
 package com.tingfeng.util.java.base.common.bean;
 
+/**
+ * 缓存成员，包含权重值和实际对象
+ *
+ * @param <T> 对象类型
+ */
+public class SimpleCacheMember<T> {
+    /**
+     * 权重增量，相对于 globalBase 的偏移量
+     * actualWeight = globalBase + weight
+     */
+    private long weight;
+    private T value;
 
-public class SimpleCacheMember<T>{
-    private int weight = 0;
-    private T value ;
-
-    @Override
-    public int hashCode() {
-        return super.hashCode();
+    public SimpleCacheMember() {
+        this.weight = 0;
     }
 
-    @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
+    public SimpleCacheMember(T value) {
+        this.value = value;
+        this.weight = 0;
     }
 
-    public int getWeight() {
+    public SimpleCacheMember(long weight, T value) {
+        this.weight = weight;
+        this.value = value;
+    }
+
+    public long getWeight() {
         return weight;
     }
 
-    public SimpleCacheMember<T> setWeight(int weight) {
+    public SimpleCacheMember<T> setWeight(long weight) {
         this.weight = weight;
         return this;
     }
