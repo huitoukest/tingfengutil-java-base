@@ -5,6 +5,7 @@ import com.tingfeng.util.java.base.common.utils.process.exception.ProcessExitCod
 import com.tingfeng.util.java.base.common.utils.process.exception.ProcessStartException;
 import com.tingfeng.util.java.base.common.utils.process.exception.ProcessTimeoutException;
 import com.tingfeng.util.java.base.common.utils.process.function.OutputStreamType;
+import com.tingfeng.util.java.base.common.utils.process.function.IndexedLineProcessor;
 import com.tingfeng.util.java.base.common.utils.process.function.TypedLineProcessor;
 import com.tingfeng.util.java.base.common.utils.process.model.ProcessConfig;
 import com.tingfeng.util.java.base.common.utils.process.model.ProcessInfo;
@@ -37,6 +38,8 @@ public class ProcessUtils {
      * 执行命令（默认120秒超时）
      * @param command 命令
      * @return 执行结果
+     * @example ProcessResult r = ProcessUtils.execute("ls");
+     *          if (r.isSuccess()) { System.out.println(r.getStandardOutput()); }
      */
     public static ProcessResult execute(String command) {
         return execute(command, DEFAULT_TIMEOUT_MS);
@@ -47,6 +50,7 @@ public class ProcessUtils {
      * @param command 命令
      * @param timeoutMs 超时时间（毫秒）
      * @return 执行结果
+     * @example ProcessResult r = ProcessUtils.execute("ping -n 4 127.0.0.1", 5000);
      */
     public static ProcessResult execute(String command, long timeoutMs) {
         return execute(command, timeoutMs, getSystemCharset());
@@ -111,6 +115,9 @@ public class ProcessUtils {
      * @param command 命令
      * @param stdoutProcessor stdout处理回调
      * @param stderrProcessor stderr处理回调
+     * @example ProcessUtils.executeWithCallback("echo hello",
+     *          line -> System.out.println("[OUT] " + line),
+     *          line -> System.err.println("[ERR] " + line));
      */
     public static void executeWithCallback(String command,
                                           Consumer<String> stdoutProcessor,
@@ -123,6 +130,27 @@ public class ProcessUtils {
                         stderrProcessor.accept(line);
                     }
                 });
+    }
+
+    /**
+     * 执行命令并实时处理输出流（带行号）
+     * @param command 命令
+     * @param timeoutMs 超时时间（毫秒）
+     * @param processor 行处理器
+     * @example ProcessUtils.executeWithCallback("cat file.txt", 5000,
+     *          (lineNum, line) -> System.out.println(lineNum + ": " + line));
+     */
+    public static void executeWithCallback(String command, long timeoutMs, IndexedLineProcessor processor) {
+        executeWithCallback(command, timeoutMs, (lineNum, line, type) -> processor.process(lineNum, line));
+    }
+
+    /**
+     * 执行命令并实时处理输出流（带行号，跨平台兼容）
+     * @param command 命令
+     * @param processor 行处理器
+     */
+    public static void executeWithCallback(String command, IndexedLineProcessor processor) {
+        executeWithCallback(command, DEFAULT_TIMEOUT_MS, processor);
     }
 
     /**
@@ -141,6 +169,11 @@ public class ProcessUtils {
      * @param timeoutMs 超时时间
      * @param charset 字符集
      * @param processor 行处理器
+     * @example ProcessUtils.executeWithCallback("python app.py", 30000, StandardCharsets.UTF_8,
+     *          (lineNum, line, type) -> {
+     *              if (type == OutputStreamType.STDOUT) logger.info(line);
+     *              else logger.error(line);
+     *          });
      */
     public static void executeWithCallback(String command, long timeoutMs, Charset charset, TypedLineProcessor processor) {
         java.lang.Process process = startProcess(command);
@@ -193,9 +226,38 @@ public class ProcessUtils {
      * @param command 命令
      * @param timeoutMs 超时时间
      * @return CompletableFuture
+     * @example ProcessUtils.executeAsync("ls").thenAccept(r -> System.out.println(r.getStandardOutput()));
      */
     public static CompletableFuture<ProcessResult> executeAsync(String command, long timeoutMs) {
         return CompletableFuture.supplyAsync(() -> execute(command, timeoutMs));
+    }
+
+    /**
+     * 异步执行命令并实时处理输出流
+     * @param command 命令
+     * @param processor 行处理器
+     * @return CompletableFuture
+     * @example ProcessUtils.executeAsyncWithCallback("tail -f log.txt", (l,n,type)->logger.info(n+": "+l))
+     */
+    public static CompletableFuture<Void> executeAsyncWithCallback(String command, TypedLineProcessor processor) {
+        return CompletableFuture.supplyAsync(() -> {
+            executeWithCallback(command, DEFAULT_TIMEOUT_MS, processor);
+            return null;
+        });
+    }
+
+    /**
+     * 异步执行命令并实时处理输出流
+     * @param command 命令
+     * @param timeoutMs 超时时间
+     * @param processor 行处理器
+     * @return CompletableFuture
+     */
+    public static CompletableFuture<Void> executeAsyncWithCallback(String command, long timeoutMs, TypedLineProcessor processor) {
+        return CompletableFuture.supplyAsync(() -> {
+            executeWithCallback(command, timeoutMs, processor);
+            return null;
+        });
     }
 
     // ==================== 快捷命令封装 ====================
@@ -204,6 +266,7 @@ public class ProcessUtils {
      * 执行curl请求
      * @param args curl参数，如 "-X GET" 或 "-X POST -d '{}'"
      * @return 执行结果
+     * @example ProcessUtils.curl("--help"), ProcessUtils.curl("-X", "POST", "-d", "{}", "http://api.example.com")
      */
     public static ProcessResult curl(String... args) {
         StringBuilder cmd = new StringBuilder("curl");
@@ -217,6 +280,7 @@ public class ProcessUtils {
      * 执行nslookup查询
      * @param domain 域名
      * @return DNS查询结果
+     * @example ProcessUtils.nslookup("localhost")
      */
     public static ProcessResult nslookup(String domain) {
         return execute("nslookup " + domain);
@@ -227,6 +291,7 @@ public class ProcessUtils {
      * @param pattern 正则表达式
      * @param paths 文件路径
      * @return 匹配结果
+     * @example ProcessUtils.grep("error", "-", "file.log")  // 从stdin和文件搜索
      */
     public static ProcessResult grep(String pattern, String... paths) {
         StringBuilder cmd = new StringBuilder("grep ");
@@ -255,6 +320,7 @@ public class ProcessUtils {
      * 执行Maven命令
      * @param args mvn参数，如 "clean package -DskipTests"
      * @return 执行结果
+     * @example ProcessUtils.mvn("-version"), ProcessUtils.mvn("clean", "package", "-DskipTests")
      */
     public static ProcessResult mvn(String... args) {
         StringBuilder cmd = new StringBuilder("mvn");
@@ -268,6 +334,7 @@ public class ProcessUtils {
      * 执行Docker命令
      * @param args docker参数
      * @return 执行结果
+     * @example ProcessUtils.docker("--version"), ProcessUtils.docker("ps", "-a")
      */
     public static ProcessResult docker(String... args) {
         StringBuilder cmd = new StringBuilder("docker");
@@ -281,6 +348,7 @@ public class ProcessUtils {
      * 执行kubectl命令
      * @param args kubectl参数
      * @return 执行结果
+     * @example ProcessUtils.kubectl("get", "pods"), ProcessUtils.kubectl("logs", "pod-name")
      */
     public static ProcessResult kubectl(String... args) {
         StringBuilder cmd = new StringBuilder("kubectl");
@@ -295,6 +363,7 @@ public class ProcessUtils {
      * @param scriptPath 脚本路径
      * @param args 脚本参数
      * @return 执行结果
+     * @example ProcessUtils.python("/path/to/script.py", "arg1", "arg2")
      */
     public static ProcessResult python(String scriptPath, String... args) {
         StringBuilder cmd = new StringBuilder("python ");
@@ -310,6 +379,7 @@ public class ProcessUtils {
      * @param scriptPath 脚本路径
      * @param args 脚本参数
      * @return 执行结果
+     * @example ProcessUtils.node("/path/to/script.js", "--port", "8080")
      */
     public static ProcessResult node(String scriptPath, String... args) {
         StringBuilder cmd = new StringBuilder("node ");
@@ -362,10 +432,11 @@ public class ProcessUtils {
     }
 
     /**
-     * 梯度终止进程
+     * 梯度终止进程：先SIGTERM等待，再SIGTERM，再SIGKILL
      * @param process 进程
      * @param timeoutMs 总超时时间
      * @return true if terminated
+     * @example Process p = new ProcessBuilder("sleep 100").start(); ProcessUtils.gracefulShutdown(p, 5000);
      */
     public static boolean gracefulShutdown(java.lang.Process process, long timeoutMs) {
         if (process == null || !process.isAlive()) {
@@ -417,6 +488,7 @@ public class ProcessUtils {
 
     /**
      * 获取进程信息
+     * @example ProcessInfo info = ProcessUtils.getProcessInfo(process);
      */
     public static ProcessInfo getProcessInfo(java.lang.Process process) {
         ProcessInfo info = new ProcessInfo();
