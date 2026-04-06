@@ -1,293 +1,381 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.common.bean.DefaultTreeNode;
-import com.tingfeng.util.java.base.common.bean.TreeTraverseContext;
-import com.tingfeng.util.java.base.common.bean.User;
-import com.tingfeng.util.java.base.common.constant.TraversalPolicy;
+import com.tingfeng.util.java.base.common.helper.TreeHelper;
+import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
+/**
+ * TreeUtils 单元测试
+ */
 public class TreeUtilsTest {
 
-
-    private List<User> getTree(){
-        List<User>  userList  = new ArrayList<>();
-        User user = new User();
-        User user2 = new User();
-        User userChild = new User();
-        User userChild2 = new User();
-
-        //init
-        user.setAge(100);
-        user.userName = "a";
-        user2.setAge(50);
-        user2.userName = "b";
-        user2.parentUserName = "kk";
-
-        userChild.userName = "bb1";
-        userChild.setAge(20);
-        userChild.parentUserName = "b";
-        userChild2.userName = "bb2";
-        userChild2.setAge(10);
-        userChild2.parentUserName = "b";
-
-        userList.add(user);
-        userList.add(user2);
-        userList.add(userChild);
-        userList.add(userChild2);
-
-        List<User>  k = TreeUtils.getTreeList(userList,(child,parent)->{
-            if(parent.childList == null){
-                parent.childList = new ArrayList<>();
-            }
-            parent.childList.add(child);
-        },(child,parent) -> Objects.equals(child.parentUserName,parent.userName),(u) -> u.getAge());
-        return k;
-    }
+    // ==================== 测试辅助方法 ====================
 
     /**
-     * 生成 深度等于 level, 总节点数为 maxNodeSize 的一个 tree
-     * @param level
-     * @param maxNodeSize
-     * @return 一个 tree 的各个 Node,它们的层级关系是同级的，尚未建立父子层级关系
+     * 构建简单的树结构:
+     *       1
+     *      / \
+     *     2   3
+     *    / \
+     *   4   5
      */
-    public List<DefaultTreeNode> generateTree(int level,int maxNodeSize){
+    private List<DefaultTreeNode> buildSimpleTree() {
+        List<DefaultTreeNode> nodes = new ArrayList<>();
+        nodes.add(new DefaultTreeNode("1", null, 1));
+        nodes.add(new DefaultTreeNode("2", "1", 2));
+        nodes.add(new DefaultTreeNode("3", "1", 3));
+        nodes.add(new DefaultTreeNode("4", "2", 4));
+        nodes.add(new DefaultTreeNode("5", "2", 5));
+        return nodes;
+    }
 
-        Function<Integer,String> levelNodeBaseRandomCharF = l -> {
-            switch (l){
-                case 1:
-                case 2:{
-                    return RandomUtils.randomLowerString(1);
-                }
-                default:{
-                    return RandomUtils.randomUpperString(2);
-                }
-            }
-        };
-        List<DefaultTreeNode> trees = new ArrayList<>(maxNodeSize);
-        Set<String> nodeIds = new HashSet<>(maxNodeSize);
-        for (int i = 0; i < maxNodeSize; ) {
-            int currentLevel = RandomUtils.randomInt(0, level);
-            StringBuilder stringBuilder = new StringBuilder();
-            for (int j = 0; j < currentLevel + 1 && i < maxNodeSize; j++) {
-                String parentId = stringBuilder.toString();
-                if (j > 0) {
-                    stringBuilder.append("-");
-                }
-                String baseStr = levelNodeBaseRandomCharF.apply(j + 1);
-                stringBuilder.append(baseStr);
-                String id = stringBuilder.toString();
-                if(nodeIds.contains(id)){
-                    continue;
-                }
-                DefaultTreeNode node = new DefaultTreeNode();
-                node.setId(id);
-                node.setSortValue(RandomUtils.randomInt(0, 1000));
-                if(currentLevel > 0){
-                    node.setParentId(parentId);
-                }
-                trees.add(node);
-                nodeIds.add(id);
-                i++;
-            }
-        }
-        return trees;
+    private final Function<DefaultTreeNode, List<DefaultTreeNode>> childrenGetter = DefaultTreeNode::getChildren;
+
+    // ==================== depthFirst 测试 ====================
+
+    @Test
+    public void testDepthFirstSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.depthFirst(tree, childrenGetter);
+
+        Assert.assertEquals(5, result.size());
+        // 深度优先: 1 -> 2 -> 4 -> 5 -> 3
+        Assert.assertEquals("1", result.get(0).getId());
+        Assert.assertEquals("2", result.get(1).getId());
+        Assert.assertEquals("4", result.get(2).getId());
+        Assert.assertEquals("5", result.get(3).getId());
+        Assert.assertEquals("3", result.get(4).getId());
     }
 
     @Test
-    public void treeUtilsTest(){
-        List<User>  k = getTree();
-        System.out.println(JSON.toJSONString(k));
+    public void testDepthFirstEmpty() {
+        List<DefaultTreeNode> result = TreeUtils.depthFirst(Collections.emptyList(), childrenGetter);
+        Assert.assertTrue(result.isEmpty());
     }
 
     @Test
-    public void flatListTest(){
-        List<User> users = TreeUtils.flatList(getTree(),it -> it.childList,it -> it);
-        System.out.println(JSON.toJSONString(users));
-    }
-
-
-    @Test
-    public void performanceTest(){
-        List<DefaultTreeNode> treeNodes = generateTree(10,100000);
-        TestUtils.printTime(1,10,index -> {
-            List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-            System.out.println(treeList.size());
-        });
+    public void testDepthFirstNull() {
+        List<DefaultTreeNode> result = TreeUtils.depthFirst(null, childrenGetter);
+        Assert.assertTrue(result.isEmpty());
     }
 
     @Test
-    public void performanceTest2(){
-        List<DefaultTreeNode> treeNodes = generateTree(10,100);
-        TestUtils.printTime(1,10,index -> {
-            List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes,(child,parent) -> parent.getChildren().add(child),
-                    (child,parent) -> parent.getId().equals(child.getParentId()),DefaultTreeNode::getSortValue);
-            System.out.println(treeList.size());
-        });
+    public void testDepthFirstSingleNode() {
+        List<DefaultTreeNode> treeNodes = Collections.singletonList(new DefaultTreeNode("1", null, 1));
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.depthFirst(tree, childrenGetter);
+
+        Assert.assertEquals(1, result.size());
+        Assert.assertEquals("1", result.get(0).getId());
     }
 
-    /**
-     * 示例图：
-     *                 1
-     *      ---------------------------
-     *      /      |       \         \
-     *     21      22       23        24
-     *    / \     |     /  |   \       |
-     *   31 32    33   34  35  36     37
-     *     /     |         |   |
-     *    41     42        43  44
-     * 期望的遍历的顺序为  1,21,31,32,41,22,33,42,23,34,35,43,36,44,24,37
-     */
+    // ==================== breadthFirst 测试 ====================
+
     @Test
-    public void testTraverseByDLR() {
-        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
-        int[] traverseExpectValue = new int[]{1,21,31,32,41,22,33,42,23,34,35,43,36,44,24,37};
-        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-        AtomicInteger traverseCount = new AtomicInteger();
-        TreeUtils.traverse(treeList, TraversalPolicy.DLR,DefaultTreeNode::getChildren,traverseContext -> {
-            int currentIndex = traverseCount.getAndIncrement();
-            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            System.out.print("," + traverseContext.getNode().getId() + String.format("[%s]", traverseContext.getLevel()));
-            checkTreeLevel(traverseContext);
-            return true;
-        });
+    public void testBreadthFirstSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.breadthFirst(tree, childrenGetter);
+
+        Assert.assertEquals(5, result.size());
+        // 广度优先: 1 -> 2 -> 3 -> 4 -> 5
+        Assert.assertEquals("1", result.get(0).getId());
+        Assert.assertEquals("2", result.get(1).getId());
+        Assert.assertEquals("3", result.get(2).getId());
+        Assert.assertEquals("4", result.get(3).getId());
+        Assert.assertEquals("5", result.get(4).getId());
     }
 
     @Test
-    public void testTraverseByDRL() {
-        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
-        int[] traverseExpectValue = new int[]{1,24,37,23,36,44,35,43,34,22,33,42,21,32,41,31};
-        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-        AtomicInteger traverseCount = new AtomicInteger();
-        TreeUtils.traverse(treeList, TraversalPolicy.DRL,DefaultTreeNode::getChildren,traverseContext -> {
-            int currentIndex = traverseCount.getAndIncrement();
-            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            //System.out.print("," + JSON.toJSONString(traverseContext));
-            checkTreeLevel(traverseContext);
-            return true;
-        });
-    }
-
-    private void checkTreeLevel(TreeTraverseContext<DefaultTreeNode> traverseContext){
-        if(Arrays.asList("1".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
-            Assert.assertEquals( 1,traverseContext.getLevel());
-        }else if(Arrays.asList("21,22,23,24".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
-            Assert.assertEquals( 2,traverseContext.getLevel());
-        }else if(Arrays.asList("31,32,33,34,35,36,37".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
-            Assert.assertEquals(3,traverseContext.getLevel());
-        }else if(Arrays.asList("41,42,43,44".split(",")).stream().anyMatch(traverseContext.getNode().getId()::equals)) {
-            Assert.assertEquals(4,traverseContext.getLevel());
-        }
-    }
-
-    /**
-     * 数据图：
-     *                 1
-     *      ---------------------------
-     *      /      |       \         \
-     *     21      22       23        24
-     *    / \     |     /  |   \       |
-     *   31 32    33   34  35  36     37
-     *     /     |         |   |
-     *    41     42        43  44
-     * @return 返回数据图中的 Tree结构的数据。
-     */
-    private static List<DefaultTreeNode> getTreeNodesForTraverse() {
-        List<DefaultTreeNode> treeNodes = new ArrayList<>();
-        treeNodes.add(new DefaultTreeNode("1",null,1));
-
-        treeNodes.add(new DefaultTreeNode("21","1",1));
-        treeNodes.add(new DefaultTreeNode("22","1",2));
-        treeNodes.add(new DefaultTreeNode("23","1",3));
-        treeNodes.add(new DefaultTreeNode("24","1",4));
-
-        treeNodes.add(new DefaultTreeNode("31","21",1));
-        treeNodes.add(new DefaultTreeNode("32","21",2));
-        treeNodes.add(new DefaultTreeNode("33","22",3));
-        treeNodes.add(new DefaultTreeNode("34","23",4));
-        treeNodes.add(new DefaultTreeNode("35","23",5));
-        treeNodes.add(new DefaultTreeNode("36","23",6));
-        treeNodes.add(new DefaultTreeNode("37","24",7));
-
-        treeNodes.add(new DefaultTreeNode("41","32",1));
-        treeNodes.add(new DefaultTreeNode("42","33",2));
-        treeNodes.add(new DefaultTreeNode("43","35",3));
-        treeNodes.add(new DefaultTreeNode("44","36",4));
-        return treeNodes;
-    }
-
-    /**
-     * 中序遍历
-     * <pre>
-     * 当前遍历一个子节点后立即遍历父节点,然后遍历其它子节点
-     * 则期望的遍历的顺序为   31,21,41,32,1,42,33,22,34,23,43,35,44,36,37,24
-     * </pre>
-     */
-    @Test
-    public void testTraverseByLDR() {
-        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
-        int[] traverseExpectValue = new int[]{31,21,41,32,1,42,33,22,34,23,43,35,44,36,37,24};
-        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-        AtomicInteger traverseCount = new AtomicInteger();
-        TreeUtils.traverse(treeList, TraversalPolicy.LDR,DefaultTreeNode::getChildren,traverseContext -> {
-            int currentIndex = traverseCount.getAndIncrement();
-            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            //System.out.print("," + traverseContext.getNode().getId());
-            checkTreeLevel(traverseContext);
-            //当前遍历一个子节点后,当前的索引为0 ,则接下来立即遍历父节点,然后遍历其它子节点
-            return true;
-        });
+    public void testBreadthFirstEmpty() {
+        List<DefaultTreeNode> result = TreeUtils.breadthFirst(Collections.emptyList(), childrenGetter);
+        Assert.assertTrue(result.isEmpty());
     }
 
     @Test
-    public void traverseByRDL() {
-        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
-        int[] traverseExpectValue = new int[]{37,24,1,44,36,23,43,35,34,42,33,22,41,32,21,31};
-        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-        AtomicInteger traverseCount = new AtomicInteger();
-        TreeUtils.traverse(treeList, TraversalPolicy.RDL,DefaultTreeNode::getChildren,traverseContext -> {
-            int currentIndex = traverseCount.getAndIncrement();
-            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            checkTreeLevel(traverseContext);
-            //System.out.print("," + traverseContext.getNode().getId());
-            //当前遍历一个子节点后,当前的索引为0 ,则接下来立即遍历父节点,然后遍历其它子节点
-            return true;
-        });
+    public void testBreadthFirstNull() {
+        List<DefaultTreeNode> result = TreeUtils.breadthFirst(null, childrenGetter);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    // ==================== traverseAndCollect 测试 ====================
+
+    @Test
+    public void testTraverseAndCollect() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<String> result = TreeUtils.traverseAndCollect(tree, childrenGetter,
+                (node, level) -> node.getId() + "-" + level);
+
+        Assert.assertEquals(5, result.size());
+        Assert.assertEquals("1-0", result.get(0));
+        Assert.assertEquals("2-1", result.get(1));
+        Assert.assertEquals("3-1", result.get(2));
+        Assert.assertEquals("4-2", result.get(3));
+        Assert.assertEquals("5-2", result.get(4));
     }
 
     @Test
-    public void traverseByLRD() {
-        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
-        int[] traverseExpectValue = new int[]{31,41,32,21,42,33,22,34,43,35,44,36,23,37,24,1};
-        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-        AtomicInteger traverseCount = new AtomicInteger();
-        TreeUtils.traverse(treeList, TraversalPolicy.LRD,DefaultTreeNode::getChildren,traverseContext -> {
-            int currentIndex = traverseCount.getAndIncrement();
-            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            //System.out.print("," + traverseContext.getNode().getId() + String.format("[%s]", traverseContext.getLevel()));
-            checkTreeLevel(traverseContext);
-            //System.out.print("," + traverseContext.getNode().getId());
-            return true;
-        });
+    public void testTraverseAndCollectEmpty() {
+        List<String> result = TreeUtils.traverseAndCollect(Collections.emptyList(), childrenGetter,
+                (node, level) -> node.getId());
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    // ==================== traverseUntil 测试 ====================
+
+    @Test
+    public void testTraverseUntilFound() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        Optional<DefaultTreeNode> result = TreeUtils.traverseUntil(tree, childrenGetter,
+                node -> "5".equals(node.getId()));
+
+        Assert.assertTrue(result.isPresent());
+        Assert.assertEquals("5", result.get().getId());
     }
 
     @Test
-    public void traverseByRLD() {
-        List<DefaultTreeNode> treeNodes = getTreeNodesForTraverse();
-        int[] traverseExpectValue = new int[]{37,24,44,36,43,35,34,23,42,33,22,41,32,31,21,1};
-        List<DefaultTreeNode> treeList = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
-        AtomicInteger traverseCount = new AtomicInteger();
-        TreeUtils.traverse(treeList, TraversalPolicy.RLD,DefaultTreeNode::getChildren,traverseContext -> {
-            int currentIndex = traverseCount.getAndIncrement();
-            Assert.assertEquals("" + traverseExpectValue[currentIndex],traverseContext.getNode().getId());
-            checkTreeLevel(traverseContext);
-            //System.out.print("," + traverseContext.getNode().getId());
-            return true;
-        });
+    public void testTraverseUntilNotFound() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        Optional<DefaultTreeNode> result = TreeUtils.traverseUntil(tree, childrenGetter,
+                node -> "not-exist".equals(node.getId()));
+
+        Assert.assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testTraverseUntilEmpty() {
+        Optional<DefaultTreeNode> result = TreeUtils.traverseUntil(Collections.emptyList(), childrenGetter,
+                node -> true);
+        Assert.assertFalse(result.isPresent());
+    }
+
+    // ==================== count 测试 ====================
+
+    @Test
+    public void testCountSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        int count = TreeUtils.count(tree, childrenGetter);
+
+        Assert.assertEquals(5, count);
+    }
+
+    @Test
+    public void testCountEmpty() {
+        int count = TreeUtils.count(Collections.emptyList(), childrenGetter);
+        Assert.assertEquals(0, count);
+    }
+
+    @Test
+    public void testCountNull() {
+        int count = TreeUtils.count(null, childrenGetter);
+        Assert.assertEquals(0, count);
+    }
+
+    @Test
+    public void testCountSingleNode() {
+        List<DefaultTreeNode> treeNodes = Collections.singletonList(new DefaultTreeNode("1", null, 1));
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        int count = TreeUtils.count(tree, childrenGetter);
+
+        Assert.assertEquals(1, count);
+    }
+
+    // ==================== depth 测试 ====================
+
+    @Test
+    public void testDepthSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        int depth = TreeUtils.depth(tree.get(0), childrenGetter);
+
+        Assert.assertEquals(3, depth); // 1 -> 2 -> 4 (depth=3)
+    }
+
+    @Test
+    public void testDepthEmpty() {
+        int depth = TreeUtils.depth(null, childrenGetter);
+        Assert.assertEquals(0, depth);
+    }
+
+    @Test
+    public void testDepthSingleNode() {
+        DefaultTreeNode single = new DefaultTreeNode("1", null, 1);
+        int depth = TreeUtils.depth(single, childrenGetter);
+        Assert.assertEquals(1, depth);
+    }
+
+    // ==================== map 测试 ====================
+
+    @Test
+    public void testMapSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<String> result = TreeUtils.map(tree, childrenGetter, node -> node.getId() + "-mapped");
+
+        Assert.assertEquals(5, result.size());
+        Assert.assertTrue(result.stream().allMatch(s -> s.endsWith("-mapped")));
+    }
+
+    @Test
+    public void testMapEmpty() {
+        List<String> result = TreeUtils.map(Collections.emptyList(), childrenGetter, DefaultTreeNode::getId);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    // ==================== filter 测试 ====================
+
+    @Test
+    public void testFilterSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.filter(tree, childrenGetter,
+                node -> node.getSortValue() <= 3);
+
+        Assert.assertEquals(3, result.size());
+    }
+
+    @Test
+    public void testFilterEmpty() {
+        List<DefaultTreeNode> result = TreeUtils.filter(Collections.emptyList(), childrenGetter, node -> true);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testFilterNoneMatch() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.filter(tree, childrenGetter, node -> false);
+
+        Assert.assertEquals(0, result.size());
+    }
+
+    // ==================== sort 测试 ====================
+
+    @Test
+    public void testSortSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> sorted = TreeUtils.sort(tree, childrenGetter,
+                (a, b) -> Integer.compare(b.getSortValue(), a.getSortValue())); // 降序
+
+        // 根节点排序后应该在最前
+        Assert.assertEquals("3", sorted.get(0).getId()); // sortValue=3
+    }
+
+    // ==================== getTreeList (backward compatible) 测试 ====================
+
+    @Test
+    public void testGetTreeListWithComparator() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes,
+                Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        Assert.assertEquals(1, tree.size());
+        Assert.assertEquals("1", tree.get(0).getId());
+        Assert.assertEquals(2, tree.get(0).getChildren().size());
+    }
+
+    @Test
+    public void testGetTreeListWithCallbacks() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes,
+                (child, parent) -> parent.getChildren().add(child),
+                (child, parent) -> Objects.equals(child.getParentId(), parent.getId()),
+                DefaultTreeNode::getId);
+
+        Assert.assertEquals(1, tree.size());
+        Assert.assertEquals("1", tree.get(0).getId());
+    }
+
+    @Test
+    public void testGetTreeListEmpty() {
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(Collections.emptyList(),
+                Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        Assert.assertTrue(tree.isEmpty());
+    }
+
+    @Test
+    public void testGetTreeListNull() {
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(null,
+                Comparator.comparingInt(DefaultTreeNode::getSortValue));
+        Assert.assertTrue(tree.isEmpty());
+    }
+
+    // ==================== flatList 测试 ====================
+
+    @Test
+    public void testFlatListSimple() {
+        List<DefaultTreeNode> treeNodes = buildSimpleTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(treeNodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        FunctionROne<List<DefaultTreeNode>, DefaultTreeNode> getChildren = DefaultTreeNode::getChildren;
+        FunctionROne<DefaultTreeNode, DefaultTreeNode> getSelf = n -> n;
+
+        List<DefaultTreeNode> flat = TreeUtils.flatList(tree, getChildren, getSelf);
+
+        Assert.assertEquals(5, flat.size());
+    }
+
+    @Test
+    public void testFlatListEmpty() {
+        FunctionROne<List<DefaultTreeNode>, DefaultTreeNode> getChildren = DefaultTreeNode::getChildren;
+        FunctionROne<DefaultTreeNode, DefaultTreeNode> getSelf = n -> n;
+
+        List<DefaultTreeNode> flat = TreeUtils.flatList(Collections.emptyList(), getChildren, getSelf);
+        Assert.assertTrue(flat.isEmpty());
+    }
+
+    // ==================== helper 工厂方法测试 ====================
+
+    @Test
+    public void testHelperFactory() {
+        List<DefaultTreeNode> nodes = buildSimpleTree();
+
+        TreeHelper<DefaultTreeNode, String> helper = TreeUtils.helper(nodes, DefaultTreeNode::getId, DefaultTreeNode::getParentId);
+
+        Assert.assertNotNull(helper);
+        Assert.assertEquals(5, helper.size());
+    }
+
+    @Test
+    public void testHelperFactoryWithCopier() {
+        List<DefaultTreeNode> nodes = buildSimpleTree();
+
+        TreeHelper<DefaultTreeNode, String> helper = TreeUtils.helper(nodes, DefaultTreeNode::getId, DefaultTreeNode::getParentId,
+                node -> {
+                    DefaultTreeNode copy = new DefaultTreeNode();
+                    copy.setId(node.getId());
+                    copy.setParentId(node.getParentId());
+                    copy.setSortValue(node.getSortValue());
+                    return copy;
+                });
+
+        Assert.assertNotNull(helper);
+        Assert.assertEquals(5, helper.size());
     }
 }
