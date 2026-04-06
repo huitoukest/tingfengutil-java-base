@@ -1,32 +1,29 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.tingfeng.util.java.base.common.bean.thread.NamedThreadFactory;
-
-import java.util.concurrent.ThreadFactory;
-
 /**
- * 线程相关的工具
+ * 线程操作工具类（已迁移到 concurrent 包）
+ *
+ * @deprecated 请使用 {@link com.tingfeng.util.java.base.common.concurrent.ThreadUtils}
  */
+@Deprecated
 public class ThreadUtils {
-    /**
-     * sleep mills
-     * @param mills
-     */
-    public static void sleep(long mills){
-        try {
-            Thread.sleep(mills);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+
+    private ThreadUtils() {
     }
 
     /**
-     * 创建线程工厂
-     * @param namePrefix 线程的名称前缀
-     * @param isDaemon 是否守护线程
-     * @return
+     * @deprecated 请使用 {@link com.tingfeng.util.java.base.common.concurrent.ThreadUtils#sleep(long)}
      */
-    public static ThreadFactory newNamedThreadFactory(String namePrefix,boolean isDaemon){
-        return new NamedThreadFactory(namePrefix, isDaemon);
+    @Deprecated
+    public static void sleep(long mills) {
+        com.tingfeng.util.java.base.common.concurrent.ThreadUtils.sleep(mills);
+    }
+
+    /**
+     * @deprecated 请使用 {@link com.tingfeng.util.java.base.common.concurrent.ThreadFactoryUtils#newNamedThreadFactory(String, boolean)}
+     */
+    @Deprecated
+    public static java.util.concurrent.ThreadFactory newNamedThreadFactory(String namePrefix, boolean isDaemon) {
+        return com.tingfeng.util.java.base.common.concurrent.ThreadFactoryUtils.newNamedThreadFactory(namePrefix, isDaemon);
     }
 }

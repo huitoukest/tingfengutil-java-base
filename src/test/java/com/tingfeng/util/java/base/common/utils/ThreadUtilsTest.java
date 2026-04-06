@@ -4,6 +4,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -110,32 +111,37 @@ public class ThreadUtilsTest {
     }
 
     /**
-     * 测试sleep方法被中断时的异常处理
+     * 测试sleep方法被中断时的处理
+     * 新实现静默处理中断，保持中断状态，不抛出异常
      */
-    @Test(expected = RuntimeException.class)
+    @Test
     public void testSleepInterrupted() {
+        final AtomicBoolean interrupted = new AtomicBoolean(false);
         Thread sleepingThread = new Thread(() -> {
             ThreadUtils.sleep(1000);
+            // sleep 返回后检查中断状态
+            interrupted.set(Thread.currentThread().isInterrupted());
         });
-        
+
         sleepingThread.start();
-        
+
         // 等待线程开始睡眠
         try {
             Thread.sleep(50);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         }
-        
+
         // 中断睡眠线程
         sleepingThread.interrupt();
-        
+
         try {
             sleepingThread.join(1000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new RuntimeException(e);
         }
+
+        // 验证线程被中断且静默处理，没有抛出异常
+        Assert.assertTrue("线程应该已被中断", interrupted.get());
     }
 }
