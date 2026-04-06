@@ -498,6 +498,14 @@ public class ProcessUtils {
         return info;
     }
 
+    /**
+     * 获取当前JVM进程启动时间
+     * @return 进程启动时间（毫秒，1970年起）
+     */
+    public static long getProcessStartTime() {
+        return ManagementFactory.getRuntimeMXBean().getStartTime();
+    }
+
     // ==================== 工具方法 ====================
 
     /**
