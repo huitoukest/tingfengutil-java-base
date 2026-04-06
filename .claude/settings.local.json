@@ -5,7 +5,11 @@
       "Bash(javac -version)",
       "mcp__ide__getDiagnostics",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git log:*)",
+      "Bash(mvn test:*)",
+      "Bash(where mvn:*)",
+      "Bash(java -version)"
     ]
   }
 }
