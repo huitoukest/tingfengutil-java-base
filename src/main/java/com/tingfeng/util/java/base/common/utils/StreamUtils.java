@@ -1,14 +1,21 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.exception.io.IOException;
 import com.tingfeng.util.java.base.common.exception.io.StreamCloseException;
 
 import java.io.*;
 import java.util.function.Consumer;
 
+/**
+ * 流处理工具类
+ * @deprecated 由于历史原因保留，建议使用 {@link IOUtils}
+ * @author huitoukest
+ */
+@Deprecated
 public class StreamUtils {
 
-	final static int BUFFER_SIZE = 4096;
+	private static final int BUFFER_SIZE = 4096;
 	/**
 	 * 将String转换成InputStream
 	 * 默认UTF-8编码
@@ -143,8 +150,8 @@ public class StreamUtils {
 					readSizeCallBack.accept(sumReadSize);
 				}
 			}
-		}catch (IOException e){
-			throw new com.tingfeng.util.java.base.common.exception.io.IOException(e);
+		}catch (java.io.IOException e){
+			throw new IOException(e);
 		}finally {
 			try {
 				if (closeStream && inputStream != null) {

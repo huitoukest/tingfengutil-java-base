@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -324,13 +325,98 @@ public class StreamUtilsTest {
         for (int i = 0; i < 256; i++) {
             binaryData[i] = (byte) i;
         }
-        
+
         InputStream inputStream = StreamUtils.getInputStreamByBytes(binaryData);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        
+
         StreamUtils.copy(outputStream, inputStream);
-        
+
         byte[] result = outputStream.toByteArray();
         Assert.assertArrayEquals("二进制数据复制应该正确", binaryData, result);
+    }
+
+    /**
+     * 测试根据不存在的文件路径创建输入流时抛出异常
+     */
+    @Test(expected = com.tingfeng.util.java.base.common.exception.BaseException.class)
+    public void testGetFileInputStreamNotFound() {
+        StreamUtils.getFileInputStream("/nonexistent/path/to/file.txt");
+    }
+
+    /**
+     * 测试根据不存在的文件路径创建输出流时抛出异常
+     */
+    @Test(expected = com.tingfeng.util.java.base.common.exception.BaseException.class)
+    public void testGetFileOutputStreamNotFound() {
+        // 尝试创建到只读目录或不存在目录下的文件
+        StreamUtils.getFileOutputStream("/nonexistent/path/to/file.txt", false);
+    }
+
+    /**
+     * 测试GBK编码转换
+     */
+    @Test
+    public void testGetInputStreamByStreamGbkEncoding() throws Exception {
+        String testString = "你好，世界！";
+        InputStream inputStream = StreamUtils.getInputStreamByStream(testString, "GBK");
+
+        Assert.assertNotNull("输入流不能为空", inputStream);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        StreamUtils.copy(outputStream, inputStream);
+
+        String result = outputStream.toString("GBK");
+        Assert.assertEquals("GBK编码转换后的内容应该与原字符串相同", testString, result);
+    }
+
+    /**
+     * 测试流复制后输出流已关闭
+     */
+    @Test
+    public void testCopyClosesOutputStream() throws Exception {
+        String testContent = "Test content for close verification";
+        InputStream inputStream = StreamUtils.getInputStreamByStream(testContent);
+
+        // 使用标志变量验证 close 是否被调用
+        final AtomicBoolean closedFlag = new AtomicBoolean(false);
+        OutputStream outputStream = new OutputStream() {
+            private final ByteArrayOutputStream delegate = new ByteArrayOutputStream();
+            @Override
+            public void write(int b) throws IOException {
+                delegate.write(b);
+            }
+            @Override
+            public void close() throws IOException {
+                closedFlag.set(true);
+                delegate.close();
+            }
+            @Override
+            public void flush() throws IOException {
+                delegate.flush();
+            }
+        };
+
+        StreamUtils.copy(outputStream, inputStream, 1024, true, null);
+
+        Assert.assertTrue("输出流应该在copy后被关闭", closedFlag.get());
+    }
+
+    /**
+     * 测试流复制进度回调次数
+     */
+    @Test
+    public void testCopyCallbackCalledCorrectly() throws Exception {
+        // 使用较大的自定义缓冲区，确保有多次回调
+        String testContent = "ABCDEFGHIJ";
+        InputStream inputStream = StreamUtils.getInputStreamByStream(testContent);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+
+        AtomicInteger callbackCount = new AtomicInteger(0);
+        StreamUtils.copy(outputStream, inputStream, 3, true, bytesRead -> {
+            callbackCount.incrementAndGet();
+        });
+
+        // 每个字符3字节，共10字符，需要4次读取(3,3,3,1)，但最后一次bytesRead=10不触发新回调
+        Assert.assertTrue("回调应该被调用至少1次", callbackCount.get() >= 1);
     }
 }
