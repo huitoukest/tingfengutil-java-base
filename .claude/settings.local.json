@@ -9,8 +9,14 @@
       "Bash(git log:*)",
       "Bash(mvn test:*)",
       "Bash(where mvn:*)",
-      "Bash(java -version)",
-      "Bash(cmd:*)"
+      "Bash(java *)",
+      "Bash(cmd:*)",
+      "Bash(/mingw64/bin/mkdir:*)",
+      "Bash(export JAVA_TOOL_OPTIONS=\"-Dfile.encoding=UTF-8\")",
+      "Bash(export MAVEN_OPTS=\"-Dfile.encoding=UTF-8\")",
+      "Bash(iconv -f GBK -t UTF-8)",
+      "Bash(mvn *)",
+      "Bash(/mingw64/bin/git:*)"
     ]
   }
 }
