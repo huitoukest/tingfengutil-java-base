@@ -73,12 +73,12 @@ public final class TreeUtils {
         traverse.traverse(treeList, level, parent, childrenGetter, traverseF);
     }
 
-    // ==================== 新增：遍历并收集结果 ====================
+    // ==================== 遍历并收集结果（广度优先）====================
 
     /**
-     * 遍历并收集结果
+     * 遍历并收集结果（广度优先遍历森林/多根树）
      *
-     * @param roots 根节点列表
+     * @param roots 根节点列表（支持多根，即森林结构）
      * @param childrenGetter 获取子节点的方法
      * @param collector 收集函数: (节点, 层级) → 结果
      * @return 收集结果列表
@@ -95,9 +95,9 @@ public final class TreeUtils {
     }
 
     /**
-     * 遍历直到找到目标
+     * 遍历直到找到目标（广度优先）
      *
-     * @param roots 根节点列表
+     * @param roots 根节点列表（支持多根，即森林结构）
      * @param childrenGetter 获取子节点的方法
      * @param stopPredicate 停止条件
      * @return 找到的目标节点，若未找到返回 Optional.empty()
@@ -165,10 +165,15 @@ public final class TreeUtils {
         return result;
     }
 
-    // ==================== 遍历内部实现 ====================
+    // ==================== 遍历内部实现（广度优先）====================
 
     /**
-     * 带回调的遍历实现
+     * 带回调的遍历实现（广度优先，支持森林/多根结构）
+     *
+     * @param treeList 当前层的节点列表
+     * @param level 当前层级
+     * @param childrenGetter 获取子节点的方法
+     * @param callback 回调函数: (节点, 层级, 是否有父节点) → 是否继续遍历
      */
     private static <T> void traverseWithCollector(List<T> treeList, int level,
                                                    Function<T, List<T>> childrenGetter,
@@ -177,14 +182,22 @@ public final class TreeUtils {
             return;
         }
 
-        for (T node : treeList) {
-            boolean continueTraverse = callback.run(node, level, true);
-            if (continueTraverse) {
-                List<T> children = childrenGetter.apply(node);
-                if (children != null && !children.isEmpty()) {
-                    traverseWithCollector(children, level + 1, childrenGetter, callback);
+        Queue<T> queue = new LinkedList<>(treeList);
+        int currentLevel = level;
+
+        while (!queue.isEmpty()) {
+            int levelSize = queue.size();
+            for (int i = 0; i < levelSize; i++) {
+                T node = queue.poll();
+                boolean continueTraverse = callback.run(node, currentLevel, true);
+                if (continueTraverse) {
+                    List<T> children = childrenGetter.apply(node);
+                    if (children != null && !children.isEmpty()) {
+                        queue.addAll(children);
+                    }
                 }
             }
+            currentLevel++;
         }
     }
 
@@ -400,6 +413,13 @@ public final class TreeUtils {
         }
         List<T> roots = new ArrayList<>();
         Map<Object, List<T>> parentMap = new HashMap<>();
+        Map<Object, T> valueToNodeMap = new HashMap<>();
+
+        // O(n) 构建 parentMap 和 valueToNodeMap
+        for (T node : list) {
+            Object nodeValue = getRootValue.run(node);
+            valueToNodeMap.put(nodeValue, node);
+        }
 
         for (T node : list) {
             Object parentValue = null;
@@ -418,15 +438,14 @@ public final class TreeUtils {
             }
         }
 
+        // O(n) 利用 valueToNodeMap 直接查找父节点
         for (Map.Entry<Object, List<T>> entry : parentMap.entrySet()) {
             Object parentValue = entry.getKey();
             List<T> children = entry.getValue();
-            for (T node : list) {
-                if (getRootValue.run(node).equals(parentValue)) {
-                    for (T child : children) {
-                        setChildren.run(child, node);
-                    }
-                    break;
+            T parent = valueToNodeMap.get(parentValue);
+            if (parent != null) {
+                for (T child : children) {
+                    setChildren.run(child, parent);
                 }
             }
         }

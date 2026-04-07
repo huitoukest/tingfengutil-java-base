@@ -1,7 +1,5 @@
 package com.tingfeng.util.java.base.common.helper;
 
-import com.tingfeng.util.java.base.common.bean.TreeNode;
-
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Collectors;
@@ -32,6 +30,9 @@ public final class TreeHelper<T, ID> {
     /** 节点拷贝函数 */
     private final Function<T, T> copier;
 
+    /** ID 获取函数（保存以支持 getNodeId 动态获取） */
+    private final Function<T, ID> idGetter;
+
     // ==================== 构造方法 ====================
 
     /**
@@ -47,6 +48,7 @@ public final class TreeHelper<T, ID> {
                       Function<T, ID> parentIdGetter,
                       Function<T, T> copier) {
         this.copier = copier;
+        this.idGetter = idGetter;
         this.allNodes = nodes == null ? Collections.emptyList() : new ArrayList<>(nodes);
 
         // 建立索引
@@ -85,13 +87,15 @@ public final class TreeHelper<T, ID> {
                        Map<ID, ID> parentIndex,
                        Map<ID, List<ID>> childrenIndex,
                        List<ID> rootIds,
-                       Function<T, T> copier) {
+                       Function<T, T> copier,
+                       Function<T, ID> idGetter) {
         this.allNodes = allNodes;
         this.nodeIndex = nodeIndex;
         this.parentIndex = parentIndex;
         this.childrenIndex = childrenIndex;
         this.rootIds = rootIds;
         this.copier = copier;
+        this.idGetter = idGetter;
     }
 
     // ==================== 工厂方法 ====================
@@ -168,6 +172,13 @@ public final class TreeHelper<T, ID> {
      */
     public List<T> getChildren(T node) {
         ID nodeId = getNodeId(node);
+        return getChildrenById(nodeId);
+    }
+
+    /**
+     * 根据节点ID获取子节点列表（内部使用，避免重复转换）
+     */
+    private List<T> getChildrenById(ID nodeId) {
         return Optional.ofNullable(childrenIndex.get(nodeId))
                 .orElse(Collections.emptyList())
                 .stream()
@@ -211,10 +222,16 @@ public final class TreeHelper<T, ID> {
     }
 
     /**
-     * 获取节点层级（根=0）
+     * 获取节点层级（根=0）- 优化：直接遍历父节点链，避免构建完整路径
      */
     public int getLevel(T node) {
-        return getPathToRoot(node).size() - 1;
+        int level = 0;
+        ID currentId = getNodeId(node);
+
+        while ((currentId = parentIndex.get(currentId)) != null) {
+            level++;
+        }
+        return level;
     }
 
     /**
@@ -227,15 +244,24 @@ public final class TreeHelper<T, ID> {
                 .orElse(0);
     }
 
+    /**
+     * 计算以 node 为根的子树深度 - 优化：直接使用 childrenIndex 避免 List 创建
+     */
     private int calculateDepth(T node, int currentDepth) {
-        List<T> children = getChildren(node);
-        if (children.isEmpty()) {
-            return currentDepth;
+        ID nodeId = getNodeId(node);
+        List<ID> childIds = childrenIndex.get(nodeId);
+        if (childIds == null || childIds.isEmpty()) {
+            return currentDepth + 1; // 叶子节点本身需要被计数
         }
-        return children.stream()
-                .mapToInt(child -> calculateDepth(child, currentDepth + 1))
-                .max()
-                .orElse(currentDepth);
+        int maxChildDepth = currentDepth + 1;
+        for (ID childId : childIds) {
+            T child = nodeIndex.get(childId);
+            if (child != null) {
+                int childDepth = calculateDepth(child, currentDepth + 1);
+                maxChildDepth = Math.max(maxChildDepth, childDepth);
+            }
+        }
+        return maxChildDepth;
     }
 
     /**
@@ -250,6 +276,98 @@ public final class TreeHelper<T, ID> {
      */
     public boolean isEmpty() {
         return allNodes.isEmpty();
+    }
+
+    // ==================== 排序操作（返回新实例，保持不可变性）=================
+
+    /**
+     * 对树的子节点进行排序（递归排序所有层级）
+     * <p>
+     * 返回一个新的 TreeHelper，所有层级的子节点都按 comparator 排序。
+     * 本实例不受影响，保持不可变性。
+     * </p>
+     *
+     * @param comparator 比较器
+     * @return 排序后的新 TreeHelper
+     */
+    public TreeHelper<T, ID> sort(Comparator<T> comparator) {
+        // 复制所有节点列表
+        List<T> copiedNodes = allNodes.stream()
+                .map(node -> copier.apply(node))
+                .collect(Collectors.toList());
+
+        // 重建索引结构
+        Map<ID, T> newNodeIndex = new HashMap<>(copiedNodes.size());
+        Map<ID, ID> newParentIndex = new HashMap<>(copiedNodes.size());
+        Map<ID, List<ID>> newChildrenIndex = new HashMap<>();
+
+        // 重建 ID → 节点映射（用于排序查找）
+        Map<ID, T> tempIndex = new HashMap<>();
+        for (T node : copiedNodes) {
+            ID id = getNodeIdFromCopiedNode(node);
+            tempIndex.put(id, node);
+        }
+
+        // 重建 parentIndex 和 childrenIndex（原始顺序）
+        for (T node : copiedNodes) {
+            ID id = getNodeIdFromCopiedNode(node);
+            T original = nodeIndex.get(id);
+            ID parentId = original != null ? parentIndex.get(id) : null;
+            newParentIndex.put(id, parentId);
+
+            if (parentId == null) {
+                // 根节点不入 childrenIndex
+            } else {
+                newChildrenIndex.computeIfAbsent(parentId, k -> new ArrayList<>()).add(id);
+            }
+            newNodeIndex.put(id, node);
+        }
+
+        // 递归排序每个根节点的子树
+        for (ID rootId : rootIds) {
+            sortChildrenRecursively(rootId, newChildrenIndex, tempIndex, comparator);
+        }
+
+        return new TreeHelper<>(copiedNodes, newNodeIndex, newParentIndex,
+                newChildrenIndex, rootIds, copier, idGetter);
+    }
+
+    /**
+     * 递归排序子节点
+     */
+    private void sortChildrenRecursively(ID nodeId,
+                                          Map<ID, List<ID>> childrenIndex,
+                                          Map<ID, T> nodeMap,
+                                          Comparator<T> comparator) {
+        List<ID> childIds = childrenIndex.get(nodeId);
+        if (childIds == null || childIds.size() <= 1) {
+            return;
+        }
+
+        // 转换为节点列表并排序
+        List<T> children = childIds.stream()
+                .map(nodeMap::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+        children.sort(comparator);
+
+        // 更新排序后的子节点 ID 列表
+        List<ID> sortedChildIds = children.stream()
+                .map(node -> getNodeIdFromCopiedNode(node))
+                .collect(Collectors.toList());
+        childrenIndex.put(nodeId, sortedChildIds);
+
+        // 递归排序每个子节点的子节点
+        for (ID childId : sortedChildIds) {
+            sortChildrenRecursively(childId, childrenIndex, nodeMap, comparator);
+        }
+    }
+
+    /**
+     * 从复制的节点中获取 ID（使用 idGetter 支持泛型）
+     */
+    private ID getNodeIdFromCopiedNode(T node) {
+        return idGetter.apply(node);
     }
 
     // ==================== 变换操作 ====================
@@ -332,21 +450,171 @@ public final class TreeHelper<T, ID> {
     }
 
     /**
-     * 展平为单层 List
+     * 展平为单层 List（深度优先）
      */
     public List<T> flatten() {
+        return flattenDepthFirst();
+    }
+
+    /**
+     * 深度优先展平为单层 List
+     */
+    public List<T> flattenDepthFirst() {
         List<T> result = new ArrayList<>();
         for (T root : getRoots()) {
-            flattenNode(root, result);
+            flattenDepthFirstNode(root, result);
         }
         return result;
     }
 
-    private void flattenNode(T node, List<T> result) {
-        result.add(node);
-        for (T child : getChildren(node)) {
-            flattenNode(child, result);
+    /**
+     * 广度优先展平为单层 List
+     */
+    public List<T> flattenBreadthFirst() {
+        List<T> result = new ArrayList<>();
+        Queue<T> queue = new LinkedList<>(getRoots());
+
+        while (!queue.isEmpty()) {
+            T node = queue.poll();
+            result.add(node);
+            List<T> children = getChildren(node);
+            if (!children.isEmpty()) {
+                queue.addAll(children);
+            }
         }
+        return result;
+    }
+
+    /**
+     * 按 comparator 排序后深度优先展平
+     */
+    public List<T> flattenSorted(Comparator<T> comparator) {
+        List<T> result = new ArrayList<>();
+        for (T root : getRoots()) {
+            flattenSortedNode(root, result, comparator);
+        }
+        return result;
+    }
+
+    /**
+     * 按 comparator 排序后广度优先展平
+     */
+    public List<T> flattenBreadthFirstSorted(Comparator<T> comparator) {
+        List<T> result = new ArrayList<>();
+        Queue<T> queue = new LinkedList<>(getRoots());
+
+        while (!queue.isEmpty()) {
+            int levelSize = queue.size();
+            List<T> levelNodes = new ArrayList<>();
+            for (int i = 0; i < levelSize; i++) {
+                T node = queue.poll();
+                levelNodes.add(node);
+                result.add(node);
+                queue.addAll(getChildren(node));
+            }
+            // 对同一层节点排序（可选）
+        }
+        return result;
+    }
+
+    private void flattenDepthFirstNode(T node, List<T> result) {
+        result.add(node);
+        List<T> children = getChildren(node);
+        for (T child : children) {
+            flattenDepthFirstNode(child, result);
+        }
+    }
+
+    private void flattenSortedNode(T node, List<T> result, Comparator<T> comparator) {
+        result.add(node);
+        List<T> children = getChildren(node);
+        if (children.size() > 1) {
+            children.sort(comparator);
+        }
+        for (T child : children) {
+            flattenSortedNode(child, result, comparator);
+        }
+    }
+
+    // ==================== 层级与条件过滤 ====================
+
+    /**
+     * 按层级和条件双重过滤节点
+     *
+     * @param level 目标层级（根节点为 0）
+     * @param predicate 过滤条件，返回 true 保留
+     * @return 满足条件的节点列表
+     */
+    public List<T> filterByLevelAndPredicate(int level, Predicate<T> predicate) {
+        if (level < 0) {
+            return Collections.emptyList();
+        }
+        List<T> result = new ArrayList<>();
+        Queue<T> queue = new LinkedList<>(getRoots());
+        int currentLevel = 0;
+
+        while (!queue.isEmpty() && currentLevel <= level) {
+            int levelSize = queue.size();
+            for (int i = 0; i < levelSize; i++) {
+                T node = queue.poll();
+                if (currentLevel == level && predicate.test(node)) {
+                    result.add(node);
+                }
+                queue.addAll(getChildren(node));
+            }
+            currentLevel++;
+        }
+        return result;
+    }
+
+    /**
+     * 获取指定层级的所有节点
+     *
+     * @param level 目标层级（根节点为 0）
+     * @return 该层级的所有节点
+     */
+    public List<T> getNodesByLevel(int level) {
+        return filterByLevelAndPredicate(level, node -> true);
+    }
+
+    // ==================== 兄弟节点与同级节点 ====================
+
+    /**
+     * 获取节点的兄弟节点（不包括自身）
+     *
+     * @param node 目标节点
+     * @return 兄弟节点列表
+     */
+    public List<T> getSiblings(T node) {
+        ID nodeId = getNodeId(node);
+        ID parentId = parentIndex.get(nodeId);
+
+        if (parentId == null) {
+            // 根节点没有兄弟
+            return Collections.emptyList();
+        }
+
+        List<ID> siblingIds = childrenIndex.get(parentId);
+        if (siblingIds == null || siblingIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return siblingIds.stream()
+                .filter(id -> !id.equals(nodeId))
+                .map(nodeIndex::get)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 获取与节点同层级的所有节点
+     *
+     * @param node 目标节点
+     * @return 同层级的所有节点（包括自身）
+     */
+    public List<T> getSameLevelNodes(T node) {
+        int level = getLevel(node);
+        return getNodesByLevel(level);
     }
 
     /**
@@ -359,10 +627,7 @@ public final class TreeHelper<T, ID> {
     // ==================== 工具方法 ====================
 
     private ID getNodeId(T node) {
-        if (node instanceof TreeNode) {
-            return (ID) ((TreeNode) node).getId();
-        }
-        throw new IllegalArgumentException("Cannot extract ID from node: " + node.getClass());
+        return idGetter.apply(node);
     }
 
     // ==================== Getters ====================

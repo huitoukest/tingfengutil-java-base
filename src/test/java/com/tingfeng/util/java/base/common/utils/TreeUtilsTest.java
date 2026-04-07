@@ -17,7 +17,7 @@ public class TreeUtilsTest {
     // ==================== 测试辅助方法 ====================
 
     /**
-     * 构建简单的树结构:
+     * 构建简单的树结构（单根）:
      *       1
      *      / \
      *     2   3
@@ -31,6 +31,37 @@ public class TreeUtilsTest {
         nodes.add(new DefaultTreeNode("3", "1", 3));
         nodes.add(new DefaultTreeNode("4", "2", 4));
         nodes.add(new DefaultTreeNode("5", "2", 5));
+        return nodes;
+    }
+
+    /**
+     * 构建复杂树结构（多根 / 森林）:
+     *     1     6
+     *    / \   / \
+     *   2   3 7   8
+     *  / \
+     * 4   5
+     *
+     * 业界处理多根的方式：
+     * 1. 虚拟根节点 - 添加一个假根作为所有真实根的父节点（DOM/XML 常用）
+     * 2. 根节点列表 API - 直接接受 List<T> 而非单一根（当前 TreeUtils 的方式）
+     * 3. 严格单根约束 - 检测到多根时抛出异常
+     * 4. 无父节点即根 - 把没有父节点的节点视为独立树的根
+     *
+     * TreeUtils 采用方式2：所有方法接受 List<T> roots，自动处理森林场景
+     */
+    private List<DefaultTreeNode> buildComplexTree() {
+        List<DefaultTreeNode> nodes = new ArrayList<>();
+        // 第一棵树
+        nodes.add(new DefaultTreeNode("1", null, 1));
+        nodes.add(new DefaultTreeNode("2", "1", 2));
+        nodes.add(new DefaultTreeNode("3", "1", 3));
+        nodes.add(new DefaultTreeNode("4", "2", 4));
+        nodes.add(new DefaultTreeNode("5", "2", 5));
+        // 第二棵树
+        nodes.add(new DefaultTreeNode("6", null, 6));
+        nodes.add(new DefaultTreeNode("7", "6", 7));
+        nodes.add(new DefaultTreeNode("8", "6", 8));
         return nodes;
     }
 
@@ -281,8 +312,8 @@ public class TreeUtilsTest {
         List<DefaultTreeNode> sorted = TreeUtils.sort(tree, childrenGetter,
                 (a, b) -> Integer.compare(b.getSortValue(), a.getSortValue())); // 降序
 
-        // 根节点排序后应该在最前
-        Assert.assertEquals("3", sorted.get(0).getId()); // sortValue=3
+        // buildSimpleTree 只有一个根节点 (node 1)，排序后不变
+        Assert.assertEquals("1", sorted.get(0).getId());
     }
 
     // ==================== getTreeList (backward compatible) 测试 ====================
@@ -377,5 +408,115 @@ public class TreeUtilsTest {
 
         Assert.assertNotNull(helper);
         Assert.assertEquals(5, helper.size());
+    }
+
+    // ==================== 复杂树（多根/森林）测试 ====================
+
+    @Test
+    public void testComplexTreeGetTreeList() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        // 多根场景：应该有 2 个根节点 (node 1 和 node 6)
+        Assert.assertEquals(2, tree.size());
+        Assert.assertEquals("1", tree.get(0).getId());
+        Assert.assertEquals("6", tree.get(1).getId());
+    }
+
+    @Test
+    public void testComplexTreeDepthFirst() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.depthFirst(tree, childrenGetter);
+
+        Assert.assertEquals(8, result.size());
+        // 深度优先遍历两棵树: 1 -> 2 -> 4 -> 5 -> 3 -> 6 -> 7 -> 8
+        Assert.assertEquals("1", result.get(0).getId());
+        Assert.assertEquals("2", result.get(1).getId());
+        Assert.assertEquals("4", result.get(2).getId());
+        Assert.assertEquals("5", result.get(3).getId());
+        Assert.assertEquals("3", result.get(4).getId());
+        Assert.assertEquals("6", result.get(5).getId());
+        Assert.assertEquals("7", result.get(6).getId());
+        Assert.assertEquals("8", result.get(7).getId());
+    }
+
+    @Test
+    public void testComplexTreeBreadthFirst() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<DefaultTreeNode> result = TreeUtils.breadthFirst(tree, childrenGetter);
+
+        Assert.assertEquals(8, result.size());
+        // 广度优先遍历森林:
+        // Level 0: 1, 6
+        // Level 1: 2, 3, 7, 8
+        // Level 2: 4
+        // BFS顺序: 1 -> 6 -> 2 -> 3 -> 7 -> 8 -> 4
+        Assert.assertEquals("1", result.get(0).getId());
+        Assert.assertEquals("6", result.get(1).getId());
+        Assert.assertEquals("2", result.get(2).getId());
+        Assert.assertEquals("3", result.get(3).getId());
+        Assert.assertEquals("7", result.get(4).getId());
+        Assert.assertEquals("8", result.get(5).getId());
+        Assert.assertEquals("4", result.get(6).getId());
+    }
+
+    @Test
+    public void testComplexTreeSort() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        // 按 sortValue 降序排序，根节点排序后 node6 (sortValue=6) 应该在前面
+        List<DefaultTreeNode> sorted = TreeUtils.sort(tree, childrenGetter,
+                (a, b) -> Integer.compare(b.getSortValue(), a.getSortValue()));
+
+        Assert.assertEquals("6", sorted.get(0).getId()); // sortValue=6 最大
+        Assert.assertEquals("1", sorted.get(1).getId()); // sortValue=1 最小
+    }
+
+    @Test
+    public void testComplexTreeTraverseAndCollect() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        List<String> result = TreeUtils.traverseAndCollect(tree, childrenGetter,
+                (node, level) -> node.getId() + "-" + level);
+
+        Assert.assertEquals(8, result.size());
+        // 广度优先遍历森林:
+        // Level 0: 1, 6 -> 1-0, 6-0
+        // Level 1: 2, 3, 7, 8 -> 2-1, 3-1, 7-1, 8-1
+        // Level 2: 4 -> 4-2
+        Assert.assertEquals("1-0", result.get(0));
+        Assert.assertEquals("6-0", result.get(1));
+        Assert.assertEquals("2-1", result.get(2));
+        Assert.assertEquals("3-1", result.get(3));
+        Assert.assertEquals("7-1", result.get(4));
+        Assert.assertEquals("8-1", result.get(5));
+        Assert.assertEquals("4-2", result.get(6));
+    }
+
+    @Test
+    public void testComplexTreeCount() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        int count = TreeUtils.count(tree, childrenGetter);
+
+        Assert.assertEquals(8, count);
+    }
+
+    @Test
+    public void testComplexTreeDepth() {
+        List<DefaultTreeNode> nodes = buildComplexTree();
+        List<DefaultTreeNode> tree = TreeUtils.getTreeList(nodes, Comparator.comparingInt(DefaultTreeNode::getSortValue));
+
+        // 第一棵树深度: 1 -> 2 -> 4 (depth=3)
+        Assert.assertEquals(3, TreeUtils.depth(tree.get(0), childrenGetter));
+        // 第二棵树深度: 6 -> 7 (depth=2)
+        Assert.assertEquals(2, TreeUtils.depth(tree.get(1), childrenGetter));
     }
 }
