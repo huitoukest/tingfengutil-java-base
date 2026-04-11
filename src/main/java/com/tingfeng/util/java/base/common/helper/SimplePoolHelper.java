@@ -6,22 +6,27 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 一个简单的池工具，提供最大并发数和资源缓存等工具；
  * 效率低于FixedPoolHelper。
  * 实现了 AutoCloseable 接口，支持 try-with-resources 语法
- * 
+ *
  * @param <T> 池中的资源类型
  * @author huitoukest
  */
 public class SimplePoolHelper<T> implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(SimplePoolHelper.class);
+
     public static final int DEFAULT_MAX_THREAD_SIZE = 4;
-    private int maxThreadCount = 4;
+    private final int maxThreadCount;
     private int useSize = 0;
     private int idleSize = 0;
-    private List<T> useMembers = new LinkedList<>();
-    private List<T> idleMembers = new LinkedList();
-    private Callable<T> openAction ;
+    private final List<T> useMembers = new LinkedList<>();
+    private final List<T> idleMembers = new LinkedList<>();
+    private final Callable<T> openAction;
     private long perSleepTime = 1;
     /**
      *
@@ -142,7 +147,7 @@ public class SimplePoolHelper<T> implements AutoCloseable {
                         ((AutoCloseable) resource).close();
                     } catch (Exception e) {
                         // 记录异常，但不影响其他资源的关闭
-                        e.printStackTrace();
+                        logger.warn("Failed to close resource", e);
                     }
                 }
             }
@@ -153,7 +158,7 @@ public class SimplePoolHelper<T> implements AutoCloseable {
                         ((AutoCloseable) resource).close();
                     } catch (Exception e) {
                         // 记录异常，但不影响其他资源的关闭
-                        e.printStackTrace();
+                        logger.warn("Failed to close resource", e);
                     }
                 }
             }

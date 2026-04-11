@@ -8,44 +8,49 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * 固定大小的简单的池对象，效率较高
  * 用于管理和复用资源，支持线程安全的资源分配
  * 实现了 AutoCloseable 接口，支持 try-with-resources 语法
- * 
+ *
  * @param <T> 池中的资源类型
  * @author huitoukest
  */
 public class FixedPoolHelper<T> implements AutoCloseable {
+    private static final Logger logger = LoggerFactory.getLogger(FixedPoolHelper.class);
+
     /**
      * 默认最大线程池大小
      */
     public static final int DEFAULT_MAX_THREAD_SIZE = 4;
-    
+
     /**
      * 池大小
      */
-    private int poolSize = 4;
-    
+    private final int poolSize;
+
     /**
      * 当前线程索引，用于循环分配资源
      */
     private int currentThread = 0;
-    
+
     /**
      * 资源列表
      */
-    private List<T> dataList = null;
-    
+    private final List<T> dataList;
+
     /**
      * 用于创建新资源的回调函数
      */
-    private Callable<T> openAction = null;
-    
+    private final Callable<T> openAction;
+
     /**
      * 用于在使用时初始化资源的回调函数
      */
-    private FunctionVOne<T> initDataAction = null;
+    private FunctionVOne<T> initDataAction;
     /**
      * 构造函数，使用默认池大小
      * @param openAction 用于创建新资源的回调函数
@@ -70,7 +75,7 @@ public class FixedPoolHelper<T> implements AutoCloseable {
      * @param initDataAction 用于在使用时初始化资源的回调函数
      */
     public FixedPoolHelper(int poolSize, Callable<T> openAction, FunctionVOne<T> initDataAction){
-        if(poolSize < 0){
+        if(poolSize <= 0){
             this.poolSize = 1;
         }else {
             this.poolSize = poolSize;
@@ -151,7 +156,7 @@ public class FixedPoolHelper<T> implements AutoCloseable {
                         ((AutoCloseable) resource).close();
                     } catch (Exception e) {
                         // 记录异常，但不影响其他资源的关闭
-                        e.printStackTrace();
+                        logger.warn("Failed to close resource", e);
                     }
                 }
             }

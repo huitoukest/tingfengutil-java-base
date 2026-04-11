@@ -6,6 +6,7 @@ import org.junit.Test;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
@@ -361,30 +362,6 @@ public class FixedPoolHelperTest {
                 }
             });
             Assert.assertNotNull("资源应该不为 null", resource);
-        }
-    }
-}
-
-// 为了测试线程安全添加的 CountDownLatch 类
-class CountDownLatch {
-    private int count;
-
-    public CountDownLatch(int count) {
-        this.count = count;
-    }
-
-    public synchronized void countDown() {
-        if (count > 0) {
-            count--;
-            if (count == 0) {
-                notifyAll();
-            }
-        }
-    }
-
-    public synchronized void await() throws InterruptedException {
-        while (count > 0) {
-            wait();
         }
     }
 }

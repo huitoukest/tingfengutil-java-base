@@ -38,7 +38,6 @@ public class SimplePoolHelperTest {
                            Thread.sleep(2);
                        } catch (InterruptedException e) {
                            Thread.currentThread().interrupt();
-                           e.printStackTrace();
                        }
                        sb.append("2");
                        System.out.println(sb.toString());

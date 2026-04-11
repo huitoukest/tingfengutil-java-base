@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.common;
+package com.tingfeng.util.java.base.common.helper;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -7,8 +7,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-import com.tingfeng.util.java.base.common.helper.PoolBaseInfo;
-import com.tingfeng.util.java.base.common.helper.PoolHelper;
 import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
 
 public class PoolHelperTest {
