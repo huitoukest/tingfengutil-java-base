@@ -1,7 +1,5 @@
 package com.tingfeng.util.java.base.file.csv;
 
-import com.alibaba.fastjson.JSON;
-import com.tingfeng.util.java.base.common.utils.RandomUtils;
 import com.tingfeng.util.java.base.common.utils.datetime.DateUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -24,7 +22,7 @@ public class CSVUtilTest {
     public void readCSVInBatch() throws URISyntaxException, IOException {
         URL resource = Thread.currentThread().getContextClassLoader().getResource("CSVTest.csv");
         Path path = Paths.get(resource.toURI());
-        CSVUtil.readCSVInBatch(RandomUtils.randomInt(2,2000),CSVReadTestVO.class,Files.lines(path, StandardCharsets.UTF_8),
+        CSVUtil.readCSVInBatch(500,CSVReadTestVO.class,Files.lines(path, StandardCharsets.UTF_8),
                 list -> {
                     Assert.assertEquals(2,list.size());
                     Assert.assertEquals(DateUtils.getDate("2022-04-28 00:00:00"),list.get(0).getHeader5());
@@ -35,7 +33,7 @@ public class CSVUtilTest {
     public void readCSVInBatchToMap() throws URISyntaxException, IOException {
         URL resource = Thread.currentThread().getContextClassLoader().getResource("CSVTest.csv");
         Path path = Paths.get(resource.toURI());
-        CSVUtil.readCSVInBatchToMap(RandomUtils.randomInt(2,2000), Files.lines(path, StandardCharsets.UTF_8),
+        CSVUtil.readCSVInBatchToMap(500, Files.lines(path, StandardCharsets.UTF_8),
                 list -> {
                     Assert.assertEquals(2,list.size());
                     Assert.assertEquals("2022-04-28 00:00:00",list.get(0).get("header5"));

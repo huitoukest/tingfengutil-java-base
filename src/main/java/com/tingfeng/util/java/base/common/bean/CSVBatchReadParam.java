@@ -37,9 +37,21 @@ public class CSVBatchReadParam<T> {
      */
     private Consumer<List<T>> consumerContentF;
     /**
-     * 当倍引号,包括单引号与双引号围绕字段时,进行反转移
+     * 当被引号包括单引号与双引号围绕字段时,进行反转移
      */
     private boolean unescapeWhenAroundQuotationMarks = true;
+    /**
+     * header 的包围符号，无引号时为 null，默认 null（无包围符号）
+     */
+    private Character headerQuoteChar = null;
+    /**
+     * content 的包围符号，无引号时为 null，默认 null（无包围符号）
+     */
+    private Character contentQuoteChar = null;
+    /**
+     * 支持的引号字符数组，用于自动检测引号类型
+     */
+    private char[] quoteChars = new char[]{'"', '\''};
 
     public CSVBatchReadParam(){}
 

@@ -16,7 +16,8 @@
       "Bash(export MAVEN_OPTS=\"-Dfile.encoding=UTF-8\")",
       "Bash(iconv -f GBK -t UTF-8)",
       "Bash(mvn *)",
-      "Bash(/mingw64/bin/git:*)"
+      "Bash(/mingw64/bin/git:*)",
+      "Bash(git stash:*)"
     ]
   }
 }

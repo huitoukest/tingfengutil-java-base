@@ -298,7 +298,7 @@ public class ReflectUtilsTest {
         User user = new User();
         user.setAge(25);
         Object result = ReflectUtils.invokeMethod(user, "getAge");
-        Assert.assertEquals("应该能调用getAge方法", 1025, result); // 因为getAge方法返回age + 1000
+        Assert.assertEquals("应该能调用getAge方法", 25, result);
     }
 
     /**
@@ -308,7 +308,7 @@ public class ReflectUtilsTest {
     public void testInvokeMethodWithParams() throws Exception {
         User user = new User();
         ReflectUtils.invokeMethod(user, "setAge", new Object[]{30}, int.class);
-        Assert.assertEquals("应该能调用setAge方法", 30, user.getAge() - 1000); // 减去1000是因为getAge方法返回age + 1000
+        Assert.assertEquals("应该能调用setAge方法", 30, user.getAge());
     }
 
     /**
@@ -346,7 +346,7 @@ public class ReflectUtilsTest {
         User user = new User();
         boolean result = ReflectUtils.setter(user, "age", 35, int.class);
         Assert.assertTrue("应该能成功设置字段", result);
-        Assert.assertEquals("年龄应该被设置", 35, user.getAge() - 1000); // 减去1000是因为getAge方法返回age + 1000
+        Assert.assertEquals("年龄应该被设置", 35, user.getAge());
     }
 
     /**

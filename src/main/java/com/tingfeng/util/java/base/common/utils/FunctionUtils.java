@@ -13,6 +13,11 @@ import java.util.function.Predicate;
 public class FunctionUtils {
 
     /**
+     * 用于标记null key的占位对象，保证null值去重时使用同一个marker
+     */
+    private static final Object NULL_KEY_MARKER = new Object();
+
+    /**
      * eg: list.stream().filter(distinctByKey(it -> getKey(it));
      * @param keyExtractor 将目标值转为一个判断重复的key
      * @param <T>
@@ -22,7 +27,8 @@ public class FunctionUtils {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>();
         return t -> {
             Object key = keyExtractor.apply(t);
-            return key == null ? seen.putIfAbsent(new Object(), Boolean.TRUE) == null : seen.putIfAbsent(key, Boolean.TRUE) == null;
+            Object mapKey = key == null ? NULL_KEY_MARKER : key;
+            return seen.putIfAbsent(mapKey, Boolean.TRUE) == null;
         };
     }
 

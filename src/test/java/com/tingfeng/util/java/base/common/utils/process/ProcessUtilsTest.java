@@ -248,12 +248,36 @@ public class ProcessUtilsTest {
 
     // ==================== grep/find测试 ====================
 
+    /**
+     * 测试grep - Unix/Linux从stdin读取
+     * Windows不支持grep从stdin读取，此测试在Windows上跳过
+     */
     @Test
     public void testGrep() {
+        if (ProcessUtils.isWindows()) {
+            // Windows上跳过，grep stdin测试仅适用于Unix/Linux
+            return;
+        }
         ProcessResult result = ProcessUtils.grep("test", "-");
         Assert.assertNotNull(result);
         // grep从stdin读取，返回码取决于是否有匹配
         Assert.assertTrue(result.getExitCode() == 0 || result.getExitCode() == 1);
+    }
+
+    /**
+     * Windows平台grep测试 - 使用文件而非stdin
+     */
+    @Test
+    public void testGrepOnWindows() {
+        if (!ProcessUtils.isWindows()) {
+            // Unix/Linux上跳过，Windows使用findstr
+            return;
+        }
+        // Windows上使用findstr命令测试
+        ProcessResult result = ProcessUtils.execute("echo test123 | findstr \"test\"");
+        Assert.assertNotNull(result);
+        // findstr返回码：0表示找到匹配，1表示未找到
+        Assert.assertTrue("Windows findstr应该成功", result.getExitCode() == 0 || result.getExitCode() == 1);
     }
 
     @Test

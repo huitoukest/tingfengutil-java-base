@@ -8,6 +8,9 @@ import com.tingfeng.util.java.base.common.utils.BeanUtils;
 import com.tingfeng.util.java.base.common.utils.ObjectUtils;
 import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -24,6 +27,7 @@ import java.util.stream.Stream;
  *
  */
 public class CSVUtil {
+    private static final Logger logger = LoggerFactory.getLogger(CSVUtil.class);
 	
 	public static final String  V_COMMON = ",";
 	public static final String V_NEW_LINE = "\r";
@@ -40,33 +44,14 @@ public class CSVUtil {
      * @param out 给定内容的输出流
      * @param csvWriter com.tingfeng.util.java.base.file.csv.CSVWriter 实例
      */
-    public static void writeCsv(OutputStream out,CSVWriter csvWriter){
-        OutputStreamWriter osw=null;
-        BufferedWriter bw=null;
-        try {
-            osw = new OutputStreamWriter(out);
-            bw =new BufferedWriter(osw);
-            //UTF-8编码bom头
-            byte[] bom ={(byte) 0xEF,(byte) 0xBB,(byte) 0xBF};
-            out.write(bom);
+    public static void writeCsv(OutputStream out, CSVWriter csvWriter){
+        try (OutputStreamWriter osw = new OutputStreamWriter(out);
+             BufferedWriter bw = new BufferedWriter(osw)) {
+            //UTF-8编码bom头，写入bw而非out，确保在内容之前
+            bw.write('\uFEFF');
             csvWriter.write(bw);
-        }catch (Throwable e){
+        } catch (Throwable e){
            throw new BaseException(e);
-        }finally{
-            if(bw!=null){
-                try {
-                    bw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } 
-            }
-            if(osw!=null){
-                try {
-                    osw.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } 
-            } 
         }
     }
 
@@ -78,25 +63,14 @@ public class CSVUtil {
      * @param <T> 读取到的数据转后后的对应的java bean对象
      */
     public static <T> void readCsv(Reader reader, ConvertI<String,T> converter, FunctionVOne<T> functionVOne){
-        BufferedReader br=null;
-        try {
-            br = new BufferedReader(reader);
-            String line = ""; 
-            while ((line = br.readLine()) != null) { 
+        try (BufferedReader br = new BufferedReader(reader)) {
+            String line;
+            while ((line = br.readLine()) != null) {
                 T t = converter.apply(line);
                 functionVOne.accept(t);
             }
-        }catch (Throwable e){
+        } catch (Throwable e){
             throw new BaseException(e);
-        }finally{
-            if(br!=null){
-                try {
-                    br.close();
-                    br=null;
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
         }
     }
     /**
@@ -107,9 +81,9 @@ public class CSVUtil {
     public static String escapeCsv(String line){
     	if(null == line)
     		return "";
-    	StringBuilder sb = new StringBuilder(); 
+    	StringBuilder sb = new StringBuilder();
     	sb.append("\"");
-    	sb.append(line.replaceAll("\"","\"\""));
+    	sb.append(line.replace("\"","\"\""));
     	sb.append("\"");
     	return sb.toString();
     }
@@ -158,13 +132,7 @@ public class CSVUtil {
                     }
     			}
     		};
-            try {
-                CSVUtil.writeCsv(out, csvWriter);
-                out.flush();
-                out.close();
-            }catch (Throwable e){
-                throw new BaseException(e);
-            }
+            CSVUtil.writeCsv(out, csvWriter);
     }
     /**
      * 将对应数组中的数据转为CSV单行字符串
@@ -234,6 +202,14 @@ public class CSVUtil {
                    }
                }
            }
+           // 剥离 header 首尾引号
+           Character headerQuoteChar = csvBatchReadParam.getHeaderQuoteChar();
+           if (headerQuoteChar != null) {
+               char qc = headerQuoteChar;
+               for (int i = 0; i < headers[0].length; i++) {
+                   headers[0][i] = trimQuote(headers[0][i], qc);
+               }
+           }
            Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter();
            if(beanConverter == null){
                if(beanCls.isAssignableFrom(Map.class)){
@@ -248,6 +224,14 @@ public class CSVUtil {
                if(csvBatchReadParam.isUnescapeWhenAroundQuotationMarks()) {
                    for (int i = 0; i < contentStr.length; i++) {
                        contentStr[i] = StringUtils.unescape(contentStr[i]);
+                   }
+               }
+               // 剥离 content 首尾引号
+               Character contentQuoteChar = csvBatchReadParam.getContentQuoteChar();
+               if (contentQuoteChar != null) {
+                   char qc = contentQuoteChar;
+                   for (int i = 0; i < contentStr.length; i++) {
+                       contentStr[i] = trimQuote(contentStr[i], qc);
                    }
                }
                if(csvBatchReadParam.getContentHandler() != null){
@@ -265,7 +249,20 @@ public class CSVUtil {
             csvBatchReadParam.getConsumerContentF().accept(contentList);
             contentList.clear();
         }
-        System.gc();
+    }
+
+    /**
+     * 剥离字符串首尾的指定引号字符
+     * @param str 原始字符串
+     * @param quoteChar 引号字符
+     * @return 剥离后的字符串
+     */
+    private static String trimQuote(String str, char quoteChar) {
+        if (str == null || str.length() < 2) return str;
+        if (str.charAt(0) == quoteChar && str.charAt(str.length() - 1) == quoteChar) {
+            return str.substring(1, str.length() - 1);
+        }
+        return str;
     }
 
     private static <T> Function<String[],Map<String,String>> createMapConverter(String[] headers) {
@@ -323,9 +320,8 @@ public class CSVUtil {
      * @param <T>
      */
     public static <T> List<T> readToBean(Class<T> beanCls,Path path, Charset charset){
-        try {
-            Stream<String> lines = Files.lines(path, charset);
-            return readToBean(beanCls,lines,charset);
+        try (Stream<String> lines = Files.lines(path, charset)) {
+            return readToBean(beanCls, lines, charset);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
