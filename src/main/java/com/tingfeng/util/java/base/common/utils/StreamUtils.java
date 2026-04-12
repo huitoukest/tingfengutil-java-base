@@ -1,16 +1,21 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.InputStream;
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.exception.io.IOException;
+import com.tingfeng.util.java.base.common.exception.io.StreamCloseException;
 
+import java.io.*;
+import java.util.function.Consumer;
+
+/**
+ * 流处理工具类
+ * @deprecated 由于历史原因保留，建议使用 {@link IOUtils}
+ * @author huitoukest
+ */
+@Deprecated
 public class StreamUtils {
 
-	final static int BUFFER_SIZE = 4096;
+	private static final int BUFFER_SIZE = 4096;
 	/**
 	 * 将String转换成InputStream
 	 * 默认UTF-8编码
@@ -49,8 +54,7 @@ public class StreamUtils {
 		try {
 			fileInputStream = new FileInputStream(filepath);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileInputStream;
 	}
@@ -65,8 +69,7 @@ public class StreamUtils {
 		try {
 			fileInputStream = new FileInputStream(file);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileInputStream;
 	}
@@ -82,8 +85,7 @@ public class StreamUtils {
 		try {
 			fileOutputStream = new FileOutputStream(file,append);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileOutputStream;
 	}
@@ -99,8 +101,7 @@ public class StreamUtils {
 		try {
 			fileOutputStream = new FileOutputStream(filepath,append);
 		} catch (FileNotFoundException e) {
-			System.out.print("错误信息:文件不存在");
-			e.printStackTrace();
+			throw new BaseException(e);
 		}
 		return fileOutputStream;
 	}
@@ -108,4 +109,61 @@ public class StreamUtils {
 		return new ByteArrayOutputStream();
 	}
 
+	/**
+	 * 将输出流中的内容outputStream拷贝到inputStream中，分批拷贝，默认每次4096 字节
+	 * @param outputStream
+	 * @param inputStream
+	 */
+	public static void copy(OutputStream outputStream, InputStream inputStream){
+		copy(outputStream,inputStream,BUFFER_SIZE,true,null);
+	}
+
+	/**
+	 * 将输出流中的内容outputStream拷贝到inputStream中，分批拷贝，缓存的size是
+	 * @param outputStream
+	 * @param inputStream
+	 * @param bufferSize
+	 */
+	public static void copy(OutputStream outputStream, InputStream inputStream, int bufferSize){
+		copy(outputStream,inputStream,bufferSize,true,null);
+	}
+	/**
+	 * 将输出流中的内容outputStream拷贝到inputStream中，分批拷贝，缓存的size是
+	 * @param outputStream
+	 * @param inputStream
+	 * @param bufferSize
+	 * @param closeStream 使用完毕之后是否关闭流
+	 * @param readSizeCallBack 回调，并传入当前已经读取的字节数
+	 */
+	public static void copy(OutputStream outputStream, InputStream inputStream, int bufferSize,boolean closeStream, Consumer<Integer> readSizeCallBack){
+		try{
+			int perReadLength = 0;
+			byte[] buffer = new byte[bufferSize];
+			// 循环读写中,读取的字节的总数量
+			int sumReadSize = 0;
+			/* 从文件读取数据到缓冲区 */
+			while ((perReadLength = inputStream.read(buffer)) != -1) {
+				/* 将数据写入DataOutputStream中 */
+				outputStream.write(buffer, 0, perReadLength);
+				if(null != readSizeCallBack) {
+					sumReadSize += perReadLength;
+					readSizeCallBack.accept(sumReadSize);
+				}
+			}
+		}catch (java.io.IOException e){
+			throw new IOException(e);
+		}finally {
+			try {
+				if (closeStream && inputStream != null) {
+					inputStream.close();
+				}
+				if (closeStream && outputStream != null) {
+					outputStream.flush();
+					outputStream.close();
+				}
+			}catch (Throwable e){
+				throw new StreamCloseException("close stream error",e);
+			}
+		}
+	}
 }

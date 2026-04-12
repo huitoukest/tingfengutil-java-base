@@ -1,23 +1,10 @@
 package com.tingfeng.util.java.base.common.constant;
 
 /**
+ * 常见的java Object的class的名称
  * @author huitoukest
- * @describe 常见的java Object的class的名称
  */
 public class ObjectTypeString {
-	/**
-	 * 包装类型属性的类型的类名,对应getGenericType;
-	 */
-	public final static String 
-			fieldBoolean = "class java.lang.Boolean",
-			fieldDate = "class java.util.Date",
-			fieldFloat = "class java.lang.Float",
-			fieldDouble = "class java.lang.Double",
-			fieldLong = "class java.lang.Long",
-			fieldInteger = "class java.lang.Integer",
-			fieldString = "class java.lang.String",
-			fieldShort = "class java.lang.Short",
-			fieldByte = "class java.lang.Byte";
 	/**
 	 * 包装类型的类名,对应Type
 	 */

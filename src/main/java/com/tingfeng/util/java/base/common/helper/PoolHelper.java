@@ -1,10 +1,13 @@
 package com.tingfeng.util.java.base.common.helper;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.tingfeng.util.java.base.common.bean.PoolMember;
 import com.tingfeng.util.java.base.common.exception.OverPoolWaitSizeException;
@@ -12,19 +15,21 @@ import com.tingfeng.util.java.base.common.exception.OverPoolWaitTimeException;
 import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
 /**
  * 任务池工具
- * @author WangGang
+ * @author huitoukest
  *
  * @param <T> T 就是pool实际打开或者释放的资源本身，比如常见的jdbc的数据库的连接对象
  */
 public class PoolHelper<T>{
+    private static final Logger logger = LoggerFactory.getLogger(PoolHelper.class);
+
     /**
      * PoolMember 的动作
      */
-    private PoolMemberActionI<T>  poolMemberAction;
+    private final PoolMemberActionI<T>  poolMemberAction;
     /**
      * 当前pool的配置信息
      */
-    private PoolBaseInfo poolBaseInfo;
+    private final PoolBaseInfo poolBaseInfo;
     /**
      * 当前等待对象的数量
      */
@@ -40,19 +45,19 @@ public class PoolHelper<T>{
     /**
      * 当前pool中正在开启使用的PoolMember列表
      */
-    private final List<PoolMember<T>>  runingList = new ArrayList<>(10);
+    private final List<PoolMember<T>>  runingList = new CopyOnWriteArrayList<>();
     /**
      * 当前总的pool中正在闲置的PoolMember列表
      */
-    private final List<PoolMember<T>>  idleList = new ArrayList<>(10);
+    private final List<PoolMember<T>>  idleList = new CopyOnWriteArrayList<>();
     /**
      * 每次查找后新增的闲置池,最终会在数据处理后合并到idleList中
      */
-    private final List<PoolMember<T>>  idleListPer = new ArrayList<>(10);
+    private final List<PoolMember<T>>  idleListPer = new CopyOnWriteArrayList<>();
     /**
      * 在每次检查pool后需要释放删除的PoolMember列表
      */
-    private final List<PoolMember<T>>  delList = new ArrayList<>(10);
+    private final List<PoolMember<T>>  delList = new CopyOnWriteArrayList<>();
     /**
      * 当前运行资源的一个资源T和PoolMember的Map映射
      */
@@ -60,34 +65,37 @@ public class PoolHelper<T>{
     /**
      * 默认的一个线程用来检查pool中的状态、对象和资源
      */
-    private Thread thread = null;
+    private volatile Thread thread = null;
     
     /**
      * 资源检查和操作，包括超时，队列长度超过，闲置资源的回收等
      */
-    private  void workCheck() {
-        if(null == thread) {
-            thread =  new Thread(new Runnable() {    
-                @Override
-                public void run() {
-                    while(true) {
-                        synchronized(PoolHelper.this) {
-                            //try {
-                            delList.clear();
-                            idleListPer.clear();
-                            PoolMember<T> member = null;
+    private void workCheck() {
+        if(thread == null) {
+            synchronized(PoolHelper.this) {
+                if(thread == null) {
+                    thread = new Thread(() -> {
+                        while(true) {
+                            synchronized(PoolHelper.this) {
+                                delList.clear();
+                                idleListPer.clear();
+                                PoolMember<T> member = null;
                                 try {
                                     //找出闲置,运行超时
-                                    for(int j = 0; j < PoolHelper.this.runingList.size() ; j ++) {
-                                        member =  PoolHelper.this.runingList.get(j);
+                                    for(PoolMember<T> m : PoolHelper.this.runingList) {
+                                        member = m;
                                         try {
                                             if(isOverMaxRunTime(member)) {
                                                 PoolHelper.this.delList.add(member);
-                                                PoolHelper.this.poolMemberAction.onOverMaxRunTime(member.getMember());
+                                                try {
+                                                    PoolHelper.this.poolMemberAction.onOverMaxRunTime(member.getMember());
+                                                } catch (Throwable ex) {
+                                                    logger.error("onOverMaxRunTime callback failed", ex);
+                                                }
                                                 continue;
                                             }
                                         }catch (Throwable e) {
-                                            e.printStackTrace();
+                                            logger.error("workCheck exception", e);
                                         }
                                         if(!member.isUse()) {
                                             PoolHelper.this.idleList.add(member);
@@ -95,8 +103,8 @@ public class PoolHelper<T>{
                                         }
                                     }
                                     //消除运行超时
-                                    for(int j = 0; j < PoolHelper.this.delList.size() ; j ++) {
-                                        member =  PoolHelper.this.delList.get(j);
+                                    for(PoolMember<T> m : PoolHelper.this.delList) {
+                                        member = m;
                                         PoolHelper.this.runingList.remove(member);
                                         PoolHelper.this.poolMemberAction.destroy(member.getMember());
                                     }
@@ -104,36 +112,45 @@ public class PoolHelper<T>{
                                     PoolHelper.this.runingList.removeAll(idleListPer);
                                     PoolHelper.this.delList.clear();
                                     //找出闲置超时
-                                    for(int j = 0; j < PoolHelper.this.idleList.size() ; j ++) {
-                                        member =PoolHelper. this.idleList.get(j);
+                                    for(PoolMember<T> m : PoolHelper.this.idleList) {
+                                        member = m;
                                         if(PoolHelper.this.isOverMaxIdleTime(member)) {
                                             PoolHelper.this.delList.add(member);
                                         }
                                     }
                                     //消除闲置超时
-                                    for(int j = 0; j < PoolHelper.this.delList.size() ; j ++) {
-                                        member =  PoolHelper.this.delList.get(j);
+                                    for(PoolMember<T> m : PoolHelper.this.delList) {
+                                        member = m;
                                         PoolHelper.this.idleList.remove(member);
                                         PoolHelper.this.poolMemberAction.destroy(member.getMember());
                                     }
                                 }catch (Throwable e) {
-                                   e.printStackTrace();
-                                   PoolHelper.this.poolMemberAction.onWorkException(member.getMember(),e);
+                                    logger.error("Pool workCheck exception", e);
+                                    try {
+                                        if(member != null && member.getMember() != null) {
+                                            PoolHelper.this.poolMemberAction.onWorkException(member.getMember(), e);
+                                        }
+                                    } catch (Throwable ex) {
+                                        logger.error("onWorkException callback failed", ex);
+                                    }
                                 }
                                 //如果停止标记，并且当前再没有任务
-                                if(isShutDown && PoolHelper.this.idleList.size() == 0 && PoolHelper.this.runingList.size() == 0) {
+                                if(isShutDown && PoolHelper.this.idleList.isEmpty() && PoolHelper.this.runingList.isEmpty()) {
                                     isRunning = false;
                                     break;
                                 }
-                        }//end synchronized
-                        try {
-                            Thread.sleep(poolBaseInfo.getPerCheckTime());
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }    
-                    }//end while
-                }//end run
-            });
+                            }//end synchronized
+                            try {
+                                Thread.sleep(poolBaseInfo.getPerCheckTime());
+                            } catch (InterruptedException e) {
+                                logger.warn("workCheck thread interrupted", e);
+                                break;
+                            }
+                        }//end while
+                    });
+                    thread.setDaemon(true);
+                }
+            }
         }
         if(!isRunning && !isShutDown) {
             isRunning = true;
@@ -144,7 +161,7 @@ public class PoolHelper<T>{
 
     /**
      *
-     * @param poolMemberAction PoolMemberActionI<T> 打开和释放资源的动作对象
+     * @param poolMemberAction PoolMemberActionI&lt;T&gt; 打开和释放资源的动作对象
      * @param poolBaseInfo PoolBaseInfo pool配置信息
      */
     public PoolHelper(PoolMemberActionI<T>  poolMemberAction,PoolBaseInfo poolBaseInfo) {
@@ -155,7 +172,7 @@ public class PoolHelper<T>{
 
     /**
      *
-     * @param poolMemberAction PoolMemberActionI<T> 打开和释放资源的动作对象
+     * @param poolMemberAction PoolMemberActionI[T] 打开和释放资源的动作对象
      */
     public PoolHelper(PoolMemberActionI<T>  poolMemberAction) {
         this.poolBaseInfo =  new PoolBaseInfo();
@@ -178,18 +195,26 @@ public class PoolHelper<T>{
      * @return 返回此资源
      */
     public T open() {
+        if(poolBaseInfo.getPerWaitTime() <= 0) {
+            throw new IllegalArgumentException("perWaitTime must be positive");
+        }
+        long maxWaitTime = poolBaseInfo.getMaxWaitTime();
+        if(maxWaitTime <= 0) {
+            maxWaitTime = Long.MAX_VALUE;
+        }
+        int maxTryCount = (int) (maxWaitTime / poolBaseInfo.getPerWaitTime());
+
         if(waitCount.get() > poolBaseInfo.getMaxQueueSize()) {
             throw new OverPoolWaitSizeException("wait size:" + poolBaseInfo.getMaxQueueSize());
         }
         PoolMember<T> member = null;
         T t = null;
         int tryCount = 0 ;
-        int maxTryCount = (int) (poolBaseInfo.getMaxWaitTime() / poolBaseInfo.getPerWaitTime());
-        
+
         waitCount.incrementAndGet();
         try {
             do {
-                if(tryCount  >= maxTryCount) {
+                if(tryCount >= maxTryCount) {
                     throw new OverPoolWaitTimeException("wait time:" + poolBaseInfo.getMaxWaitTime());
                 }
                 synchronized(this) {
@@ -201,8 +226,8 @@ public class PoolHelper<T>{
                         t = poolMemberAction.create();
                         member = new PoolMember<>();
                         member.setMember(t);
-                        runingList.add(member);    
-                    }else if(idleList.size() > 0) {
+                        runingList.add(member);
+                    }else if(!idleList.isEmpty()) {
                         member =  idleList.get(0);
                         member.setUpdateTime(System.currentTimeMillis());
                         idleList.remove(0);
@@ -218,7 +243,8 @@ public class PoolHelper<T>{
                 try {
                     Thread.sleep(poolBaseInfo.getPerWaitTime());
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("open interrupted", e);
                 }
             }while(t == null);   
         }finally {
@@ -258,7 +284,7 @@ public class PoolHelper<T>{
      */
     public synchronized void keepRun(T t){
         if(null == t){
-            System.out.println("PoolHelper:can not keepRun a null poolMember");
+            logger.warn("PoolHelper:can not keepRun a null poolMember");
             return;
         }
         PoolMember<T> poolMember = runMap.get(t);
@@ -275,23 +301,33 @@ public class PoolHelper<T>{
      */
     public synchronized void close(T t) {
        if(null == t){
-            System.out.println("PoolHelper:can not close a null poolMember");
+            logger.warn("PoolHelper:can not close a null poolMember");
             return;
        }
-       PoolMember<T> poolMember = runMap.get(t);       
+       PoolMember<T> poolMember = runMap.get(t);
        if(null != poolMember) {
                poolMember.setUse(false);
                runMap.remove(t);
        }
     }
-    
+
     /**
-     * when all member is close,it will shutDown
+     * 标记关闭，等待所有资源释放后停止
      */
     public synchronized void shutDownPool() {
         isShutDown = true;
     }
-    
+
+    /**
+     * 立即关闭 pool，强制终止检查线程
+     */
+    public synchronized void shutdownNow() {
+        isShutDown = true;
+        if(thread != null) {
+            thread.interrupt();
+        }
+    }
+
     /** 当新建PoolHelper实例时也会默认调用此方法
      * when all member is close,it will shutDown
      */
@@ -299,5 +335,5 @@ public class PoolHelper<T>{
         isShutDown = false;
         workCheck();
     }
-    
+
 }

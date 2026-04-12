@@ -1,412 +1,659 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import com.tingfeng.util.java.base.common.bean.BeanCopyFun;
+import com.tingfeng.util.java.base.common.bean.UnionKey;
+import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.common.helper.SimpleCacheHelper;
+import com.tingfeng.util.java.base.common.inter.PropertyFunction;
+import com.tingfeng.util.java.base.common.inter.consumer.ConsumerTwo;
+import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
+import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
+import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import com.tingfeng.util.java.base.common.utils.reflect.ReflectJudgeUtils;
-import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringUtils;
 /**
- * @author Bear
- *  做一个方法，可以将一个JavaBean风格对象的属性值拷贝到另一个对象的同名属性中 (如果不存在同名属性的就不拷贝）
- * @version 20160517
-**/
-@SuppressWarnings("unchecked")
-public class BeanUtils{
-	/**
-	  *  深度复制一个对象,即同时赋值对象内部的基础数据类型和引用类型,通过对对象的二进制流读写达到此效果
-	  * @return
-	  * @throws IOException
-	  * @throws ClassNotFoundException
-	  */
-	public static <T> T deepClone(T t) throws IOException, ClassNotFoundException {  
-  
-        /* 写入当前对象的二进制流 */  
-        ByteArrayOutputStream bos = new ByteArrayOutputStream();  
-        ObjectOutputStream oos = new ObjectOutputStream(bos);  
-        oos.writeObject(t);    
-        /* 读出二进制流产生的新对象 */
-        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());  
-        ObjectInputStream ois = new ObjectInputStream(bis);  
-        return (T) ois.readObject();  
-    }	
-	/**
-	 * 返回一个拷贝之后的新的数组,通过方法和属性赋值新建对象来达到赋值的目的,是浅复制;
-	 * 深度拷贝基础属性，浅拷贝数组和集合
-	 * @param sourceList
-	 * @throws InvocationTargetException 
-	 * @throws IllegalArgumentException 
-	 * @throws SecurityException 
-	 * @throws NoSuchFieldException 
-	 */
-	public static<T> List<T> middleCopyListByField(List<? extends Object> sourceList,Class<T> tagetClass,String...exceptionFileds) throws SecurityException, IllegalArgumentException, InvocationTargetException, NoSuchFieldException{
-		List<Object> tagetList=new ArrayList<Object>();
-		for(Object o:sourceList){
-		   try {
-			Object t=tagetClass.newInstance();
-			middleCopyBean(t, o, exceptionFileds);
-			tagetList.add(t);
-		} catch (InstantiationException e) {
-			e.printStackTrace();
-		} catch (IllegalAccessException e) {
-			e.printStackTrace();
-		}
-	   }
-		return (List<T>) tagetList;
-	}	
-	
-	/**
-	 * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
-	 * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
-	 * @param target
-	 * @param source
-	 * @param exceptionFileds 对于来源对象中的某些属性不进行拷贝
-	 * @throws InvocationTargetException 
-	 * @throws IllegalAccessException 
-	 * @throws IllegalArgumentException 
-	 * @throws SecurityException 
-	 * @throws InstantiationException 
-	 * @throws NoSuchFieldException 
-	 */
-	public static void middleCopyBean(Object target,Object source,String...exceptionFileds) throws SecurityException, IllegalArgumentException, IllegalAccessException, InvocationTargetException, InstantiationException, NoSuchFieldException{
-		Class<? extends Object> sourceClz = source.getClass();
-		Class<? extends Object> targetClz = target.getClass();
-		// 得到Class对象所表征的类的所有属性(包括私有属性)
-		Field[] fields_s = sourceClz.getDeclaredFields();
-        Field[] fields_t=targetClz.getDeclaredFields();        
-		if (fields_s.length == 0) {
-			fields_s = sourceClz.getSuperclass().getDeclaredFields();
-		}
-		if (fields_t.length == 0) {
-			fields_t = targetClz.getSuperclass().getDeclaredFields();
-		}
-					
-		for (int i = 0; i < fields_s.length; i++) {
-			try{
-				String fieldName = fields_s[i].getName();
-				if(ArrayUtils.isExitedInArray(fieldName, exceptionFileds))
-					continue;
-				
-				Field targetField =null;
-				// 得到targetClz对象所表征的类的名为fieldName的属性，不存在就进入下次循环
-				try {
-					targetField = ReflectUtils.getField(targetClz, fieldName);		
-				} catch (NoSuchFieldException e) {				
-					continue;				
-				}
-				fields_s[i].setAccessible(true);    
-				Object fieldValueObject=ReflectUtils.getFieldValue(true, source,fields_s[i].getName(),null);
-				if(fieldValueObject==null)
-					continue;
-				if(!isBaseDataType(fieldValueObject)){
-					Class<?> cls=targetField.getType();
-					Object tagetFieldObject=cls.newInstance();
-						middleCopyBean(tagetFieldObject,fieldValueObject);		
-					fieldValueObject=tagetFieldObject;
-				}				
-				ReflectUtils.setFieldValue(true, target, targetField.getName(),new Object[]{fieldValueObject},fieldValueObject.getClass());
-			}catch(Exception e){
-				//e.printStackTrace();
-				continue;
-			}
-			
-						 
-		}
-	}
-	
-	/**
-	 * 判断是否是基础数据类型,包括Boolean,Byte,Long,Integer,String,Date,Float,Double,Short,数组和集合
-	 * @return
-	 */
-	public static boolean isBaseDataType(Object obj){
-		if(obj instanceof Object[])
-		{
-			return true;
-		}else if(obj instanceof Collection){
-			return true;
-		}else if(obj instanceof Boolean){
-			return true;
-		}else if(obj instanceof Byte){
-			return true;
-		}else if(obj instanceof Short){
-			return true;
-		}else if(obj instanceof Long){
-			return true;
-		}else if(obj instanceof Integer){
-			return true;
-		}else if(obj instanceof Float){
-			return true;
-		}else if(obj instanceof Double){
-			return true;
-		}else if(obj instanceof Date){
-			return true;
-		}else if(obj instanceof String){
-			return true;
-		}
-		return false;
-	}
-	
-	/**
-     * 根据属性的名称和类型来拷贝,即只拷贝名称和类型都相同的属性的值
-     * @param target
-     * @param source
-	 * @throws InstantiationException 
-     * @throws Exception
-     */
-	public static void middleCopyBeanByField(Object target, Object source) throws InstantiationException{
-			Class<? extends Object> sourceClz = source.getClass();
-			Class<? extends Object> targetClz = target.getClass();
+ * @author huitoukest
+ * 做一个方法，可以将一个JavaBean风格对象的属性值拷贝到另一个对象的同名属性中 (如果不存在同名属性的就不拷贝）
+ * @version 20180917
+ **/
+public class BeanUtils {
+    private static final Log logger = LogFactory.getLog(BeanUtils.class);
 
-			// 得到Class对象所表征的类的所有属性(包括私有属性)
-			Field[] fields_s = sourceClz.getDeclaredFields();
-            Field[] fields_t=targetClz.getDeclaredFields();                      
-            
-			if (fields_s.length == 0) {
-				fields_s = sourceClz.getSuperclass().getDeclaredFields();
-			}
-			if (fields_t.length == 0) {
-				fields_t = targetClz.getSuperclass().getDeclaredFields();
-			}
-					
-			for (int i = 0; i < fields_s.length; i++) {
-
-				String fieldName = fields_s[i].getName();
-				Field targetField =null;
-				// 得到targetClz对象所表征的类的名为fieldName的属性，不存在就进入下次循环
-				try {
-					targetField = targetClz.getDeclaredField(fieldName);
-				} catch (NoSuchFieldException e) {
-					try {
-						targetField = targetClz.getSuperclass().getDeclaredField(
-								fieldName);
-					} catch (NoSuchFieldException e1) {						
-						e1.printStackTrace();
-						continue;
-					}
-				}
-				targetField.setAccessible(true);
-				fields_s[i].setAccessible(true);
-				if (fields_s[i].getType() == targetField.getType()) {
-                    try {
-						Object value=fields_s[i].get(source);
-						if(!isBaseDataType(value)){
-							Object taget=value.getClass().newInstance();
-							middleCopyBeanByField(taget,value);
-							value=taget;
-						}
-                    	targetField.set(target,value);
-						
-					} catch (IllegalAccessException e) {
-						e.printStackTrace();
-					} catch (IllegalArgumentException e) {
-						e.printStackTrace();
-					}       
-				   }				 
-			}
-		}
-	
     /**
-     * 根据属性所使用的getter和setter方法的名称和类型来拷贝
+     * 数量固定的属性资源缓存,K = 拷贝的目标类Class
+     * BEAN_COPY_METHOD_CACHE = Map[拷贝的来源类Class,Map[属性名称,[来源对象的此属性读取方法,目标对象的此属性赋值方法]]];
+     */
+    private static SimpleCacheHelper<Class, Map<Class,Map<String, Tuple2<Method, Method>>>> BEAN_COPY_METHOD_CACHE = new SimpleCacheHelper<>(512);
+
+    /**
+     * 数量固定的属性资源缓存,UnionKey = 拷贝的目标类Class,拷贝的来源类Class
+     * BEAN_COPY_FUN_CACHE = Map[属性名称,[来源对象的此属性读取函数,目标对象的此属性赋值函数]];
+     */
+    private static SimpleCacheHelper<UnionKey, Map<String, BeanCopyFun>> BEAN_COPY_FUN_CACHE = new SimpleCacheHelper<>(512);
+
+    /**
+     * 数量固定的属性资源缓存,UnionKey = 拷贝的目标类Class,拷贝的来源类Class
+     * BEAN_COPY_Field_CACHE = Map[属性名称,[来源对象的此属性,目标对象的此属]];
+     */
+    private static SimpleCacheHelper<UnionKey, Map<String, Tuple2<Field,Field>>> BEAN_COPY_Field_CACHE = new SimpleCacheHelper<>(512);
+
+    /**
+     * 注意：不copy类型是final或者static的属性
+     * 返回一个拷贝之后的新的数组,通过方法和属性赋值新建对象来达到赋值的目的,是浅复制;
+     * 深度拷贝基础属性，浅拷贝数组和集合，优先通过getter和setter读取属性，如果没有getter和setter则直接读取属性
+     *
+     * @param sourceList
+     * @param targetClass
+     * @param exceptFields 需要排除的字段
+     * @param <T>
+     * @return
+     */
+    public static <T> List<T> copyListProperties(List<? extends Object> sourceList, Class<T> targetClass, String... exceptFields) {
+        List<T> targetList = new ArrayList<T>();
+        try {
+            for (Object o : sourceList) {
+                T t = targetClass.newInstance();
+                copyProperties(t, o, exceptFields);
+                targetList.add(t);
+            }
+        } catch (Exception e) {
+            throw new BaseException(e);
+        }
+        return targetList;
+    }
+
+    /**
+     * 注意：不copy类型是final或者static的属性
+     * 默认copy符合java bean标准的属性
+     *
      * @param target
      * @param source
-     * @throws Exception
+     * @param exceptFields 对于来源对象中的某些属性不进行拷贝
      */
-	public static void middleCopyBeanByMethod(Object target, Object source) throws Exception {
-			/*
-			 * 分别获得源对象和目标对象的Class类型对象,Class对象是整个反射机制的源头和灵魂！
-			 * 
-			 * Class对象是在类加载的时候产生,保存着类的相关属性，构造器，方法等信息
-			 */
-			Class<? extends Object> sourceClz = source.getClass();
-			Class<? extends Object> targetClz = target.getClass();
-			// 得到Class对象所表征的类的所有属性(包括私有属性)
-			Field[] fields = sourceClz.getDeclaredFields();
-			if (fields.length == 0) {
-				fields = sourceClz.getSuperclass().getDeclaredFields();
-			}
-			for (int i = 0; i < fields.length; i++) {
-				String fieldName = fields[i].getName();
-				Field targetField = null;
-				// 得到targetClz对象所表征的类的名为fieldName的属性，不存在就进入下次循环
-				try {
-					targetField = targetClz.getDeclaredField(fieldName);
-				} catch (NoSuchFieldException e) {
-					targetField = targetClz.getSuperclass().getDeclaredField(
-							fieldName);
-				}
-				// 判断sourceClz字段类型和targetClz同名字段类型是否相同
-				if (fields[i].getType() == targetField.getType()) {
-					// 由属性名字得到对应get和set方法的名字
-					String getMethodName = "get"
-							+ fieldName.substring(0, 1).toUpperCase(Locale.ENGLISH)
-							+ fieldName.substring(1);
-					String setMethodName = "set"
-							+ fieldName.substring(0, 1).toUpperCase(Locale.ENGLISH)
-							+ fieldName.substring(1);
-					// 由方法的名字得到get和set方法的Method对象
-					Method getMethod;
-					Method setMethod;
-					try {
-						try {
-							getMethod = sourceClz.getDeclaredMethod(getMethodName,
-									new Class[] {});
-						} catch (NoSuchMethodException e) {
-							getMethod = sourceClz.getSuperclass()
-									.getDeclaredMethod(getMethodName,
-											new Class[] {});
-						}
-						try {
-							setMethod = targetClz.getDeclaredMethod(setMethodName,
-									fields[i].getType());
-						} catch (NoSuchMethodException e) {
-							setMethod = targetClz.getSuperclass()
-									.getDeclaredMethod(setMethodName,
-											fields[i].getType());
-						}
-						// 调用source对象的getMethod方法
-						Object result = getMethod.invoke(source, new Object[] {});						
-						if(!isBaseDataType(result)){
-							Object taget=result.getClass().newInstance();
-							middleCopyBeanByMethod(taget,result);
-							result=taget;
-						}								
-						// 调用target对象的setMethod方法
-						setMethod.invoke(target, result);
-					} catch (SecurityException e) {
-						e.printStackTrace();
-					} catch (NoSuchMethodException e) {
-						e.printStackTrace();
-					} catch (IllegalArgumentException e) {
-						e.printStackTrace();
-					} catch (IllegalAccessException e) {
-						e.printStackTrace();
-					} catch (InvocationTargetException e) {
-						e.printStackTrace();
-					}
-				} else {
-					throw new Exception("同名属性类型不匹配！");
-				}
-			}
-		}
+    public static void copyProperties(Object target, Object source, String... exceptFields) {
+        copyProperties(target, source, true, exceptFields);
+    }
 
-		public static String firstLetterToLower(String srcString) {
-			StringBuilder sb = new StringBuilder();
-			sb.append(Character.toLowerCase(srcString.charAt(0)));
-			sb.append(srcString.substring(1));
-			return sb.toString();
-		}
-		public static <T> T initBeanFromMap(Class<T> cls,Map<String,?> map) throws InstantiationException, IllegalAccessException{
-			T t=cls.newInstance();
-			return initBeanFromMap(t, map);
-		}
-		
-		public static <T> T initBeanFromMap(T t,Map<String,?> map) throws InstantiationException, IllegalAccessException{
-			//return initBeanFromMapByTraverseBean(t, map);
-			return initBeanFromMapByTraverseMap(t, "", map);
-		}
-		/**
-		 * 通过遍历Bean属性的方式来初始化map,适用于bean属性很少的情况;
-		 * map中的key支持a.b.c的方式
-		 * 注意:这种方式不支持自我调用的bean(即a中存在a的引用的情况)的自动赋值;
-		 */
-		public static <T> T initBeanFromMapByTraverseBean(T t,Map<String,?> map){
-			Set<String> keySet=map.keySet(); 
-			for(String s:keySet){
-				Object object=map.get(s);
-				try{
-					Class<?> typeClass=ReflectUtils.getTypeByFieldName(t.getClass(),s);
-					Object valueObject=ObjectUtils.getObject(typeClass, object);
-					if(valueObject==null) continue;
-					ReflectUtils.setFieldValue(true,t, s,new Object[]{valueObject},valueObject.getClass());
-				}catch(Exception e){
-					continue;
-				}
-			}
-			return t;		
-		}
-		/**
-		 * 通过遍历Map键的方式来初始化Bean的属性,适用于大部分的情况;
-		 * map中的key支持a.b.c的方式;如果存在异常,会默认跳过;
-		 * 仅仅支持基础数据和包装类型的赋值;
-		 * 不支持集合/数组方式赋值;map中的值如果是字符串,则会更具属性的类型来进行自动的转换;
-		 * @throws IllegalAccessException 
-		 * @throws InstantiationException 
-		 */
-		public static <T> T initBeanFromMapByTraverseMap(Class<T> cls,Map<String,?> map) throws InstantiationException, IllegalAccessException{
-			return initBeanFromMapByTraverseMap(cls.newInstance(), "", map);
-		}
-		/**
-		 * 通过遍历Map键的方式来初始化Bean的属性,适用于大部分的情况;
-		 * map中的key支持a.b.c的方式;如果存在异常,会默认跳过;
-		 * 仅仅支持基础数据和包装类型的赋值;
-		 * 不支持集合/数组方式赋值;map中的值如果是字符串,则会更具属性的类型来进行自动的转换;
-		 */
-		public static <T> T initBeanFromMapByTraverseMap(T t,Map<String,?> map){
-			return initBeanFromMapByTraverseMap(t, "", map);
-		}
-		/**
-		 * 通过遍历Map键的方式来初始化Bean的属性,适用于大部分的情况;
-		 * map中的key支持a.b.c的方式;如果存在异常,会默认跳过;
-		 * @param prefix map中键的前缀,默认为"",一般前缀是"a."来表示此属性map中值为类a的属性值;
-		 * 仅仅支持基础数据和包装类型的赋值;
-		 * 不支持集合/数组方式赋值;map中的值如果是字符串,则会更具属性的类型来进行自动的转换;
-		 */
-		public static <T> T initBeanFromMapByTraverseMap(T t,String prefix,Map<String,?> map){
-			Set<String> keySet=map.keySet();
-			Field[] fields=t.getClass().getDeclaredFields();
-			//利用map来提速
-			Map<String, Field> fieldMap=new HashMap<String, Field>();
-			for(Field f:fields){
-				f.setAccessible(true);
-				fieldMap.put(f.getName(), f);
-			}
-			for(String s:keySet){
-				try {							
-					String[] names=StringUtils.getFieldNames(prefix, s);
-					String nameOne=names[0];
-					String nameTwo=names[1];
-					if(nameOne==null) 
-						continue;
-					Field f=fieldMap.get(nameOne);
-						if(f!=null){//如果存在此属性		
-							boolean isBaseType=ReflectJudgeUtils.isBaseFieldClass(f.getType());
-							if(!isBaseType&&nameTwo!=null){
-								//如果此属性是一个引用类;
-								Object object=f.get(t);
-								if(object==null){
-									object=f.getType().newInstance();
-								}
-								Map<String,Object> nextMap=new HashMap<String,Object>(1);
-									nextMap.put(s,map.get(s));
-								initBeanFromMapByTraverseMap(object,prefix+nameOne+".",nextMap);
-								ReflectUtils.setFieldValue(true, t,nameOne,new Object[]{object},object.getClass());
-							}else if(isBaseType&&nameTwo==null){
-								  //如果是一个基础属性;
-								 Object value=map.get(prefix+nameOne);
-								 Object object=ObjectUtils.getObject(f.getType(),value);
-								 //f.set(t, object);
-								 ReflectUtils.setFieldValue(true, t,nameOne,new Object[]{object},f.getType());
-							}					
-						 }
-					
-				} catch (Exception e) {
-					continue;
-				}
-			}
-			return t;			
-		}
+    /**
+     * copy bean的属性
+     *
+     * @param target
+     * @param source
+     * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
+     *                           true = 仅仅 copy 符合bean标准的属性
+     * @param exceptFields
+     */
+    public static void copyProperties(Object target, Object source, boolean strictBeanCopyMode, String... exceptFields) {
+        List<String> list = null;
+        if (exceptFields != null) {
+            list = Arrays.asList(exceptFields);
+        }
+        copyProperties(target, source,strictBeanCopyMode, list);
+    }
+
+    /**
+     * copy bean的属性
+     *
+     * @param target
+     * @param source
+     * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
+     *                           true = 仅仅 copy 符合bean标准的属性
+     * @param exceptFields
+     */
+    public static void copyProperties(Object target, Object source, boolean strictBeanCopyMode, Collection<String> exceptFields) {
+        if (strictBeanCopyMode) {
+            copyProperties(target, source, null, null, exceptFields);
+        } else {
+            copyPropertiesNotStrict(target, source, null, null, exceptFields);
+        }
+    }
+
+    /**
+     * 注意：
+     * 1. 不copy类型是final或者static的属性
+     * 2. 判断和过滤的优先级如下 exceptFields &gt; predicate &gt; mapper ;
+     * 注意： 通过反射机制 属性机制copy，效率约标准bean内省的50%性能，需要高性能请使用另一个通过 PropertyDescriptor实现的copyProperties方法
+     * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
+     * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
+     *
+     * @param target       目标对象
+     * @param source       源对象
+     * @param predicate    传入源对象的 Tuple2[字段,字段值] ; 返回是否进行拷贝true or false; null 时不生效
+     * @param mapper       传入源对象的 Tuple2[字段,字段值] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
+     * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
+     */
+    public static <T> void copyProperties(Object target, Object source, Predicate<Tuple2<Field, Object>> predicate, Function<Tuple2<Field, Object>, Object> mapper, String... exceptFields) {
+        Class<?> sourceClz = source.getClass();
+        Class<?> targetClz = target.getClass();
+        Map<String, Tuple2<Field, Field>> beanCopyFieldMap = getBeanCopyFieldMap(targetClz, sourceClz, true);
+        Map<String, BeanCopyFun> beanCopyFunMap = getBeanCopyFunMap(targetClz, sourceClz, true);
+        Set<String> exceptSet = null;
+        if (exceptFields != null) {
+            exceptSet = Arrays.asList(exceptFields).stream().collect(Collectors.toSet());
+        }
+        Set<Map.Entry<String, Tuple2<Field, Field>>> entries = beanCopyFieldMap.entrySet();
+        try {
+            for (Map.Entry<String, Tuple2<Field, Field>> entry : entries) {
+                if (exceptSet != null && exceptSet.contains(entry.getKey())) {
+                    continue;
+                }
+                BeanCopyFun beanCopyFun = beanCopyFunMap.get(entry.getKey());
+                Object value = beanCopyFun.read(source);
+                Tuple2 tuple2 = null;
+                if (predicate == null || predicate.test(tuple2 = new Tuple2(entry.getValue().get_1(), value))) {
+                    if (mapper != null) {
+                        value = mapper.apply(tuple2);
+                    }
+                    beanCopyFun.write(target, value);
+                }
+            }
+        }catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e){
+            throw new BaseException(e);
+        }
+    }
+
+        /**
+     * 返回拷贝属性时，可用户的 函数成对描述
+     * @param targetCls
+     * @param sourceCls
+     * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
+     * @return
+     */
+    public static Map<String, Tuple2<Field, Field>> getBeanCopyFieldMap(Class targetCls, Class sourceCls, boolean useCache) {
+        Map<String, Tuple2<Field, Field>> map = null;
+        UnionKey unionKey = new UnionKey(targetCls,sourceCls);
+        if (useCache) {
+            map = BEAN_COPY_Field_CACHE.get(unionKey);
+            if(map == null){
+                map = getBeanCopyFieldMap(targetCls,sourceCls,false);
+                BEAN_COPY_Field_CACHE.set(unionKey,map);
+            }
+        }else {
+            // 得到Class对象所表征的类的所有属性(包括私有属性)
+            List<Field> fieldsS = ReflectUtils.getFields(sourceCls, false, false, true, true);
+            List<Field> fieldsT = ReflectUtils.getFields(targetCls, false, false, true, true);
+            Map<String, Field> sourceFieldNameMap = fieldsS.stream()
+                    .peek(it -> it.setAccessible(true))
+                    .collect(Collectors.toMap(Field::getName, Function.identity(), (a, b) -> b));
+            return fieldsT.stream()
+                    .peek(targetField -> targetField.setAccessible(true))
+                    .filter(targetField -> sourceFieldNameMap.get(targetField.getName()) != null)
+                    .map(targetField -> new Tuple2<Field,Field>(sourceFieldNameMap.get(targetField.getName()), targetField))
+                    .collect(Collectors.toMap(it -> it.get_1().getName(),Function.identity()));
+        }
+        return map;
+    }
+
+    /**
+     * 返回拷贝属性时，可用户的 函数成对描述
+     * @param targetCls
+     * @param sourceCls
+     * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
+     * @return
+     */
+    public static Map<String, BeanCopyFun> getBeanCopyFunMap(Class targetCls, Class sourceCls, boolean useCache) {
+        Map<String, BeanCopyFun> map = null;
+        UnionKey unionKey = new UnionKey(targetCls,sourceCls);
+        if (useCache) {
+            map = BEAN_COPY_FUN_CACHE.get(unionKey);
+            if(map == null){
+                map = getBeanCopyFunMap(targetCls,sourceCls,false);
+                BEAN_COPY_FUN_CACHE.set(unionKey,map);
+            }
+        }else {
+            // 得到Class对象所表征的类的所有属性(包括私有属性)
+            List<Field> fieldsS = ReflectUtils.getFields(sourceCls, false, false, true, true);
+            List<Field> fieldsT = ReflectUtils.getFields(targetCls, false, false, true, true);
+
+            Map<String, Tuple2<Method, Method>> propertyDescriptorMap = getBeanCopyPropertyDescriptorMap(targetCls, sourceCls);
+            Map<String, Field> sourceFieldNameMap = fieldsS.stream()
+                    .peek(it -> it.setAccessible(true))
+                    .collect(Collectors.toMap(Field::getName, Function.identity(), (a, b) -> b));
+            return fieldsT.stream().map(targetField -> {
+                targetField.setAccessible(true);
+                String name = targetField.getName();
+                //优先使用getter与setter方法
+                Tuple2<Method, Method> methodTuple2 = propertyDescriptorMap.get(name);
+                if (methodTuple2 != null) {
+                    return new BeanCopyFun() {
+                        @Override
+                        public String getName() {
+                            return name;
+                        }
+
+                        @Override
+                        public Object read(Object srcObj)  throws IllegalAccessException, InvocationTargetException, IllegalArgumentException{
+                            return methodTuple2.get_1().invoke(srcObj);
+                        }
+
+                        @Override
+                        public Object write(Object targetObj, Object value)  throws IllegalAccessException, InvocationTargetException, IllegalArgumentException{
+                            return methodTuple2.get_2().invoke(targetObj, value);
+                        }
+                    };
+                } else {
+                    // 处理没有getter/setter方法的公共字段
+                    Field srcField = sourceFieldNameMap.get(name);
+                    if (srcField == null) {
+                        return null;
+                    }
+                    srcField.setAccessible(true);
+                    return new BeanCopyFun() {
+                        @Override
+                        public String getName() {
+                            return name;
+                        }
+
+                        @Override
+                        public Object read(Object srcObj) throws IllegalAccessException {
+                            return srcField.get(srcObj);
+                        }
+
+                        @Override
+                        public Object write(Object targetObj, Object value) throws IllegalAccessException {
+                            targetField.set(targetObj, value);
+                            return null;
+                        }
+                    };
+                }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toMap(BeanCopyFun::getName, Function.identity()));
+        }
+        return map;
+    }
+
+    private static  Object getValue(Object src,Method method){
+        try {
+            return method.invoke(src);
+        }catch (InvocationTargetException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 注意：不copy类型是final或者static的属性
+     * 默认copy符合java bean标准的属性
+     *
+     * @param target
+     * @param source
+     */
+    public static void copyProperties(Object target, Object source) {
+        String[] args = null;
+        copyProperties(target, source, args);
+    }
+
+    /**
+     * 通过遍历Bean属性的方式来初始化map,适用于bean属性很少的情况;
+     * map中的key支持a.b.c的方式
+     * 注意:这种方式不支持自我调用的bean(即a中存在a的引用的情况)的自动赋值;
+     *
+     * @param cls 目标类型
+     * @param map map中保存的是当前对象的属性和值得键值对
+     */
+    public static <T> T getBeanByMap(Class<T> cls, Map<String, ?> map) {
+        try {
+            T t = cls.newInstance();
+            return getBeanByMap(t, map);
+        } catch (Exception e) {
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     * 通过遍历Bean属性的方式来初始化map,适用于bean属性很少的情况;
+     * map中的key支持a.b.c的方式
+     * 注意:这种方式不支持自我调用的bean(即a中存在a的引用的情况)的自动赋值;
+     *
+     * @param t   目标对象
+     * @param map map中保存的是当前对象的属性和值得键值对
+     */
+    public static <T> T getBeanByMap(T t, Map<String, ?> map) {
+        Set<String> keySet = map.keySet();
+        for (String fieldName : keySet) {
+            Object object = map.get(fieldName);
+            try {
+                Class<?> typeClass = ReflectUtils.getTypeByFieldName(t.getClass(), fieldName);
+                Object valueObject = ObjectUtils.getObject(typeClass, object);
+                if (valueObject == null) {
+                    continue;
+                }
+                ReflectUtils.setFieldValue(true, t, fieldName, new Object[]{valueObject}, valueObject.getClass());
+            } catch (Exception e) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug("getBeanByMap error:", e);
+                }
+                continue;
+            }
+        }
+        return t;
+    }
+
+    /**
+     * 封装系统的Introspector#getBeanInfo，默认带有缓存
+     *
+     * @param cls
+     * @param <T>
+     * @return
+     */
+    public static <T> BeanInfo getBeanInfo(Class<T> cls) {
+        return ObjectUtils.getValue(null, () -> Introspector.getBeanInfo(cls));
+    }
+
+    /**
+     * 通过Introspector机制来实现属性的拷贝，效率更高,但是要求符合Bean规范；走getter setter拷贝值;
+     * 浅复制普通Bean对象
+     *
+     * @param target       目标对象
+     * @param source       源对象
+     * @param predicate    传入源对象的 Tuple2[字段名称,字段值 ] ; 返回是否进行拷贝true or false; null 时不生效
+     * @param mapper       传入源对象的 Tuple2[字段名称,字段值 ] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
+     * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
+     */
+    public static void copyProperties(Object target, Object source, Predicate<Tuple2<String, Object>> predicate, Function<Tuple2<String, Object>, Object> mapper, Collection<String> exceptFields) {
+        Map<String, Tuple2<Method, Method>> map = getBeanCopyMethodMap(target.getClass(), source.getClass(), true);
+        try {
+            Set<String> exceptSet = null;
+            if (exceptFields != null && !(exceptFields instanceof Set)) {
+                exceptSet = exceptFields.stream().collect(Collectors.toSet());
+            }
+            Set<Map.Entry<String, Tuple2<Method, Method>>> entries = map.entrySet();
+            for (Map.Entry<String, Tuple2<Method, Method>> entry : entries) {
+                if (exceptSet != null && exceptSet.contains(entry.getKey())) {
+                    continue;
+                }
+                Method srcMethod = entry.getValue().get_1();
+                Object value = srcMethod.invoke(source, null);
+                Tuple2<String, Object> tuple2 = null;
+                if (predicate == null || predicate.test(tuple2 = new Tuple2<>(entry.getKey(), value))) {
+                    if (mapper != null) {
+                        value = mapper.apply(tuple2);
+                    }
+                    entry.getValue().get_2().invoke(target, value);
+                }
+            }
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     *
+     * 浅复制普通Bean对象, 优先使用标准getter与setter方法，若没有则尝试读写取属性赋值
+     * @param target       目标对象
+     * @param source       源对象
+     * @param predicate    传入源对象的 Tuple2[字段名称,字段值 ] ; 返回是否进行拷贝true or false; null 时不生效
+     * @param mapper       传入源对象的 Tuple2[字段名称,字段值 ] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
+     * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
+     */
+    public static void copyPropertiesNotStrict(Object target, Object source, Predicate<Tuple2<String, Object>> predicate, Function<Tuple2<String, Object>, Object> mapper, Collection<String> exceptFields){
+        Map<String, BeanCopyFun> map = getBeanCopyFunMap(target.getClass(), source.getClass(), true);
+        Set<String> exceptSet = null;
+        if (exceptFields != null && !(exceptFields instanceof Set)) {
+            exceptSet = exceptFields.stream().collect(Collectors.toSet());
+        }
+        Set<Map.Entry<String, BeanCopyFun>> entries = map.entrySet();
+        try{
+            for (Map.Entry<String, BeanCopyFun> entry : entries) {
+                if (exceptSet != null && exceptSet.contains(entry.getKey())) {
+                    continue;
+                }
+                Object value = entry.getValue().read(source);
+                Tuple2<String, Object> tuple2 = null;
+                if (predicate == null || predicate.test(tuple2 = new Tuple2<>(entry.getKey(), value))) {
+                    if (mapper != null) {
+                        value = mapper.apply(tuple2);
+                    }
+                    entry.getValue().write(target, value);
+                }
+            }
+        }catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e){
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     * 返回拷贝属性时，可用户的PropertyDescriptor成对描述
+     * @param targetCls
+     * @param sourceCls
+     * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
+     * @return
+     */
+    public static Map<String, Tuple2<Method, Method>> getBeanCopyMethodMap(Class targetCls, Class sourceCls, boolean useCache) {
+        Map<String, Tuple2<Method, Method>> map = null;
+        if (useCache) {
+            map = getWithBeanCopyByMultiKey(targetCls,sourceCls);
+            if (map == null) {
+                map = getBeanCopyPropertyDescriptorMap(targetCls,sourceCls);
+                putWithBeanCopyByMultiKey(targetCls,sourceCls, map);
+            }
+        } else {
+            map = getBeanCopyPropertyDescriptorMap(targetCls,sourceCls);
+        }
+        return map;
+    }
+
+    private static Map<String, Tuple2<Method, Method>> getWithBeanCopyByMultiKey(Class targetClass,Class sourceClass){
+        Map<Class, Map<String, Tuple2<Method, Method>>> classMapMap = BEAN_COPY_METHOD_CACHE.get(targetClass);
+        if(classMapMap != null){
+            return classMapMap.get(sourceClass);
+        }
+        return null;
+    }
+
+    private static synchronized void putWithBeanCopyByMultiKey(Class targetClass,Class sourceClass,Map<String, Tuple2<Method, Method>> methodMap){
+        Map<Class, Map<String, Tuple2<Method, Method>>> classMapMap = BEAN_COPY_METHOD_CACHE.get(targetClass);
+        if(classMapMap == null){
+            classMapMap = new HashMap<>();
+            BEAN_COPY_METHOD_CACHE.set(targetClass,classMapMap);
+        }
+        classMapMap.put(sourceClass,methodMap);
+    }
+
+    /**
+     * 返回Bean copy 使用的 PropertyDescriptor
+     * @param targetCls
+     * @param sourceCls
+     * @return Map[属性名称,[来源对象的此属性读取方法,目标对象的此属性赋值方法]]
+     */
+    private static Map<String, Tuple2<Method, Method>> getBeanCopyPropertyDescriptorMap(Class targetCls, Class sourceCls){
+        try {
+            BeanInfo sourceBeanInfo = Introspector.getBeanInfo(sourceCls);
+            BeanInfo targetBeanInfo = Introspector.getBeanInfo(targetCls);
+            Map<String, Method> sMap = Arrays.asList(sourceBeanInfo.getPropertyDescriptors()).stream()
+                    .filter(it -> it.getReadMethod() != null)
+                    .peek(it -> it.getReadMethod().setAccessible(true))
+                    .collect(Collectors.toMap(it -> it.getName(), PropertyDescriptor::getReadMethod));
+            Map<String, Method> tMap = Arrays.asList(targetBeanInfo.getPropertyDescriptors()).stream()
+                    .filter(it -> it.getWriteMethod() != null)
+                    .peek(it -> it.getWriteMethod().setAccessible(true))
+                    .collect(Collectors.toMap(it -> it.getName(), it -> it.getWriteMethod()));
+            //source的读方法和target的写方法做一个映射，并缓存
+            Map<String, Tuple2<Method, Method>> sToTMap = sMap.keySet().stream()
+                    .filter(it -> tMap.containsKey(it))
+                    .collect(Collectors.toMap(it -> it, it -> new Tuple2(sMap.get(it), tMap.get(it))));
+            return sToTMap;
+        } catch (IntrospectionException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     * 将一个java bean Obj转为Map.
+     * null 属性会自动忽略.
+     * @param obj
+     * @param ignoreProperties 忽略的 对象Property 值, 例如 通过Lambda使用bean的get方法引用即可; 如  User::getId ; 如果不传则不使用
+     * @param <T>              必须是标准的java bean.
+     * @return
+     */
+    public static <T> Map<String, Object> toMap(T obj, PropertyFunction<T, ?>... ignoreProperties) {
+        try {
+            BeanInfo beanInfo = Introspector.getBeanInfo(obj.getClass());
+            PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
+            Set<String> columnNames = Arrays.asList(ignoreProperties).stream()
+                    .map(LambdaUtils::getFieldName).collect(Collectors.toSet());
+			columnNames.add("class");
+            return Arrays.asList(descriptors).stream()
+                    .filter(it -> !columnNames.contains(it.getName()))
+                    .filter(it -> it.getReadMethod() != null)
+                    .map(it -> {
+                        try {
+                            return new Tuple2<String, Object>(it.getName(), it.getReadMethod().invoke(obj));
+                        } catch (IllegalAccessException | InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+					.filter(it -> null != it.get_2())
+					.collect(Collectors.toMap(Tuple2::get_1, Tuple2::get_2));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 要求要符合javaBean规范
+     * 通过getter方法的名字 拿到对应的 属性名称
+     *
+     * @param getterName bean 标准的getter 方法的名称
+     * @return
+     */
+    public static String getFieldNameByGetter(String getterName) {
+        if (getterName.startsWith("get")) {
+            getterName = getterName.substring(3);
+        } else if (getterName.startsWith("is")) {
+            getterName = getterName.substring(2);
+        }
+        // 小写第一个字母
+        return StringUtils.firstLetterToLower(getterName);
+    }
+
+    /**
+     * 获取一个转换器，将输入的字符串数组转为一个bean
+     * @param filedNames  需要转换的字段名称
+     * @param beanCls 需要转为的目标对象的class， 必须是标准的java bean, 带有标准的getter 与 setter 方法
+     * @param filedValueConverter  自定义的属性转换器：输入[当前字段名称，当前内容字符串], 返回转换后的对象; 传入 null 则不使用
+     * @param <T>
+     * @return
+     */
+    public static <T> Function<String[],T> createBeanConverter(String[] filedNames, Class<T> beanCls, Function2<Object,String,String> filedValueConverter){
+        PropertyDescriptor[] propertyDescriptors;
+        try {
+            propertyDescriptors = Introspector.getBeanInfo(beanCls).getPropertyDescriptors();
+        } catch (IntrospectionException e) {
+            throw new RuntimeException(e);
+        }
+        Map<String, PropertyDescriptor> beanFiledNameMap = Arrays.asList(propertyDescriptors)
+                .stream()
+                .collect(Collectors.toMap(PropertyDescriptor::getName, Function.identity()));
+        //Consumer[bean实例对象,属性值]
+        Map<String, Tuple2<Field, ConsumerTwo<Object, String>>> beanStringToFieldValueSetterMap = getBeanStringToFieldValueSetterMap(beanCls);
+        Map<Integer, PropertyDescriptor> filedIndexMap = IntStream.range(0, filedNames.length)
+                .mapToObj(index -> {
+                    PropertyDescriptor propertyDescriptor = beanFiledNameMap.get(filedNames[index]);
+                    if (propertyDescriptor == null || propertyDescriptor.getWriteMethod() == null) {
+                        return null;
+                    }
+                    return new Tuple2<>(index,propertyDescriptor);
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toMap(Tuple2::get_1, Tuple2::get_2));
+        return contents -> {
+            T bean;
+            try {
+                bean = beanCls.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+            IntStream.range(0,contents.length)
+                    .forEach(index -> {
+                        PropertyDescriptor propertyDescriptor = filedIndexMap.get(index);
+                        String srcFiledValue = contents[index];
+                        Object filedValue = srcFiledValue;
+                        if(propertyDescriptor != null) {
+                            if (null != filedValueConverter) {
+                                filedValue = filedValueConverter.run(propertyDescriptor.getName(), contents[index]);
+                            }else {
+                                filedValue = ObjectUtils.getObject(propertyDescriptor.getPropertyType(), contents[index]);
+                            }
+                            Class<?>[] parameterTypes = propertyDescriptor.getWriteMethod().getParameterTypes();
+                            if (!parameterTypes[0].equals(String.class)) {
+                                Function<String, ?> converter = ConverterUtil.getConverter(String.class, parameterTypes[0]);
+                                if (converter != null) {
+                                    filedValue = Optional.ofNullable(srcFiledValue).map(converter::apply).orElse(null);
+                                }
+                            }
+                            try {
+                                propertyDescriptor.getWriteMethod().invoke(bean, filedValue);
+                            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+                                throw new RuntimeException(e);
+                            }
+                        } else {
+                            String filedName = filedNames[index];
+                            Tuple2<Field, ConsumerTwo<Object, String>> fieldConsumer = beanStringToFieldValueSetterMap.get(filedName);
+                            Optional.ofNullable(fieldConsumer)
+                                    .map(Tuple2::get_2)
+                                    .ifPresent(tuple2Consumer -> tuple2Consumer.accept(bean, srcFiledValue));
+                        }
+                    });
+            return bean;
+        };
+    }
+
+    /**
+     * 获取bean属性设置的map
+     * @param beanCls
+     * @param <T>
+     * @return Map[属性名称,Tuple2[属性对象,Consumer2[对象实例,属性值]]]
+     */
+    private static <T> Map<String, Tuple2<Field,ConsumerTwo<Object,String>>> getBeanStringToFieldValueSetterMap(Class<T> beanCls) {
+        List<Field> fields = ReflectUtils.getFields(beanCls, false, false, true, true);
+        Map<String, Tuple2<Field,ConsumerTwo<Object,String>>> beanFieldSetterMap = fields.stream()
+                .collect(Collectors.toMap(Field::getName, field -> {
+                    String name = field.getName();
+                    Class<?> fieldClass = field.getType();
+                    Method targetMethod = ReflectUtils.getMethod(beanCls, ReflectUtils.getSetterName(name), fieldClass);
+                    if(targetMethod != null) {
+                        targetMethod.setAccessible(true);
+                    }
+                    ConsumerTwo<Object,String> consumer = (bean,paramObj) -> {
+                        try {
+                            Object targetValue = paramObj;
+                            if(!fieldClass.equals(String.class)){
+                                Function<String, ?> converter = ConverterUtil.getConverter(String.class, fieldClass);
+                                if(converter != null){
+                                    targetValue = Optional.ofNullable(paramObj).map(converter::apply).orElse(null);
+                                }
+                            }
+                            if(targetMethod != null){
+                                targetMethod.invoke(bean, targetValue);
+                            }else {
+                                field.set(bean,targetValue);
+                            }
+                        } catch (IllegalAccessException | IllegalArgumentException e) {
+                            throw new RuntimeException(e);
+                        } catch (InvocationTargetException e) {
+                            throw new RuntimeException(e);
+                        }
+                    };
+                    return new Tuple2<>(field, consumer);
+                }));
+        return beanFieldSetterMap;
+    }
 }

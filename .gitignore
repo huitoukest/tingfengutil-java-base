@@ -36,3 +36,9 @@ captures/
 /target
 /src/target/classes
 /*.iml
+/src/main/*.iml
+*.iml
+/export-api-pom.xml
+/export-build.sh
+.idea
+annotation
