@@ -17,7 +17,11 @@
       "Bash(iconv -f GBK -t UTF-8)",
       "Bash(mvn *)",
       "Bash(/mingw64/bin/git:*)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(git tag:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "Bash(git filter-branch:*)"
     ]
   }
 }
