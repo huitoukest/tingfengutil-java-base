@@ -21,7 +21,19 @@
       "Bash(git tag:*)",
       "Bash(git branch:*)",
       "Bash(git push:*)",
-      "Bash(git filter-branch:*)"
+      "Bash(mkdir:*)",
+      "Bash(git mv:*)",
+      "Bash(ls ./src/main/java/com/tingfeng/util/java/base/common/utils/*.java)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/utils/datetime/*.java src/main/java/com/tingfeng/util/java/base/datetime/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/database/common/*.java src/main/java/com/tingfeng/util/java/base/db/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/file/csv/*.java src/main/java/com/tingfeng/util/java/base/io/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/bean/tuple/*.java src/main/java/com/tingfeng/util/java/base/lang/base/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/bean/fraction/*.java src/main/java/com/tingfeng/util/java/base/math/base/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/bean/collection/*.java src/main/java/com/tingfeng/util/java/base/collection/base/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/abs/collection/*.java src/main/java/com/tingfeng/util/java/base/collection/base/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/exception/*.java src/main/java/com/tingfeng/util/java/base/lang/exception/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/exception/io/*.java src/main/java/com/tingfeng/util/java/base/lang/exception/)",
+      "Bash(mv src/main/java/com/tingfeng/util/java/base/common/exception/test/*.java src/main/java/com/tingfeng/util/java/base/lang/exception/)"
     ]
   }
 }
