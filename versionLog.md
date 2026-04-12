@@ -1,4 +1,19 @@
-# 版本日志
+# 版本变更日志
+
+## 0.2.x 系列
+| 版本 | 日期 | 更新说明 |
+|------|------|---------|
+| 0.2.6 | 2026-04-12 | 增强前缀树、HttpUtils；修复StringUtils兼容性问题 |
+| 0.2.5 | 2024-05-20 | 修复TreeUtils遍历level问题 |
+| 0.2.4 | - | 修复LocalDateUtils#getDateString bug |
+| 0.2.3 | 2024-01-05 | 新增ArrayUtils.join、shuffle方法 |
+| 0.2.2 | 2023-11-06 | 增强CacheSupplier、日期工具类、CSVUtil优化 |
+| 0.2.1 | 2023-08-10 | TimeBufferConsumerList优化、CollectionUtils修复 |
+
+详细日志：[查看详细日志](./versionLog/0.2.md)
+
+---
+
 maven 引用:
 ```xml
         <dependency>
@@ -7,41 +22,3 @@ maven 引用:
           <version>0.2.6</version>
         </dependency>
 ```
-## 0.2.6
-- 增强
-  - 新增 TrieNode 前缀树，快速构建方法放到StringUtils中
-  - 增强HttpUtils.toGetUrl的功能,加入单元测试
-- bugfix
-  - 修复StringUtils在java9以上无法使用的问题
-## 0.2.5
-20240520
-- bugfix
-  - 修复 TreeUtils.traverse 中 TreeTraverseContext<T> 的level不正确的问题
-## 0.2.4
-- bugfix
-  - 修复 LocalDateUtils#getDateString bug
-## 0.2.3
-20240105
-- 增强
-  - 新增 ArrayUtils.join，支持各种类型以指定连接符拼接为字符串
-  - 新增 ArrayUtils/CollectionUtils 新增shuffle方法，可打乱数组或List集合中内容的顺序
-- bugfix
-  - 修复 TimeBufferConsumerList 只有第一个实例会正常运行
-## 0.2.2
-20231106
-- 增强
-  - add CacheSupplier：带有缓存功能的 Supplier
-  - LocalDateUtils 新增大量工具方法
-  - 日期工具类增强：新增 Date 与 LocalDate/LocalDateTime的转换，他们与字符串、毫秒的相互转换工具
-  - 新增StringUtils.unescape 反转义工具
-  - CSVUtil优化: 支持反转义header头（header头多一个一层引号的情况）
-- bugfix
-  - EnumUtils 的 getEnum 与 getEnumByValue方法，通过枚举值获取枚举对象本身时，默认使用的缓存只会以第一次获取值的枚举方法（例如枚举有A、B两个属性，一次通过A属性方法getA取值得到枚举，第二次通过B属性方法取的枚举值时，此时仍会通过A属性的取值与传入的值作比，等同时获取A属性值对应的枚举类造成bug）
-- 不兼容
-  - 日期格式化常量从 DateUtils.FORMATE_xxxx  移动到 DateFormat.FORMAT_xxx
-
-## 0.2.1
-20230810
-- TimeBufferConsumerList 性能优化
-- bugfix
-  - CollectionUtils.eq bug
