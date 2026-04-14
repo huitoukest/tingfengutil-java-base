@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.collection;
 
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 
 import java.util.*;
 import java.util.function.BinaryOperator;

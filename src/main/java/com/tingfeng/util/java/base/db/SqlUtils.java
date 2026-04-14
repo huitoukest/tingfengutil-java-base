@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.database.common;
+package com.tingfeng.util.java.base.db;
 
 public class SqlUtils {
 	public static final String badStr = "'|and|exec|execute|insert|select|delete|update|count|drop|*|%|chr|mid|master|truncate|" +

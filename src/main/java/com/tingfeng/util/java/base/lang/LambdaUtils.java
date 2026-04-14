@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.lang;
 
 import com.tingfeng.util.java.base.bean.BeanUtils;
-import com.tingfeng.util.java.base.common.inter.PropertyFunction;
+import com.tingfeng.util.java.base.lang.inter.PropertyFunction;
 
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Method;

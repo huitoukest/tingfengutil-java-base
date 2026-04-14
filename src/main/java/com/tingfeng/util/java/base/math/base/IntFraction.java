@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.math.base;
 
-import com.tingfeng.util.java.base.common.inter.IFractionOperation;
+import com.tingfeng.util.java.base.lang.inter.IFractionOperation;
 import com.tingfeng.util.java.base.math.MathUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 

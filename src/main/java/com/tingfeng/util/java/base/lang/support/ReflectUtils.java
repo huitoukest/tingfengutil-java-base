@@ -632,11 +632,8 @@ public class ReflectUtils {
      */
     public static String getSetterName(String fieldName) {
         // 单词首字母大写
-        boolean hasIs = fieldName.startsWith("is");
         String str = formatGetterOrSetterFieldName(fieldName);
-        if (!hasIs) {
-            str = "set" + str;
-        }
+        str = "set" + str;
         return str;
     }
 

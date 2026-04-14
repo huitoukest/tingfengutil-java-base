@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.common.bean;
+package com.tingfeng.util.java.base.io.base;
 
 import lombok.Data;
 

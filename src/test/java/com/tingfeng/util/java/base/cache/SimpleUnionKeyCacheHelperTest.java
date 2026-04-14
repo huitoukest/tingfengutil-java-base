@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.cache;
 
 import com.tingfeng.util.java.base.cache.SimpleCacheHelper;
-import com.tingfeng.util.java.base.common.bean.UnionKey;
+import com.tingfeng.util.java.base.lang.base.UnionKey;
 import com.tingfeng.util.java.base.common.utils.TestUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import org.junit.Assert;

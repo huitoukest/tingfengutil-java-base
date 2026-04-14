@@ -3,7 +3,7 @@ package com.tingfeng.util.java.base.lang;
 import com.tingfeng.util.java.base.common.constant.ObjectType;
 import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
 import com.tingfeng.util.java.base.validate.JudgeEmptyHelper;
-import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.lang.base.ConvertI;
 import com.tingfeng.util.java.base.datetime.DateUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 

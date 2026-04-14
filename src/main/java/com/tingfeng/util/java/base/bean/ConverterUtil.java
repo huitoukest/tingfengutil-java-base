@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.bean;
 
-import com.tingfeng.util.java.base.common.bean.ConverterInfo;
-import com.tingfeng.util.java.base.common.bean.UnionKey;
+import com.tingfeng.util.java.base.bean.base.ConverterInfo;
+import com.tingfeng.util.java.base.lang.base.UnionKey;
 import com.tingfeng.util.java.base.datetime.DateUtils;
 import com.tingfeng.util.java.base.datetime.LocalDateUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;

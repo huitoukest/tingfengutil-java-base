@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.common.inter;
+package com.tingfeng.util.java.base.lang.base;
 
 /**
  * base64 转为 String

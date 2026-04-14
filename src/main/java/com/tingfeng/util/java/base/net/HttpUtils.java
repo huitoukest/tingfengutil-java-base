@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.web.http;
+package com.tingfeng.util.java.base.net;
 
 import com.tingfeng.util.java.base.net.base.HttpResponseInfo;
 import com.tingfeng.util.java.base.common.constant.Constants;

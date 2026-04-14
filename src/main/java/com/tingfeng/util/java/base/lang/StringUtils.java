@@ -5,7 +5,7 @@ import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
 import com.tingfeng.util.java.base.text.StringTemplateHelper;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.array.ArrayUtils;
 import com.tingfeng.util.java.base.text.RegExpUtils;
 import com.tingfeng.util.java.base.lang.support.ReflectUtils;

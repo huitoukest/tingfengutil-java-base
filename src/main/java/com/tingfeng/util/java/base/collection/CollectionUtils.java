@@ -1,9 +1,9 @@
 package com.tingfeng.util.java.base.collection;
 
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.ConvertI;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
+import com.tingfeng.util.java.base.lang.base.ConvertI;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionRTwo;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import com.tingfeng.util.java.base.math.RandomUtils;
 

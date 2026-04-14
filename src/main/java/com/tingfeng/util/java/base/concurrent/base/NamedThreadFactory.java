@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.common.bean.thread;
+package com.tingfeng.util.java.base.concurrent.base;
 
 import lombok.AllArgsConstructor;
 

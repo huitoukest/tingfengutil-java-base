@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
+import com.tingfeng.util.java.base.lang.inter.PoolMemberActionI;
 import com.tingfeng.util.java.base.pool.base.PoolBaseInfo;
 import com.tingfeng.util.java.base.pool.PoolHelper;
 

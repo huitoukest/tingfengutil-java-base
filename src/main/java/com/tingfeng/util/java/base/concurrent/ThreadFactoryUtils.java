@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.concurrent;
 
-import com.tingfeng.util.java.base.common.bean.thread.NamedThreadFactory;
+import com.tingfeng.util.java.base.concurrent.base.NamedThreadFactory;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;

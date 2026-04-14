@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.database.common;
+package com.tingfeng.util.java.base.db;
 
 /**
  * 数据库的类别

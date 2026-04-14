@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.lang;
 
-import com.tingfeng.util.java.base.common.inter.IEnum;
+import com.tingfeng.util.java.base.lang.base.IEnum;
 import org.junit.Assert;
 import org.junit.Test;
 

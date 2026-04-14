@@ -1,4 +1,6 @@
-package com.tingfeng.util.java.base.common.bean;
+package com.tingfeng.util.java.base.bean.base;
+
+import com.tingfeng.util.java.base.lang.base.UnionKey;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -16,9 +16,9 @@ import java.util.function.*;
 
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.lang.exception.StreamCloseException;
-import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
-import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
-import com.tingfeng.util.java.base.common.inter.RateCallBackI;
+import com.tingfeng.util.java.base.lang.base.Base64ConvertToStringI;
+import com.tingfeng.util.java.base.lang.inter.PercentActionCallBackI;
+import com.tingfeng.util.java.base.lang.inter.RateCallBackI;
 import com.tingfeng.util.java.base.lang.Base64Utils;
 import com.tingfeng.util.java.base.io.IOUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;

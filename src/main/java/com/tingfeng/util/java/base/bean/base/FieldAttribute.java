@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.common.bean;
+package com.tingfeng.util.java.base.bean.base;
 /**
  * 
  * @author huitoukest

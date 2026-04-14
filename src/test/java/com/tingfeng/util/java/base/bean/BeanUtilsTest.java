@@ -5,7 +5,7 @@ import com.tingfeng.util.java.base.math.RandomUtils;
 import com.tingfeng.util.java.base.bean.User;
 import com.tingfeng.util.java.base.bean.UserWechatServiceFansInfo;
 import com.tingfeng.util.java.base.bean.WechatServiceUserInfo;
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.common.utils.TestUtils;
 import lombok.Getter;
 import lombok.Setter;

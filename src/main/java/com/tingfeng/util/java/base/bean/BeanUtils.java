@@ -1,16 +1,16 @@
 package com.tingfeng.util.java.base.bean;
 
-import com.tingfeng.util.java.base.common.bean.BeanCopyFun;
-import com.tingfeng.util.java.base.common.bean.UnionKey;
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.bean.base.BeanCopyFun;
+import com.tingfeng.util.java.base.lang.base.UnionKey;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.lang.ObjectUtils;
 import com.tingfeng.util.java.base.lang.LambdaUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.cache.SimpleCacheHelper;
-import com.tingfeng.util.java.base.common.inter.PropertyFunction;
-import com.tingfeng.util.java.base.common.inter.consumer.ConsumerTwo;
-import com.tingfeng.util.java.base.common.inter.returnfunction.Function2;
+import com.tingfeng.util.java.base.lang.inter.PropertyFunction;
+import com.tingfeng.util.java.base.lang.inter.consumer.ConsumerTwo;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.Function2;
 import com.tingfeng.util.java.base.lang.support.ReflectUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

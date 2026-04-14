@@ -1,8 +1,8 @@
 package com.tingfeng.util.java.base.pool;
 
 import com.tingfeng.util.java.base.lang.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
-import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.collection.base;
 
-import com.tingfeng.util.java.base.common.inter.collection.BufferConsumerCollection;
+import com.tingfeng.util.java.base.lang.inter.collection.BufferConsumerCollection;
 
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;

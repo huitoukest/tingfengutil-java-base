@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.validate;
 
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple3;
-import com.tingfeng.util.java.base.common.inter.ObjectDealReturnInter;
+import com.tingfeng.util.java.base.lang.base.Tuple3;
+import com.tingfeng.util.java.base.lang.inter.ObjectDealReturnInter;
 
 import java.util.*;
 import java.util.function.Function;

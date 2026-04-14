@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.crypto;
 
 
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;

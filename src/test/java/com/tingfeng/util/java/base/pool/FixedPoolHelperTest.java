@@ -10,8 +10,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
-import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
 
 /**
  * FixedPoolHelper 类的单元测试

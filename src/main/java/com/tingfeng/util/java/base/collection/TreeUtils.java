@@ -3,10 +3,10 @@ package com.tingfeng.util.java.base.collection;
 import com.tingfeng.util.java.base.collection.base.TreeTraverseContext;
 import com.tingfeng.util.java.base.common.constant.TraversalPolicy;
 import com.tingfeng.util.java.base.collection.support.TreeHelper;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRThree;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionRTwo;
-import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVTwo;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionRThree;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionRTwo;
+import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVTwo;
 import com.tingfeng.util.java.base.collection.support.tree.Traverse;
 
 import java.util.*;

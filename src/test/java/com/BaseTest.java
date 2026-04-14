@@ -2,7 +2,7 @@ package com;
 
 
 import com.tingfeng.util.java.base.lang.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.lang.support.ReflectUtils;
 import org.junit.Test;
 

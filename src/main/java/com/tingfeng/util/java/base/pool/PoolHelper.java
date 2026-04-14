@@ -13,7 +13,7 @@ import com.tingfeng.util.java.base.pool.base.PoolMember;
 import com.tingfeng.util.java.base.pool.base.PoolBaseInfo;
 import com.tingfeng.util.java.base.lang.exception.OverPoolWaitSizeException;
 import com.tingfeng.util.java.base.lang.exception.OverPoolWaitTimeException;
-import com.tingfeng.util.java.base.common.inter.PoolMemberActionI;
+import com.tingfeng.util.java.base.lang.inter.PoolMemberActionI;
 /**
  * 任务池工具
  * @author huitoukest

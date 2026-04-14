@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.array;
 
 import com.tingfeng.util.java.base.common.constant.Constants;
-import com.tingfeng.util.java.base.common.inter.ConvertI;
+import com.tingfeng.util.java.base.lang.base.ConvertI;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import com.tingfeng.util.java.base.math.RandomUtils;
 

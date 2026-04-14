@@ -1,15 +1,12 @@
-package  com.tingfeng.util.java.base.file.csv;
+package com.tingfeng.util.java.base.io;
 
-import com.tingfeng.util.java.base.common.bean.CSVBatchReadParam;
+import com.tingfeng.util.java.base.io.base.CSVBatchReadParam;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
-import com.tingfeng.util.java.base.common.inter.ConvertI;
-import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
+import com.tingfeng.util.java.base.lang.base.ConvertI;
+import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.bean.BeanUtils;
 import com.tingfeng.util.java.base.lang.ObjectUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.charset.Charset;
@@ -27,8 +24,7 @@ import java.util.stream.Stream;
  *
  */
 public class CSVUtil {
-    private static final Logger logger = LoggerFactory.getLogger(CSVUtil.class);
-	
+
 	public static final String  V_COMMON = ",";
 	public static final String V_NEW_LINE = "\r";
 	public static final String V_NULL_STRING = "";

@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.lang;
 
-import com.tingfeng.util.java.base.common.bean.UnionKey;
-import com.tingfeng.util.java.base.common.inter.IEnum;
+import com.tingfeng.util.java.base.lang.base.UnionKey;
+import com.tingfeng.util.java.base.lang.base.IEnum;
 
 import java.util.Arrays;
 import java.util.Collections;

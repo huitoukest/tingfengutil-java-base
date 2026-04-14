@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.text;
 
-import com.tingfeng.util.java.base.common.bean.tuple.Tuple2;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.lang.StringUtils;
 
 import java.util.*;

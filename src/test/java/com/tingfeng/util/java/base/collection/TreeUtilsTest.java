@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.collection;
 
 import com.tingfeng.util.java.base.collection.base.DefaultTreeNode;
 import com.tingfeng.util.java.base.collection.support.TreeHelper;
-import com.tingfeng.util.java.base.common.inter.returnfunction.FunctionROne;
+import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
 import org.junit.Assert;
 import org.junit.Test;
 

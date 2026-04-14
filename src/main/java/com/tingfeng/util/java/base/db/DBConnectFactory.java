@@ -1,7 +1,10 @@
-package com.tingfeng.util.java.base.database.common;
+package com.tingfeng.util.java.base.db;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import static com.tingfeng.util.java.base.db.DBType.HIVE;
+import static com.tingfeng.util.java.base.db.DBType.HIVE2;
 
 public class DBConnectFactory {
 	/**
@@ -15,7 +18,7 @@ public class DBConnectFactory {
 	 * @throws ClassNotFoundException
 	 * @throws SQLException
 	 */
-	public static Connection getConnection(String host,String port,String dbName,String name,String password,DBType type) throws ClassNotFoundException, SQLException{
+	public static Connection getConnection(String host, String port, String dbName, String name, String password, DBType type) throws ClassNotFoundException, SQLException{
 		switch (type) {
 		case  HIVE:
 			  return getHiveConnect(host, port, dbName, name, password);
