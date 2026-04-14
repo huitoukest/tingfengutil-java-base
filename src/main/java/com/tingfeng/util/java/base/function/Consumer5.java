@@ -1,0 +1,32 @@
+package com.tingfeng.util.java.base.function;
+
+import java.util.Objects;
+
+/**
+ * 五参数消费者接口，与 JDK 命名对齐
+ *
+ * @param <T> 第一个输入类型
+ * @param <U> 第二个输入类型
+ * @param <V> 第三个输入类型
+ * @param <W> 第四个输入类型
+ * @param <X> 第五个输入类型
+ */
+@FunctionalInterface
+public interface Consumer5<T, U, V, W, X> {
+
+    /**
+     * 接受五个参数
+     */
+    void accept(T t, U u, V v, W w, X x);
+
+    /**
+     * 组合：先执行当前，再执行 after
+     */
+    default Consumer5<T, U, V, W, X> andThen(Consumer5<? super T, ? super U, ? super V, ? super W, ? super X> after) {
+        Objects.requireNonNull(after);
+        return (T t, U u, V v, W w, X x) -> {
+            accept(t, u, v, w, x);
+            after.accept(t, u, v, w, x);
+        };
+    }
+}

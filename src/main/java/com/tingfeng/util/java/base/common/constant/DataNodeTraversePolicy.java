@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.common.constant;
 
-import com.tingfeng.util.java.base.common.bean.TreeTraverseContext;
+import com.tingfeng.util.java.base.collection.base.TreeTraverseContext;
 
 import java.util.function.Predicate;
 

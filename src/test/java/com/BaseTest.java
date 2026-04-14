@@ -1,9 +1,9 @@
 package com;
 
 
-import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.voidfunction.FunctionVOne;
-import com.tingfeng.util.java.base.common.utils.reflect.ReflectUtils;
+import com.tingfeng.util.java.base.lang.support.ReflectUtils;
 import org.junit.Test;
 
 import java.lang.reflect.Field;

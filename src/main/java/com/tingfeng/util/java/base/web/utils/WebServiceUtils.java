@@ -1,10 +1,10 @@
 package com.tingfeng.util.java.base.web.utils;
 
-import com.tingfeng.util.java.base.common.exception.BaseException;
+import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.common.inter.Base64ConvertToStringI;
 import com.tingfeng.util.java.base.common.inter.PercentActionCallBackI;
-import com.tingfeng.util.java.base.common.utils.RandomUtils;
-import com.tingfeng.util.java.base.common.utils.string.StringUtils;
+import com.tingfeng.util.java.base.math.RandomUtils;
+import com.tingfeng.util.java.base.lang.StringUtils;
 import com.tingfeng.util.java.base.file.FileUtils;
 
 import java.io.*;

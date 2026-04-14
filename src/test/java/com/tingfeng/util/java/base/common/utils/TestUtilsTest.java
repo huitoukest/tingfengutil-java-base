@@ -1,6 +1,5 @@
 package com.tingfeng.util.java.base.common.utils;
 
-import com.tingfeng.util.java.base.common.bean.test.*;
 import com.tingfeng.util.java.base.common.exception.test.TestTimeoutException;
 import org.junit.Assert;
 import org.junit.Test;

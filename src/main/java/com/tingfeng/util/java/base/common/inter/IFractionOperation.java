@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.common.inter;
 
-import com.tingfeng.util.java.base.common.bean.fraction.AbstractFraction;
+import com.tingfeng.util.java.base.math.base.AbstractFraction;
 
 /**
  * 分数运算操作接口，定义了分数的基本数学运算和行为

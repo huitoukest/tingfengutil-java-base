@@ -1,9 +1,9 @@
 package com.tingfeng.util.java.base.common.constant;
 
-import com.tingfeng.util.java.base.common.utils.support.tree.DataAfterTraverse;
-import com.tingfeng.util.java.base.common.utils.support.tree.DataFirstTraverse;
-import com.tingfeng.util.java.base.common.utils.support.tree.DataLastTraverse;
-import com.tingfeng.util.java.base.common.utils.support.tree.Traverse;
+import com.tingfeng.util.java.base.collection.support.tree.DataAfterTraverse;
+import com.tingfeng.util.java.base.collection.support.tree.DataFirstTraverse;
+import com.tingfeng.util.java.base.collection.support.tree.DataLastTraverse;
+import com.tingfeng.util.java.base.collection.support.tree.Traverse;
 
 /**
  * tree遍历的策略 <br/>

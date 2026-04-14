@@ -1,0 +1,112 @@
+package com.tingfeng.util.java.base.collection.base;
+
+import com.tingfeng.util.java.base.collection.base.BaseTimeBufferConsumerCollection;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.function.Consumer;
+
+/**
+ * 线程安全，基于时间和缓冲区触发消费的List
+ * @param <T>
+ */
+public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<T> {
+
+    private final int batchSize;
+    private final Consumer<List<T>> consumer;
+    private final int maxHoldMs;
+    /**
+     * 是否在添加时检查,且在检查符合当前条件时触发消费逻辑
+     */
+    private final boolean consumerIfMatchWhenAdd;
+
+    private LinkedList<List<T>> buffer = new LinkedList<>() ;
+    private List<T> currentBuffer = new ArrayList<>();
+    private volatile long lastConsumerTime = System.currentTimeMillis();
+
+    /**
+     * if the add elements size >= batchSize, or maxHoldMs milliseconds elapsed and 0 <= elements size ;
+     * then call the consumerIfMatch, to invoke to consumer elements
+     * @param checkInterval
+     * @param batchSize must less than maxIntValue / 2;
+     * @param maxHoldMs
+     * @param consumerIfMatchWhenAdd 是否在添加时检查,且在检查符合当前条件时触发消费逻辑
+     * @param consumer
+     */
+    public TimeBufferConsumerList(int checkInterval,int batchSize, int maxHoldMs, boolean consumerIfMatchWhenAdd,Consumer<List<T>> consumer) {
+        super(checkInterval);
+        if(checkInterval >= maxHoldMs){
+           throw new IllegalArgumentException("checkInterval must great than maxHoldMs");
+        }
+        this.batchSize = batchSize;
+        this.maxHoldMs = maxHoldMs;
+        this.consumer = consumer;
+        this.consumerIfMatchWhenAdd = consumerIfMatchWhenAdd;
+    }
+    /**
+     * if the add elements size >= batchSize, or maxHoldMs milliseconds elapsed and 0 <= elements size ;
+     * then call the consumerIfMatch, to invoke to consumer elements
+     * @param checkInterval
+     * @param batchSize must less than maxIntValue / 2;
+     * @param maxHoldMs
+     * @param consumer
+     */
+    public TimeBufferConsumerList(int checkInterval,int batchSize, int maxHoldMs,Consumer<List<T>> consumer) {
+        this(checkInterval,batchSize,maxHoldMs,false,consumer);
+    }
+
+    public TimeBufferConsumerList(int batchSize, Consumer<List<T>> consumer) {
+        this(batchSize, 128,5, consumer);
+    }
+
+    @Override
+    public void add(T t) {
+        synchronized(this.buffer) {
+            this.currentBuffer.add(t);
+            if(this.currentBuffer.size() >= batchSize){
+                this.buffer.add(new ArrayList<>(this.currentBuffer));
+                this.currentBuffer.clear();
+            }
+        }
+        if(consumerIfMatchWhenAdd) {
+            consumerIfMatch();
+        }
+    }
+
+    @Override
+    public void consumerIfMatch() {
+        List<T> consumerList = Collections.emptyList();
+        boolean timeMatch = System.currentTimeMillis() - lastConsumerTime >= maxHoldMs;
+        List<T> firstList;
+        synchronized(this.buffer) {
+            if(timeMatch){
+                this.buffer.add(new ArrayList<>(this.currentBuffer));
+                this.currentBuffer.clear();
+            }
+            firstList = this.buffer.stream().findFirst().orElse(Collections.emptyList());
+            if(timeMatch || firstList.size() >= batchSize) {
+                consumerList = firstList;
+                this.buffer.removeFirst();
+            }
+        }
+        if(!consumerList.isEmpty()) {
+            this.consumer.accept(consumerList);
+            lastConsumerTime = System.currentTimeMillis();
+        }
+        while(!consumerIfMatchWhenAdd){
+            synchronized(this.buffer) {
+                firstList = this.buffer.peekFirst();
+                if (firstList != null && firstList.size() >= batchSize) {
+                    consumerList = firstList;
+                    this.buffer.removeFirst();
+                    this.consumer.accept(consumerList);
+                    lastConsumerTime = System.currentTimeMillis();
+                } else {
+                    break;
+                }
+            }
+        }
+    }
+}

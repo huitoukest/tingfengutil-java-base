@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.file;
 
-import com.tingfeng.util.java.base.common.utils.IOUtils;
+import com.tingfeng.util.java.base.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,7 +37,7 @@ public class FileUtilsTest {
         }
     }
 
-    @Test(expected = com.tingfeng.util.java.base.common.exception.io.FileNotFoundException.class)
+    @Test(expected = com.tingfeng.util.java.base.lang.exception.FileNotFoundException.class)
     public void testReadFileToByteArrayNotFound() {
         FileUtils.readFileToByteArray(new File("non_existent_file.txt"));
     }
