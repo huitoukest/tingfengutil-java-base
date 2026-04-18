@@ -13,11 +13,11 @@ import java.util.stream.IntStream;
 public class ArrayUtilsTest {
 
     @Test
-    public void testIsContain() {
+    public void testContains() {
         String[] array = {"a", "b", "c"};
-        Assert.assertTrue(ArrayUtils.isContain(array, "a"));
-        Assert.assertFalse(ArrayUtils.isContain(array, "d"));
-        Assert.assertFalse(ArrayUtils.isContain(null, "a"));
+        Assert.assertTrue(ArrayUtils.contains(array, "a"));
+        Assert.assertFalse(ArrayUtils.contains(array, "d"));
+        Assert.assertFalse(ArrayUtils.contains(null, "a"));
     }
 
     @Test
@@ -292,5 +292,274 @@ public class ArrayUtilsTest {
         String result = ArrayUtils.toString(array);
         Assert.assertEquals("a,b,c", result);
         Assert.assertNull(ArrayUtils.toString((String[]) null));
+    }
+
+    // ==================== 新增方法测试 ====================
+
+    @Test
+    public void testIsEmpty() {
+        Assert.assertTrue(ArrayUtils.isEmpty(null));
+        Assert.assertTrue(ArrayUtils.isEmpty(new String[0]));
+        Assert.assertFalse(ArrayUtils.isEmpty(new String[]{"a"}));
+    }
+
+    @Test
+    public void testIsNotEmpty() {
+        Assert.assertFalse(ArrayUtils.isNotEmpty(null));
+        Assert.assertFalse(ArrayUtils.isNotEmpty(new String[0]));
+        Assert.assertTrue(ArrayUtils.isNotEmpty(new String[]{"a"}));
+    }
+
+    @Test
+    public void testIndexOf() {
+        String[] array = {"a", "b", "c", "b"};
+        Assert.assertEquals(0, ArrayUtils.indexOf(array, "a"));
+        Assert.assertEquals(1, ArrayUtils.indexOf(array, "b"));
+        Assert.assertEquals(-1, ArrayUtils.indexOf(array, "d"));
+        Assert.assertEquals(-1, ArrayUtils.indexOf(null, "a"));
+    }
+
+    @Test
+    public void testLastIndexOf() {
+        String[] array = {"a", "b", "c", "b"};
+        Assert.assertEquals(3, ArrayUtils.lastIndexOf(array, "b"));
+        Assert.assertEquals(0, ArrayUtils.lastIndexOf(array, "a"));
+        Assert.assertEquals(-1, ArrayUtils.lastIndexOf(array, "d"));
+        Assert.assertEquals(-1, ArrayUtils.lastIndexOf(null, "a"));
+    }
+
+    @Test
+    public void testFilter() {
+        Integer[] array = {1, 2, 3, 4, 5};
+        Integer[] result = ArrayUtils.filter(array, i -> i % 2 == 0);
+        Assert.assertEquals(2, result.length);
+        Assert.assertEquals(Integer.valueOf(2), result[0]);
+        Assert.assertEquals(Integer.valueOf(4), result[1]);
+        Assert.assertNull(ArrayUtils.filter(null, i -> true));
+        Assert.assertNull(ArrayUtils.filter(array, null));
+    }
+
+    @Test
+    public void testMap() {
+        Integer[] array = {1, 2, 3};
+        String[] result = ArrayUtils.map(array, String::valueOf, String[]::new);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals("1", result[0]);
+        Assert.assertEquals("2", result[1]);
+        Assert.assertEquals("3", result[2]);
+        Assert.assertNull(ArrayUtils.map(null, String::valueOf, String[]::new));
+        Assert.assertNull(ArrayUtils.map(array, null, String[]::new));
+    }
+
+    @Test
+    public void testSubArrayGeneric() {
+        String[] array = {"a", "b", "c", "d", "e"};
+        String[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals("b", result[0]);
+        Assert.assertEquals("c", result[1]);
+        Assert.assertEquals("d", result[2]);
+        // 边界测试：负数start自动修正为0，end超过长度自动截断
+        Assert.assertEquals(0, ArrayUtils.subArray(array, 1, 1).length);
+        Assert.assertEquals(2, ArrayUtils.subArray(array, -1, 2).length);  // start修正为0
+        Assert.assertEquals(5, ArrayUtils.subArray(array, 0, 10).length); // end截断为5
+        Assert.assertNull(ArrayUtils.subArray((String[]) null, 0, 2));
+    }
+
+    @Test
+    public void testSubArrayInt() {
+        int[] array = {1, 2, 3, 4, 5};
+        int[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals(2, result[0]);
+        Assert.assertEquals(3, result[1]);
+        Assert.assertEquals(4, result[2]);
+    }
+
+    @Test
+    public void testSubArrayLong() {
+        long[] array = {1L, 2L, 3L, 4L, 5L};
+        long[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals(2L, result[0]);
+    }
+
+    @Test
+    public void testSubArrayByte() {
+        byte[] array = {1, 2, 3, 4, 5};
+        byte[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals(2, result[0]);
+    }
+
+    @Test
+    public void testSubArrayChar() {
+        char[] array = {'a', 'b', 'c', 'd', 'e'};
+        char[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals('b', result[0]);
+    }
+
+    @Test
+    public void testSubArrayDouble() {
+        double[] array = {1.1, 2.2, 3.3, 4.4, 5.5};
+        double[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals(2.2, result[0], 0.001);
+    }
+
+    @Test
+    public void testSubArrayFloat() {
+        float[] array = {1.1f, 2.2f, 3.3f, 4.4f, 5.5f};
+        float[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals(2.2f, result[0], 0.001);
+    }
+
+    @Test
+    public void testSubArrayBoolean() {
+        boolean[] array = {true, false, true, false, true};
+        boolean[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertFalse(result[0]);
+    }
+
+    @Test
+    public void testSubArrayShort() {
+        short[] array = {1, 2, 3, 4, 5};
+        short[] result = ArrayUtils.subArray(array, 1, 4);
+        Assert.assertEquals(3, result.length);
+        Assert.assertEquals(2, result[0]);
+    }
+
+    @Test
+    public void testToBoolean() {
+        Boolean[] array = {true, null, false, true};
+        boolean[] result = ArrayUtils.toBoolean(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertTrue(result[0]);
+        Assert.assertFalse(result[1]);
+        Assert.assertFalse(result[2]);
+        Assert.assertTrue(result[3]);
+        Assert.assertNull(ArrayUtils.toBoolean(null));
+    }
+
+    @Test
+    public void testToChar() {
+        Character[] array = {'a', null, 'c', 'd'};
+        char[] result = ArrayUtils.toChar(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals('a', result[0]);
+        Assert.assertEquals('\0', result[1]);
+        Assert.assertEquals('c', result[2]);
+        Assert.assertNull(ArrayUtils.toChar(null));
+    }
+
+    @Test
+    public void testToByte() {
+        Byte[] array = {1, null, 3, 4};
+        byte[] result = ArrayUtils.toByte(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1, result[0]);
+        Assert.assertEquals(0, result[1]);
+        Assert.assertNull(ArrayUtils.toByte(null));
+    }
+
+    @Test
+    public void testToShort() {
+        Short[] array = {1, null, 3, 4};
+        short[] result = ArrayUtils.toShort(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1, result[0]);
+        Assert.assertEquals(0, result[1]);
+        Assert.assertNull(ArrayUtils.toShort(null));
+    }
+
+    @Test
+    public void testToInt() {
+        Integer[] array = {1, null, 3, 4};
+        int[] result = ArrayUtils.toInt(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1, result[0]);
+        Assert.assertEquals(0, result[1]);
+        Assert.assertNull(ArrayUtils.toInt(null));
+    }
+
+    @Test
+    public void testToLong() {
+        Long[] array = {1L, null, 3L, 4L};
+        long[] result = ArrayUtils.toLong(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1L, result[0]);
+        Assert.assertEquals(0L, result[1]);
+        Assert.assertNull(ArrayUtils.toLong(null));
+    }
+
+    @Test
+    public void testToFloat() {
+        Float[] array = {1.1f, null, 3.3f, 4.4f};
+        float[] result = ArrayUtils.toFloat(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1.1f, result[0], 0.001);
+        Assert.assertEquals(0f, result[1], 0.001);
+        Assert.assertNull(ArrayUtils.toFloat(null));
+    }
+
+    @Test
+    public void testToDouble() {
+        Double[] array = {1.1, null, 3.3, 4.4};
+        double[] result = ArrayUtils.toDouble(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(1.1, result[0], 0.001);
+        Assert.assertEquals(0d, result[1], 0.001);
+        Assert.assertNull(ArrayUtils.toDouble(null));
+    }
+
+    // ==================== 统计方法测试 ====================
+
+    @Test
+    public void testSumInt() {
+        int[] array = {1, 2, 3, 4, 5};
+        Assert.assertEquals(15L, ArrayUtils.sum(array));
+        Assert.assertEquals(0L, ArrayUtils.sum((int[]) null));
+        Assert.assertEquals(0L, ArrayUtils.sum(new int[0]));
+    }
+
+    @Test
+    public void testSumLong() {
+        long[] array = {1L, 2L, 3L, 4L, 5L};
+        Assert.assertEquals(15L, ArrayUtils.sum(array));
+    }
+
+    @Test
+    public void testSumDouble() {
+        double[] array = {1.0, 2.0, 3.0, 4.0, 5.0};
+        Assert.assertEquals(15.0, ArrayUtils.sum(array), 0.001);
+    }
+
+    @Test
+    public void testSumFloat() {
+        float[] array = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+        Assert.assertEquals(15.0, ArrayUtils.sum(array), 0.001);
+    }
+
+    @Test
+    public void testAverageInt() {
+        int[] array = {1, 2, 3, 4, 5};
+        Assert.assertEquals(3.0, ArrayUtils.average(array), 0.001);
+        Assert.assertEquals(0d, ArrayUtils.average((int[]) null), 0.001);
+        Assert.assertEquals(0d, ArrayUtils.average(new int[0]), 0.001);
+    }
+
+    @Test
+    public void testAverageDouble() {
+        double[] array = {1.0, 2.0, 3.0, 4.0, 5.0};
+        Assert.assertEquals(3.0, ArrayUtils.average(array), 0.001);
+    }
+
+    @Test
+    public void testAverageFloat() {
+        float[] array = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f};
+        Assert.assertEquals(3.0, ArrayUtils.average(array), 0.001);
     }
 }

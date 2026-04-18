@@ -12,6 +12,12 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.DoublePredicate;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
+import java.util.function.LongPredicate;
+import java.util.function.Predicate;
 
 /**
  * 操作数组的一些工具类
@@ -26,17 +32,166 @@ public class ArrayUtils {
 
 	/**
 	 * 判断数组是否包含指定元素
-	 * 使用Objects.equals进行比较，支持null值判断
+	 * 使用循环遍历进行比较，支持null值判断
 	 * @param array 要搜索的数组
 	 * @param t 要查找的元素
 	 * @param <T> 数组元素类型
 	 * @return 如果数组包含指定元素返回true，否则返回false；数组为null时返回false
 	 */
-	public static <T> boolean isContain(T[] array, T t) {
+	public static <T> boolean contains(T[] array, T t) {
 		if (array == null) {
 			return false;
 		}
-		return Arrays.stream(array).anyMatch(element -> Objects.equals(element, t));
+		for (int i = 0; i < array.length; i++) {
+			if (Objects.equals(array[i], t)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（byte类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(byte[] array, byte t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（int类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(int[] array, int t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（long类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(long[] array, long t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（char类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(char[] array, char t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（short类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(short[] array, short t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（boolean类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(boolean[] array, boolean t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（double类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(double[] array, double t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (Double.compare(array[i], t) == 0) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 判断数组是否包含指定元素（float类型）
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @return 如果数组包含指定元素返回true，否则返回false
+	 */
+	public static boolean contains(float[] array, float t) {
+		if (array == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (Float.compare(array[i], t) == 0) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
@@ -102,20 +257,20 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 反转Object数组
-	 * 使用双指针法进行原地反转
-	 * @param arrays 要反转的数组
+	 * 反转数组 - 使用双指针法进行原地反转
+	 * 通用内部实现
 	 */
-	public static void reverse(Object[] arrays) {
-		if (arrays == null || arrays.length <= 1) {
+	private static void reverseInternal(Object array) {
+		int length = java.lang.reflect.Array.getLength(array);
+		if (length <= 1) {
 			return;
 		}
 		int left = 0;
-		int right = arrays.length - 1;
+		int right = length - 1;
 		while (left < right) {
-			Object temp = arrays[left];
-			arrays[left] = arrays[right];
-			arrays[right] = temp;
+			Object temp = java.lang.reflect.Array.get(array, left);
+			java.lang.reflect.Array.set(array, left, java.lang.reflect.Array.get(array, right));
+			java.lang.reflect.Array.set(array, right, temp);
 			left++;
 			right--;
 		}
@@ -194,6 +349,27 @@ public class ArrayUtils {
 		int right = arrays.length - 1;
 		while (left < right) {
 			float temp = arrays[left];
+			arrays[left] = arrays[right];
+			arrays[right] = temp;
+			left++;
+			right--;
+		}
+	}
+
+	/**
+	 * 反转泛型数组
+	 * 使用双指针法进行原地反转
+	 * @param arrays 要反转的数组
+	 * @param <T> 数组元素类型
+	 */
+	public static <T> void reverse(T[] arrays) {
+		if (arrays == null || arrays.length <= 1) {
+			return;
+		}
+		int left = 0;
+		int right = arrays.length - 1;
+		while (left < right) {
+			T temp = arrays[left];
 			arrays[left] = arrays[right];
 			arrays[right] = temp;
 			left++;
@@ -527,6 +703,69 @@ public class ArrayUtils {
 	}
 
 	/**
+	 * 使用指定分隔符连接double数组
+	 * @param array double数组
+	 * @param splitStr 分隔符
+	 * @return 连接后的字符串，数组为null时返回null
+	 */
+	public static String join(double[] array, String splitStr) {
+		if (array == null) {
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+
+	/**
+	 * 使用指定分隔符连接float数组
+	 * @param array float数组
+	 * @param splitStr 分隔符
+	 * @return 连接后的字符串，数组为null时返回null
+	 */
+	public static String join(float[] array, String splitStr) {
+		if (array == null) {
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+
+	/**
+	 * 使用指定分隔符连接short数组
+	 * @param array short数组
+	 * @param splitStr 分隔符
+	 * @return 连接后的字符串，数组为null时返回null
+	 */
+	public static String join(short[] array, String splitStr) {
+		if (array == null) {
+			return null;
+		}
+		return StringUtils.doAppend(sb -> {
+			for (int i = 0; i < array.length; i++) {
+				if (i > 0) {
+					sb.append(splitStr);
+				}
+				sb.append(array[i]);
+			}
+			return sb.toString();
+		});
+	}
+
+	/**
 	 * 使用指定分隔符连接泛型数组
 	 * @param array 泛型数组
 	 * @param splitStr 分隔符
@@ -603,5 +842,810 @@ public class ArrayUtils {
 		return join(array, Constants.Symbol.comma);
 	}
 
+	// ==================== 新增方法 ====================
+
+	/**
+	 * 判断数组是否为空（null或长度为0）
+	 * @param array 要检查的数组
+	 * @param <T> 数组元素类型
+	 * @return 如果数组为null或长度为0返回true，否则返回false
+	 */
+	public static <T> boolean isEmpty(T[] array) {
+		return array == null || array.length == 0;
+	}
+
+	/**
+	 * 判断数组是否非空
+	 * @param array 要检查的数组
+	 * @param <T> 数组元素类型
+	 * @return 如果数组不为null且长度大于0返回true，否则返回false
+	 */
+	public static <T> boolean isNotEmpty(T[] array) {
+		return !isEmpty(array);
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @param <T> 数组元素类型
+	 * @return 元素所在索引，未找到返回-1；数组为null时返回-1
+	 */
+	public static <T> int indexOf(T[] array, T t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (Objects.equals(array[i], t)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置
+	 * @param array 要搜索的数组
+	 * @param t 要查找的元素
+	 * @param <T> 数组元素类型
+	 * @return 元素所在索引，未找到返回-1；数组为null时返回-1
+	 */
+	public static <T> int lastIndexOf(T[] array, T t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (Objects.equals(array[i], t)) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（byte类型）
+	 */
+	public static int indexOf(byte[] array, byte t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（int类型）
+	 */
+	public static int indexOf(int[] array, int t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（long类型）
+	 */
+	public static int indexOf(long[] array, long t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（char类型）
+	 */
+	public static int indexOf(char[] array, char t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（short类型）
+	 */
+	public static int indexOf(short[] array, short t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（double类型）
+	 */
+	public static int indexOf(double[] array, double t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (Double.compare(array[i], t) == 0) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 查找元素在数组中的索引位置（float类型）
+	 */
+	public static int indexOf(float[] array, float t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (Float.compare(array[i], t) == 0) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（byte类型）
+	 */
+	public static int lastIndexOf(byte[] array, byte t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（int类型）
+	 */
+	public static int lastIndexOf(int[] array, int t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（long类型）
+	 */
+	public static int lastIndexOf(long[] array, long t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（char类型）
+	 */
+	public static int lastIndexOf(char[] array, char t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（short类型）
+	 */
+	public static int lastIndexOf(short[] array, short t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (array[i] == t) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（double类型）
+	 */
+	public static int lastIndexOf(double[] array, double t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (Double.compare(array[i], t) == 0) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 从后向前查找元素在数组中的索引位置（float类型）
+	 */
+	public static int lastIndexOf(float[] array, float t) {
+		if (array == null) {
+			return -1;
+		}
+		for (int i = array.length - 1; i >= 0; i--) {
+			if (Float.compare(array[i], t) == 0) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	/**
+	 * 按条件过滤数组元素
+	 * @param array 源数组
+	 * @param predicate 过滤条件
+	 * @param <T> 数组元素类型
+	 * @return 过滤后的新数组，数组为null时返回null
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T> T[] filter(T[] array, Predicate<? super T> predicate) {
+		if (array == null || predicate == null) {
+			return null;
+		}
+		return Arrays.stream(array).filter(predicate).toArray(i -> (T[]) Array.newInstance(array.getClass().getComponentType(), i));
+	}
+
+	/**
+	 * 是否有任意元素满足条件
+	 * @param array 源数组
+	 * @param predicate 条件
+	 * @param <T> 数组元素类型
+	 * @return 如果有任意元素满足条件返回true，数组为null或空时返回false
+	 */
+	public static <T> boolean anyMatch(T[] array, Predicate<? super T> predicate) {
+		if (array == null || predicate == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (predicate.test(array[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 所有元素是否都满足条件
+	 * @param array 源数组
+	 * @param predicate 条件
+	 * @param <T> 数组元素类型
+	 * @return 如果所有元素都满足条件返回true，数组为null或空时返回true
+	 */
+	public static <T> boolean allMatch(T[] array, Predicate<? super T> predicate) {
+		if (array == null || predicate == null) {
+			return true;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (!predicate.test(array[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * 是否有任意元素满足条件（int类型）
+	 */
+	public static boolean anyMatch(int[] array, IntPredicate predicate) {
+		if (array == null || predicate == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (predicate.test(array[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 所有元素是否都满足条件（int类型）
+	 */
+	public static boolean allMatch(int[] array, IntPredicate predicate) {
+		if (array == null || predicate == null) {
+			return true;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (!predicate.test(array[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * 是否有任意元素满足条件（long类型）
+	 */
+	public static boolean anyMatch(long[] array, LongPredicate predicate) {
+		if (array == null || predicate == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (predicate.test(array[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 所有元素是否都满足条件（long类型）
+	 */
+	public static boolean allMatch(long[] array, LongPredicate predicate) {
+		if (array == null || predicate == null) {
+			return true;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (!predicate.test(array[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * 是否有任意元素满足条件（double类型）
+	 */
+	public static boolean anyMatch(double[] array, DoublePredicate predicate) {
+		if (array == null || predicate == null) {
+			return false;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (predicate.test(array[i])) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * 所有元素是否都满足条件（double类型）
+	 */
+	public static boolean allMatch(double[] array, DoublePredicate predicate) {
+		if (array == null || predicate == null) {
+			return true;
+		}
+		for (int i = 0; i < array.length; i++) {
+			if (!predicate.test(array[i])) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * 对数组元素进行映射转换
+	 * @param array 源数组
+	 * @param mapper 转换函数
+	 * @param <S> 源数组元素类型
+	 * @param <T> 目标数组元素类型
+	 * @return 转换后的新数组，源数组为null时返回null
+	 */
+	public static <S, T> T[] map(S[] array, Function<? super S, ? extends T> mapper, IntFunction<T[]> arrayFactory) {
+		if (array == null || mapper == null) {
+			return null;
+		}
+		return Arrays.stream(array).map(mapper).toArray(arrayFactory);
+	}
+
+	/**
+	 * 对数组元素进行映射转换（使用组件类型创建目标数组）
+	 * @param array 源数组
+	 * @param mapper 转换函数
+	 * @param targetComponentType 目标数组的组件类型
+	 * @param <S> 源数组元素类型
+	 * @param <T> 目标数组元素类型
+	 * @return 转换后的新数组，源数组为null时返回null
+	 */
+	@SuppressWarnings("unchecked")
+	public static <S, T> T[] map(S[] array, Function<? super S, ? extends T> mapper, Class<T> targetComponentType) {
+		if (array == null || mapper == null) {
+			return null;
+		}
+		return Arrays.stream(array).map(mapper).toArray(i -> (T[]) Array.newInstance(targetComponentType, i));
+	}
+
+	/**
+	 * 规范化子数组边界
+	 * @param length 数组长度
+	 * @param start 起始索引（包含）
+	 * @param end 结束索引（不包含）
+	 * @return int[]{规范化后的start, 规范化后的end}，如果start>=end则返回null
+	 */
+	private static int[] normalizeSubArrayRange(int length, int start, int end) {
+		if (start < 0) {
+			start = 0;
+		}
+		if (end > length) {
+			end = length;
+		}
+		if (start >= end) {
+			return null;
+		}
+		return new int[]{start, end};
+	}
+
+	/**
+	 * 切分子数组
+	 * @param array 源数组
+	 * @param start 起始索引（包含）
+	 * @param end 结束索引（不包含）
+	 * @param <T> 数组元素类型
+	 * @return 子数组，参数非法时返回null
+	 */
+	public static <T> T[] subArray(T[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return (T[]) Array.newInstance(array.getClass().getComponentType(), 0);
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分int数组
+	 */
+	public static int[] subArray(int[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new int[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分long数组
+	 */
+	public static long[] subArray(long[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new long[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分byte数组
+	 */
+	public static byte[] subArray(byte[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new byte[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分char数组
+	 */
+	public static char[] subArray(char[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new char[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分double数组
+	 */
+	public static double[] subArray(double[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new double[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分float数组
+	 */
+	public static float[] subArray(float[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new float[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分boolean数组
+	 */
+	public static boolean[] subArray(boolean[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new boolean[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 切分short数组
+	 */
+	public static short[] subArray(short[] array, int start, int end) {
+		if (array == null) {
+			return null;
+		}
+		int[] range = normalizeSubArrayRange(array.length, start, end);
+		if (range == null) {
+			return new short[0];
+		}
+		return Arrays.copyOfRange(array, range[0], range[1]);
+	}
+
+	/**
+	 * 对象数组转boolean数组
+	 */
+	public static boolean[] toBoolean(Boolean[] array) {
+		if (array == null) {
+			return null;
+		}
+		boolean[] result = new boolean[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : false;
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转char数组
+	 */
+	public static char[] toChar(Character[] array) {
+		if (array == null) {
+			return null;
+		}
+		char[] result = new char[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : '\0';
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转byte数组
+	 */
+	public static byte[] toByte(Byte[] array) {
+		if (array == null) {
+			return null;
+		}
+		byte[] result = new byte[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : 0;
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转short数组
+	 */
+	public static short[] toShort(Short[] array) {
+		if (array == null) {
+			return null;
+		}
+		short[] result = new short[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : 0;
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转int数组
+	 */
+	public static int[] toInt(Integer[] array) {
+		if (array == null) {
+			return null;
+		}
+		int[] result = new int[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : 0;
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转long数组
+	 */
+	public static long[] toLong(Long[] array) {
+		if (array == null) {
+			return null;
+		}
+		long[] result = new long[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : 0L;
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转float数组
+	 */
+	public static float[] toFloat(Float[] array) {
+		if (array == null) {
+			return null;
+		}
+		float[] result = new float[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : 0f;
+		}
+		return result;
+	}
+
+	/**
+	 * 对象数组转double数组
+	 */
+	public static double[] toDouble(Double[] array) {
+		if (array == null) {
+			return null;
+		}
+		double[] result = new double[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i] != null ? array[i] : 0d;
+		}
+		return result;
+	}
+
+	// ==================== 统计方法 ====================
+
+	/**
+	 * int数组求和
+	 */
+	public static long sum(int[] array) {
+		if (array == null || array.length == 0) {
+			return 0L;
+		}
+		long sum = 0;
+		for (int i = 0; i < array.length; i++) {
+			sum += array[i];
+		}
+		return sum;
+	}
+
+	/**
+	 * long数组求和
+	 */
+	public static long sum(long[] array) {
+		if (array == null || array.length == 0) {
+			return 0L;
+		}
+		long sum = 0;
+		for (int i = 0; i < array.length; i++) {
+			sum += array[i];
+		}
+		return sum;
+	}
+
+	/**
+	 * double数组求和
+	 */
+	public static double sum(double[] array) {
+		if (array == null || array.length == 0) {
+			return 0d;
+		}
+		double sum = 0d;
+		for (int i = 0; i < array.length; i++) {
+			sum += array[i];
+		}
+		return sum;
+	}
+
+	/**
+	 * float数组求和
+	 */
+	public static double sum(float[] array) {
+		if (array == null || array.length == 0) {
+			return 0d;
+		}
+		double sum = 0d;
+		for (int i = 0; i < array.length; i++) {
+			sum += array[i];
+		}
+		return sum;
+	}
+
+	/**
+	 * int数组求平均值
+	 */
+	public static double average(int[] array) {
+		if (array == null || array.length == 0) {
+			return 0d;
+		}
+		return (double) sum(array) / array.length;
+	}
+
+	/**
+	 * long数组求平均值
+	 */
+	public static double average(long[] array) {
+		if (array == null || array.length == 0) {
+			return 0d;
+		}
+		return (double) sum(array) / array.length;
+	}
+
+	/**
+	 * double数组求平均值
+	 */
+	public static double average(double[] array) {
+		if (array == null || array.length == 0) {
+			return 0d;
+		}
+		return sum(array) / array.length;
+	}
+
+	/**
+	 * float数组求平均值
+	 */
+	public static double average(float[] array) {
+		if (array == null || array.length == 0) {
+			return 0d;
+		}
+		return sum(array) / array.length;
+	}
 
 }

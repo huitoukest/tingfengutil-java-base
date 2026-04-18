@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.net;
 
 import com.alibaba.fastjson.JSON;
 import com.tingfeng.util.java.base.net.base.HttpResponseInfo;
-import com.tingfeng.util.java.base.web.http.HttpUtils;
+import com.tingfeng.util.java.base.net.HttpUtils;
 import org.junit.Test;
 
 import java.util.HashMap;
