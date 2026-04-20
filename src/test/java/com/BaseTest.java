@@ -71,4 +71,11 @@ public class BaseTest {
         System.out.println(isCharTypeArray(ReflectUtils.getField(A.class,"bytes")));
     }
 
+    @Test
+    public void typeTest2(){
+        Class<Integer> integerClass = int.class;
+        System.out.println(integerClass.getName());
+        System.out.println(Integer.class.getName());
+    }
+
 }

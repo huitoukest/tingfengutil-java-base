@@ -1,6 +1,7 @@
 package com.tingfeng.util.java.base.bean;
 
 import com.tingfeng.util.java.base.bean.base.BeanCopyFun;
+import com.tingfeng.util.java.base.bean.converter.ConverterUtil;
 import com.tingfeng.util.java.base.lang.base.UnionKey;
 import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.lang.ObjectUtils;

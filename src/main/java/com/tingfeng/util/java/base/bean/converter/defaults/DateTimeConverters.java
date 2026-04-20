@@ -1,0 +1,62 @@
+package com.tingfeng.util.java.base.bean.converter.defaults;
+
+import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
+import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+
+import static com.tingfeng.util.java.base.datetime.DateUtils.getDateString;
+import static com.tingfeng.util.java.base.datetime.LocalDateUtils.getDateString;
+
+/**
+ * 日期时间类型转换器注册
+ * <p>
+ * 所有 src=Date/LocalDateTime/LocalDate 的转换器（不含 String -> X）
+ */
+public final class DateTimeConverters {
+
+    private DateTimeConverters() {}
+
+    public static void register(ConverterRegistry registry) {
+        // Date -> String
+        registry.register(ConverterUtils.of(
+                Date.class, String.class,
+                d -> getDateString(d, com.tingfeng.util.java.base.datetime.DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE)
+        ));
+
+        // LocalDateTime -> String
+        registry.register(ConverterUtils.of(
+                LocalDateTime.class, String.class,
+                d -> getDateString(d)
+        ));
+
+        // LocalDate -> String
+        registry.register(ConverterUtils.of(
+                LocalDate.class, String.class,
+                d -> getDateString(d)
+        ));
+
+        // Date <-> LocalDateTime
+        registry.register(ConverterUtils.of(
+                Date.class, LocalDateTime.class,
+                d -> d.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDateTime.class, Date.class,
+                d -> Date.from(d.atZone(ZoneId.systemDefault()).toInstant())
+        ));
+
+        // Date <-> LocalDate
+        registry.register(ConverterUtils.of(
+                Date.class, LocalDate.class,
+                d -> d.toInstant().atZone(ZoneId.systemDefault()).toLocalDate()
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDate.class, Date.class,
+                d -> Date.from(d.atStartOfDay(ZoneId.systemDefault()).toInstant())
+        ));
+    }
+}
