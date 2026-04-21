@@ -24,6 +24,7 @@ public final class DefaultConverters {
         NumberConverters.register(registry);
         DateTimeConverters.register(registry);
         ByteArrayConverters.register(registry);
+        ArrayConverters.register(registry);
         CollectionConverters.register(registry);
         UrlConverters.register(registry);
         BigNumberConverters.register(registry);

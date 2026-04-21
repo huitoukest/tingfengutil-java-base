@@ -1648,4 +1648,14 @@ public class ArrayUtils {
 		return sum(array) / array.length;
 	}
 
+	/**
+	 * 检查数组所有元素是否都不为 null
+	 */
+    public static  <T>  boolean allNonNull(T[] array) {
+        if (array == null) return false;
+        for (T t : array) {
+            if (t == null) return false;
+        }
+        return true;
+    }
 }
