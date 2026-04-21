@@ -2,7 +2,10 @@ package com.tingfeng.util.java.base.bean.converter.defaults;
 
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
+import com.tingfeng.util.java.base.lang.StringUtils;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 
 import static com.tingfeng.util.java.base.lang.StringUtils.encodeURL;
@@ -115,6 +118,20 @@ public final class StringConverters {
                 s -> s != null,
                 s -> toDecodeStringUrl(s, "UTF-8")
         ));
+
+        // String -> BigDecimal
+        registry.register(ConverterUtils.of(
+                String.class, BigDecimal.class,
+                StringUtils::isBigDecimal,
+                s -> new BigDecimal(s.trim())
+        ));
+
+        // String -> BigInteger
+        registry.register(ConverterUtils.of(
+                String.class, BigInteger.class,
+                StringUtils::isBigInteger,
+                StringConverters::parseBigInteger
+        ));
     }
 
     // ==================== 辅助判断方法 ====================
@@ -200,5 +217,19 @@ public final class StringConverters {
             return false;
         }
         return java.util.regex.Pattern.matches(".*\\d.*[-:/].*", s);
+    }
+
+    /**
+     * 解析 BigInteger，支持十六进制(0x)、八进制(0)和十进制
+     */
+    private static BigInteger parseBigInteger(String s) {
+        String trimmed = s.trim();
+        if (trimmed.startsWith("0x") || trimmed.startsWith("0X")) {
+            return new BigInteger(trimmed.substring(2), 16);
+        }
+        if (trimmed.length() > 1 && trimmed.startsWith("0")) {
+            return new BigInteger(trimmed.substring(1), 8);
+        }
+        return new BigInteger(trimmed);
     }
 }

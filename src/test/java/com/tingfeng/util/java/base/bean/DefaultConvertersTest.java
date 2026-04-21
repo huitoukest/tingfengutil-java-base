@@ -3,6 +3,8 @@ package com.tingfeng.util.java.base.bean;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
 import org.junit.Test;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -87,6 +89,43 @@ public class DefaultConvertersTest {
         assertEquals(Integer.valueOf(1), integerArray[0]);
         assertEquals(Integer.valueOf(2), integerArray[1]);
         assertEquals(Integer.valueOf(3), integerArray[2]);
+    }
+
+    @Test
+    public void testBigNumberConversion() {
+        ConverterUtils.resetConverter();
+
+        // String -> BigDecimal
+        BigDecimal bd = ConverterUtils.convert("123.456", BigDecimal.class);
+        assertEquals(new BigDecimal("123.456"), bd);
+
+        // BigDecimal -> String
+        String s = ConverterUtils.convert(new BigDecimal("999.5"), String.class);
+        assertEquals("999.5", s);
+
+        // String -> BigInteger
+        BigInteger bi = ConverterUtils.convert("123456789", BigInteger.class);
+        assertEquals(new BigInteger("123456789"), bi);
+
+        // BigInteger -> String
+        String biStr = ConverterUtils.convert(new BigInteger("999"), String.class);
+        assertEquals("999", biStr);
+
+        // String -> BigInteger (hex)
+        BigInteger hexBi = ConverterUtils.convert("0xFF", BigInteger.class);
+        assertEquals(new BigInteger("255"), hexBi);
+
+        // BigDecimal -> BigInteger
+        BigInteger fromBd = ConverterUtils.convert(new BigDecimal("123.999"), BigInteger.class);
+        assertEquals(new BigInteger("123"), fromBd);
+
+        // Number -> BigDecimal
+        BigDecimal fromNum = ConverterUtils.convert(100L, BigDecimal.class);
+        assertEquals(new BigDecimal("100"), fromNum);
+
+        // Number -> BigInteger
+        BigInteger fromInt = ConverterUtils.convert(42, BigInteger.class);
+        assertEquals(new BigInteger("42"), fromInt);
     }
 
     @Test

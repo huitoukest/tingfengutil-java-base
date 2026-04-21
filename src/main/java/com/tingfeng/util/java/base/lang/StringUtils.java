@@ -556,6 +556,34 @@ public class StringUtils {
     }
 
     /**
+     * 判断字符串是否为合法 BigInteger 格式
+     * <p>支持：整数（含正负）、十六进制(0x/0X前缀)、八进制(0前缀)</p>
+     *
+     * @param s 待判断字符串
+     * @return 是否为合法 BigInteger 格式
+     */
+    public static boolean isBigInteger(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        return RegExpUtils.isMatch(s, RegExpUtils.PatternStr.BIGINTEGER, true);
+    }
+
+    /**
+     * 判断字符串是否为合法 BigDecimal 格式
+     * <p>支持：整数、浮点数（含正负）、科学计数法</p>
+     *
+     * @param s 待判断字符串
+     * @return 是否为合法 BigDecimal 格式
+     */
+    public static boolean isBigDecimal(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        return RegExpUtils.isMatch(s, RegExpUtils.PatternStr.BIGDECIMAL, true);
+    }
+
+    /**
      * word是否包含大写字符串
      *
      * @param word

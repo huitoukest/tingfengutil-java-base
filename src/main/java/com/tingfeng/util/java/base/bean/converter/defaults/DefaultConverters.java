@@ -26,5 +26,7 @@ public final class DefaultConverters {
         ByteArrayConverters.register(registry);
         CollectionConverters.register(registry);
         UrlConverters.register(registry);
+        BigNumberConverters.register(registry);
+        // EnumConverters.registerEnum(MyEnum.class, registry); // 需指定枚举类
     }
 }

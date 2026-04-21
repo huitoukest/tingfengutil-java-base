@@ -13,6 +13,39 @@ mvn test -Dtest=ClassName#methodName
 mvn package -DskipTests
 ```
 
+---
+
+## AI 编码行为准则（最高优先级）
+
+每次编码任务必须首先遵守以下准则：
+
+### 1. Think Before Coding
+- 陈述假设。不确定则 **Ask**。
+- 多解并存则 **全部列出**。
+- 有更简方案则 **Say so**。困惑则 **Stop & Ask**。
+
+### 2. Simplicity First
+- 只写最小必要代码。不推测。
+- 不为单次使用建抽象。不写冗余错误处理。
+- 200行可简至50行则 **Rewrite**。
+
+### 3. Surgical Changes
+- 只改必须改的。不顺手优化。
+- **严格匹配现有风格**。
+- 仅清理**自己改动**造成的孤儿元素。
+
+### 4. Goal-Driven Execution
+- 任务转为可验证目标：
+  - "加验证" → 写无效输入测试，使其通过。
+  - "修Bug" → 写复现测试，使其通过。
+- 多步骤给简要计划：
+  ```
+  1. [步骤] → 验证: [检查点]
+  2. [步骤] → 验证: [检查点]
+  ```
+
+---
+
 ## 包结构
 
 ```
@@ -45,6 +78,7 @@ src/main/java/com/tingfeng/util/java/base/
 - **测试规范**：`/skill testing-guide` - 单元测试模式
 - **架构原则**：`/skill architecture` - 类设计、模块划分
 - **模块设计**：按需查阅 `/skill io-utils-design` 等
+- **行为规范**：`doc/ai/Ai代码优化规则.md` - Think Before Coding、Simplicity First、Surgical Changes、Goal-Driven Execution
 
 ## 关键约束
 

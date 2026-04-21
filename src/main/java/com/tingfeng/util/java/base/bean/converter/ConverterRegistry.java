@@ -13,14 +13,14 @@ public interface ConverterRegistry {
      * 注册转换器
      * @param converter 转换器
      */
-    void register(Converter<?, ?> converter);
+    <S,T> void register(Converter<S, T> converter);
 
     /**
      * 注销转换器
      * @param converter 要注销的转换器
      * @return 是否成功注销
      */
-    boolean unregister(Converter<?, ?> converter);
+    <S,T> boolean unregister(Converter<S, T> converter);
 
     /**
      * 返回所有适用于该类型对的 Converter
@@ -32,7 +32,7 @@ public interface ConverterRegistry {
      * @param target 目标类型
      * @return 所有匹配的 Converter 列表，可能为空
      */
-    List<Converter<?, ?>> findAll(Class<?> source, Class<?> target);
+    <S,T> List<Converter<S, T>> findAll(Class<S> source, Class<T> target);
 
     /**
      * 返回适用于该类型对的转换器查找结果
@@ -44,7 +44,7 @@ public interface ConverterRegistry {
      * @param target 目标类型
      * @return 转换器查找结果
      */
-    ConverterSearchResult findConverters(Class<?> source, Class<?> target);
+    <S,T> ConverterSearchResult<S, T> findConverters(Class<S> source, Class<T> target);
 
     /**
      * 执行转换，失败抛 ConverterException
