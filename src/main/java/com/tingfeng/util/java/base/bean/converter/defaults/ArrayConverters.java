@@ -4,6 +4,9 @@ import com.tingfeng.util.java.base.array.ArrayUtils;
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
 
+import java.util.List;
+import java.util.Set;
+
 /**
  * 数组类型转换器注册
  * <p>
@@ -120,6 +123,72 @@ public final class ArrayConverters {
                 Character[].class, char[].class,
                 ArrayUtils::allNonNull,
                 ArrayConverters::characterToCharPrimitive
+        ));
+
+        // ========== 基础类型数组 -> List（条件转换器）==========
+        registry.register(ConverterUtils.of(
+                int[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                long[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                double[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                float[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                short[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                byte[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                boolean[].class, List.class, ArrayUtils::toList
+        ));
+
+        registry.register(ConverterUtils.of(
+                char[].class, List.class, ArrayUtils::toList
+        ));
+
+        // ========== 基础类型数组 -> Set（条件转换器）==========
+        registry.register(ConverterUtils.of(
+                int[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                long[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                double[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                float[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                short[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                byte[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                boolean[].class, Set.class, ArrayUtils::toSet
+        ));
+
+        registry.register(ConverterUtils.of(
+                char[].class, Set.class, ArrayUtils::toSet
         ));
     }
 

@@ -562,4 +562,135 @@ public class CollectionUtils {
     public static  <T> List<T> shuffle(List<T> list) {
         return shuffle(list, list.size());
     }
+
+    /**
+     * 集合判空
+     * @param collection
+     * @return
+     */
+    public static boolean allNonNull(Collection collection) {
+        if(null == collection){
+            return false;
+        }
+        for (Object item : collection) {
+            if(item == null){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // ==================== 集合转基础类型数组 ====================
+
+    /**
+     * List(Integer) 转 int[]
+     */
+    public static int[] toIntArray(List<Integer> list) {
+        if (list == null) {
+            return null;
+        }
+        int[] result = new int[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Long) 转 long[]
+     */
+    public static long[] toLongArray(List<Long> list) {
+        if (list == null) {
+            return null;
+        }
+        long[] result = new long[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Double) 转 double[]
+     */
+    public static double[] toDoubleArray(List<Double> list) {
+        if (list == null) {
+            return null;
+        }
+        double[] result = new double[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Float) 转 float[]
+     */
+    public static float[] toFloatArray(List<Float> list) {
+        if (list == null) {
+            return null;
+        }
+        float[] result = new float[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Short) 转 short[]
+     */
+    public static short[] toShortArray(List<Short> list) {
+        if (list == null) {
+            return null;
+        }
+        short[] result = new short[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Byte) 转 byte[]
+     */
+    public static byte[] toByteArray(List<Byte> list) {
+        if (list == null) {
+            return null;
+        }
+        byte[] result = new byte[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Boolean) 转 boolean[]
+     */
+    public static boolean[] toBooleanArray(List<Boolean> list) {
+        if (list == null) {
+            return null;
+        }
+        boolean[] result = new boolean[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
+
+    /**
+     * List(Character) 转 char[]
+     */
+    public static char[] toCharArray(List<Character> list) {
+        if (list == null) {
+            return null;
+        }
+        char[] result = new char[list.size()];
+        for (int i = 0; i < list.size(); i++) {
+            result[i] = list.get(i);
+        }
+        return result;
+    }
 }

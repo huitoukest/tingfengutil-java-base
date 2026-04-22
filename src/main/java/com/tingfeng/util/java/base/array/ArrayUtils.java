@@ -10,8 +10,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.DoublePredicate;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -1657,5 +1659,259 @@ public class ArrayUtils {
             if (t == null) return false;
         }
         return true;
+    }
+
+    // ==================== 数组转 List/Set ====================
+
+    /**
+     * 泛型数组转 List
+     */
+    public static <T> List<T> toList(T[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<T> list = new java.util.ArrayList<>(array.length);
+        for (T t : array) {
+            list.add(t);
+        }
+        return list;
+    }
+
+    /**
+     * 泛型数组转 Set
+     */
+    public static <T> Set<T> toSet(T[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<T> set = new HashSet<>(array.length);
+        for (T t : array) {
+            set.add(t);
+        }
+        return set;
+    }
+
+    /**
+     * int 数组转 List
+     */
+    public static List<Integer> toList(int[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Integer> list = new java.util.ArrayList<>(array.length);
+        for (int v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * int 数组转 Set
+     */
+    public static Set<Integer> toSet(int[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Integer> set = new HashSet<>(array.length);
+        for (int v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * long 数组转 List
+     */
+    public static List<Long> toList(long[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Long> list = new java.util.ArrayList<>(array.length);
+        for (long v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * long 数组转 Set
+     */
+    public static Set<Long> toSet(long[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Long> set = new HashSet<>(array.length);
+        for (long v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * double 数组转 List
+     */
+    public static List<Double> toList(double[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Double> list = new java.util.ArrayList<>(array.length);
+        for (double v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * double 数组转 Set
+     */
+    public static Set<Double> toSet(double[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Double> set = new HashSet<>(array.length);
+        for (double v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * float 数组转 List
+     */
+    public static List<Float> toList(float[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Float> list = new java.util.ArrayList<>(array.length);
+        for (float v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * float 数组转 Set
+     */
+    public static Set<Float> toSet(float[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Float> set = new HashSet<>(array.length);
+        for (float v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * short 数组转 List
+     */
+    public static List<Short> toList(short[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Short> list = new java.util.ArrayList<>(array.length);
+        for (short v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * short 数组转 Set
+     */
+    public static Set<Short> toSet(short[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Short> set = new HashSet<>(array.length);
+        for (short v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * byte 数组转 List
+     */
+    public static List<Byte> toList(byte[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Byte> list = new java.util.ArrayList<>(array.length);
+        for (byte v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * byte 数组转 Set
+     */
+    public static Set<Byte> toSet(byte[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Byte> set = new HashSet<>(array.length);
+        for (byte v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * boolean 数组转 List
+     */
+    public static List<Boolean> toList(boolean[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Boolean> list = new java.util.ArrayList<>(array.length);
+        for (boolean v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * boolean 数组转 Set
+     */
+    public static Set<Boolean> toSet(boolean[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Boolean> set = new HashSet<>(array.length);
+        for (boolean v : array) {
+            set.add(v);
+        }
+        return set;
+    }
+
+    /**
+     * char 数组转 List
+     */
+    public static List<Character> toList(char[] array) {
+        if (array == null) {
+            return null;
+        }
+        List<Character> list = new java.util.ArrayList<>(array.length);
+        for (char v : array) {
+            list.add(v);
+        }
+        return list;
+    }
+
+    /**
+     * char 数组转 Set
+     */
+    public static Set<Character> toSet(char[] array) {
+        if (array == null) {
+            return null;
+        }
+        Set<Character> set = new HashSet<>(array.length);
+        for (char v : array) {
+            set.add(v);
+        }
+        return set;
     }
 }
