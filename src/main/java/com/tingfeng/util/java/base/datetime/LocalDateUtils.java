@@ -276,6 +276,72 @@ public class LocalDateUtils implements DateFormat{
     }
 
     /**
+     * 将LocalDateTime转换为Calendar
+     * @param localDateTime 输入的日期时间
+     * @return 转换后的Calendar对象，如果输入为null则返回null
+     */
+    public static Calendar toCalendar(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return DateUtils.toCalendar(toDate(localDateTime));
+    }
+
+    /**
+     * 将LocalDate转换为Calendar
+     * @param localDate 输入的日期
+     * @return 转换后的Calendar对象，如果输入为null则返回null
+     */
+    public static Calendar toCalendar(LocalDate localDate) {
+        if (localDate == null) {
+            return null;
+        }
+        return DateUtils.toCalendar(toDate(localDate));
+    }
+
+    /**
+     * 将LocalDateTime转换为秒数（从纪元开始）
+     * @param localDateTime 输入的日期时间
+     * @return 秒数，如果输入为null则返回null
+     */
+    public static Integer toSeconds(LocalDateTime localDateTime) {
+        if (localDateTime == null) {
+            return null;
+        }
+        return (int) localDateTime.atZone(ZoneId.systemDefault()).toInstant().getEpochSecond();
+    }
+
+    /**
+     * 将LocalDate转换为秒数（从纪元开始，当天0点）
+     * @param localDate 输入的日期
+     * @return 秒数，如果输入为null则返回null
+     */
+    public static Integer toSeconds(LocalDate localDate) {
+        if (localDate == null) {
+            return null;
+        }
+        return (int) localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().getEpochSecond();
+    }
+
+    /**
+     * 将LocalDateTime转换为毫秒数（从纪元开始）
+     * @param localDateTime 输入的日期时间
+     * @return 毫秒数，如果输入为null则返回null
+     */
+    public static Long toMills(LocalDateTime localDateTime) {
+        return getMills(localDateTime);
+    }
+
+    /**
+     * 将LocalDate转换为毫秒数（从纪元开始，当天0点）
+     * @param localDate 输入的日期
+     * @return 毫秒数，如果输入为null则返回null
+     */
+    public static Long toMills(LocalDate localDate) {
+        return getMills(localDate);
+    }
+
+    /**
      * 解析数值类型的日期 , 如 20200101 , 8位数字
      * @param dateNumber 8位数字的日期，格式为yyyyMMdd
      * @return 解析后的LocalDate对象

@@ -2,14 +2,15 @@ package com.tingfeng.util.java.base.bean.converter.defaults;
 
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
+import com.tingfeng.util.java.base.datetime.DateFormat;
+import com.tingfeng.util.java.base.datetime.DateUtils;
+import com.tingfeng.util.java.base.datetime.LocalDateUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Date;
-
-import static com.tingfeng.util.java.base.datetime.DateUtils.getDateString;
-import static com.tingfeng.util.java.base.datetime.LocalDateUtils.getDateString;
 
 /**
  * 日期时间类型转换器注册
@@ -24,19 +25,19 @@ public final class DateTimeConverters {
         // Date -> String
         registry.register(ConverterUtils.of(
                 Date.class, String.class,
-                d -> getDateString(d, com.tingfeng.util.java.base.datetime.DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE)
+                d -> DateUtils.getDateString(d, DateFormat.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE)
         ));
 
         // LocalDateTime -> String
         registry.register(ConverterUtils.of(
                 LocalDateTime.class, String.class,
-                d -> getDateString(d)
+                d -> LocalDateUtils.getDateString(d)
         ));
 
         // LocalDate -> String
         registry.register(ConverterUtils.of(
                 LocalDate.class, String.class,
-                d -> getDateString(d)
+                d -> LocalDateUtils.getDateString(d)
         ));
 
         // Date <-> LocalDateTime
@@ -57,6 +58,48 @@ public final class DateTimeConverters {
         registry.register(ConverterUtils.of(
                 LocalDate.class, Date.class,
                 d -> Date.from(d.atStartOfDay(ZoneId.systemDefault()).toInstant())
+        ));
+
+        // ==================== Date -> Calendar ====================
+        registry.register(ConverterUtils.of(
+                Date.class, Calendar.class,
+                DateUtils::toCalendar
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDateTime.class, Calendar.class,
+                LocalDateUtils::toCalendar
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDate.class, Calendar.class,
+                LocalDateUtils::toCalendar
+        ));
+
+        // ==================== Date -> Integer (秒) ====================
+        registry.register(ConverterUtils.of(
+                Date.class, Integer.class,
+                DateUtils::toSeconds
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDateTime.class, Integer.class,
+                LocalDateUtils::toSeconds
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDate.class, Integer.class,
+                LocalDateUtils::toSeconds
+        ));
+
+        // ==================== Date -> Long (毫秒) ====================
+        registry.register(ConverterUtils.of(
+                Date.class, Long.class,
+                DateUtils::toMills
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDateTime.class, Long.class,
+                LocalDateUtils::toMills
+        ));
+        registry.register(ConverterUtils.of(
+                LocalDate.class, Long.class,
+                LocalDateUtils::toMills
         ));
     }
 }

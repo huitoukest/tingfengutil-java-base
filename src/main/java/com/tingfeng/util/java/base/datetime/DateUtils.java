@@ -831,4 +831,42 @@ public class DateUtils implements DateFormat{
 		return getDayEnd(calendar.getTime());
 	}
 
+	/**
+	 * 将Date转换为Calendar
+	 * @param date 输入的日期
+	 * @return 转换后的Calendar对象，如果输入为null则返回null
+	 */
+	public static Calendar toCalendar(Date date) {
+		if (date == null) {
+			return null;
+		}
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(date);
+		return calendar;
+	}
+
+	/**
+	 * 将Date转换为秒数（从纪元开始）
+	 * @param date 输入的日期
+	 * @return 秒数，如果输入为null则返回null
+	 */
+	public static Integer toSeconds(Date date) {
+		if (date == null) {
+			return null;
+		}
+		return (int) date.toInstant().getEpochSecond();
+	}
+
+	/**
+	 * 将Date转换为毫秒数（从纪元开始）
+	 * @param date 输入的日期
+	 * @return 毫秒数，如果输入为null则返回null
+	 */
+	public static Long toMills(Date date) {
+		if (date == null) {
+			return null;
+		}
+		return date.toInstant().toEpochMilli();
+	}
+
 }
