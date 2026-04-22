@@ -5,6 +5,7 @@ import com.tingfeng.util.java.base.bean.converter.ConverterConstants;
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
 import com.tingfeng.util.java.base.common.constant.BigNumberConstants;
+import com.tingfeng.util.java.base.math.NumberUtils;
 import com.tingfeng.util.java.base.math.base.BigFraction;
 
 import java.math.BigDecimal;
@@ -154,31 +155,31 @@ public final class BigNumberConverters {
         registry.register(ConverterUtils.of(
                 BigInteger.class, Date.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> Date.from(Instant.ofEpochSecond(bi.longValue()))
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, java.sql.Date.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> new java.sql.Date(bi.longValue() * 1000)
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, LocalDateTime.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> LocalDateTime.ofInstant(Instant.ofEpochSecond(bi.longValue()), ZoneId.systemDefault())
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, LocalDate.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> Instant.ofEpochSecond(bi.longValue()).atZone(ZoneId.systemDefault()).toLocalDate()
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, Calendar.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> {
                     Calendar c = Calendar.getInstance();
                     c.setTimeInMillis(bi.longValue() * 1000);
@@ -188,13 +189,13 @@ public final class BigNumberConverters {
         registry.register(ConverterUtils.of(
                 BigInteger.class, ZonedDateTime.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> Instant.ofEpochSecond(bi.longValue()).atZone(ZoneId.systemDefault())
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, Instant.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid10DigitTimestamp,
+                NumberUtils::isValidSecond,
                 bi -> Instant.ofEpochSecond(bi.longValue())
         ));
 
@@ -202,31 +203,31 @@ public final class BigNumberConverters {
         registry.register(ConverterUtils.of(
                 BigInteger.class, Date.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> Date.from(Instant.ofEpochMilli(bi.longValue()))
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, java.sql.Date.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> new java.sql.Date(bi.longValue())
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, LocalDateTime.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> LocalDateTime.ofInstant(Instant.ofEpochMilli(bi.longValue()), ZoneId.systemDefault())
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, LocalDate.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> Instant.ofEpochMilli(bi.longValue()).atZone(ZoneId.systemDefault()).toLocalDate()
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, Calendar.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> {
                     Calendar c = Calendar.getInstance();
                     c.setTimeInMillis(bi.longValue());
@@ -236,13 +237,13 @@ public final class BigNumberConverters {
         registry.register(ConverterUtils.of(
                 BigInteger.class, ZonedDateTime.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> Instant.ofEpochMilli(bi.longValue()).atZone(ZoneId.systemDefault())
         ));
         registry.register(ConverterUtils.of(
                 BigInteger.class, Instant.class,
                 ConverterConstants.ORDER_DEFAULT,
-                BigNumberConverters::isValid13DigitTimestamp,
+                NumberUtils::isValidMillis,
                 bi -> Instant.ofEpochMilli(bi.longValue())
         ));
     }
@@ -453,21 +454,5 @@ public final class BigNumberConverters {
                 BigFraction.class, String.class,
                 BigFraction::toString
         ));
-    }
-
-    // ==================== 时间戳判断辅助 ====================
-
-    private static boolean isValid10DigitTimestamp(BigInteger bi) {
-        if (bi == null) return false;
-        if (bi.bitLength() > 36) return false;
-        long val = bi.longValue();
-        return val >= 0 && val <= BigNumberConstants.BIG_INTEGER_MAX_10_DIGIT_SECONDS;
-    }
-
-    private static boolean isValid13DigitTimestamp(BigInteger bi) {
-        if (bi == null) return false;
-        if (bi.bitLength() > 50) return false;
-        long val = bi.longValue();
-        return val >= 0 && val <= BigNumberConstants.BIG_INTEGER_MAX_13_DIGIT_MILLIS;
     }
 }

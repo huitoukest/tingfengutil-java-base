@@ -42,12 +42,12 @@ public class ConverterUtil {
      * @param target 目标类型
      * @return 转换函数
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public static <S, T> Function<S, T> getConverter(Class<S> src, Class<T> target) {
-        java.util.List<Converter<?, ?>> converters = MANAGER.findAll(src, target);
+        java.util.List converters = MANAGER.findAll(src, target);
         if (converters == null || converters.isEmpty()) {
             return null;
         }
-        @SuppressWarnings("unchecked")
         Converter<S, T> converter = (Converter<S, T>) converters.get(0);
         return converter != null ? converter::convert : null;
     }
