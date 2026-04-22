@@ -52,22 +52,9 @@ public class DefaultConverterRegistry implements ConverterRegistry {
         return INSTANCE;
     }
 
-    @Override
-    public void register(Converter<?, ?> converter) {
-        if (converter == null) {
-            return;
-        }
-        Class<?> srcType = converter.getSourceType();
-        Class<?> targetType = converter.getTargetType();
-        if (srcType == null || targetType == null) {
-            return;
-        }
-        // 注册当前类型
-        registerOne(converter, srcType, targetType);
-    }
 
     @Override
-    public boolean unregister(Converter<?, ?> converter) {
+    public <S, T> boolean unregister(Converter<S, T> converter) {
         if (converter == null) {
             return false;
         }
@@ -81,7 +68,7 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     }
 
     @Override
-    public List<Converter<?, ?>> findAll(Class<?> source, Class<?> target) {
+    public <S, T> List<Converter<S, T>> findAll(Class<S> source, Class<T> target) {
         if (source == null || target == null) {
             return Collections.emptyList();
         }
@@ -89,9 +76,9 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     }
 
     @Override
-    public ConverterSearchResult findConverters(Class<?> source, Class<?> target) {
+    public <S, T> ConverterSearchResult<S, T> findConverters(Class<S> source, Class<T> target) {
         if (source == null || target == null) {
-            return new ConverterSearchResult(Collections.emptyList(), null);
+            return new ConverterSearchResult<>(Collections.emptyList(), null);
         }
 
         UnionKey key = new UnionKey(source, target);
@@ -102,11 +89,24 @@ public class DefaultConverterRegistry implements ConverterRegistry {
         // 2. 获取普通 Converter
         Converter<?, ?> converter = converters.get(key);
 
-        return new ConverterSearchResult(conditionList, converter);
+        return new ConverterSearchResult<>((List) conditionList, converter);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
+    public <S, T> void register(Converter<S, T> converter) {
+        if (converter == null) {
+            return;
+        }
+        Class<?> srcType = converter.getSourceType();
+        Class<?> targetType = converter.getTargetType();
+        if (srcType == null || targetType == null) {
+            return;
+        }
+        // 注册当前类型
+        registerOne(converter, srcType, targetType);
+    }
+
+    @Override
     public <T> T convert(Object source, Class<T> target) {
         if (source == null) {
             return null;
@@ -135,7 +135,6 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> T convert(Object source, Class<T> target, T defaultValue) {
         if (source == null) {
             return defaultValue;
@@ -177,7 +176,6 @@ public class DefaultConverterRegistry implements ConverterRegistry {
      * <p>
      * 规则：先找基础类型转换器，没有则找包装类型转换器，转换结果为null则表示无效
      */
-    @SuppressWarnings("unchecked")
     private <T> T convertToPrimitive(Object source, Class<?> sourceType, Class<T> target) {
         // 1. 先尝试基础类型转换器
         ConverterSearchResult primitiveResult = findConverters(sourceType, target);
@@ -203,7 +201,6 @@ public class DefaultConverterRegistry implements ConverterRegistry {
      * <p>
      * 规则：目标为包装类型 或 来源为基础类型时，先找自身，找不到则找对应类型
      */
-    @SuppressWarnings("unchecked")
     private <T> T convertToWrapper(Object source, Class<?> sourceType, Class<T> target) {
         // 1. 先找自身转换器
         ConverterSearchResult result = findConverters(sourceType, target);
@@ -233,7 +230,6 @@ public class DefaultConverterRegistry implements ConverterRegistry {
      * <p>
      * 规则：优先自身转换器，找不到且值不为null则尝试基础类型转换器
      */
-    @SuppressWarnings("unchecked")
     private <T> T convertAuto(Object source, Class<?> sourceType, Class<T> target) {
         // 1. 优先使用包装类型自身转换器
         ConverterSearchResult result = findConverters(sourceType, target);

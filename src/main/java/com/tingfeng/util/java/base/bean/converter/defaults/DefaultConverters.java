@@ -28,6 +28,6 @@ public final class DefaultConverters {
         CollectionConverters.register(registry);
         UrlConverters.register(registry);
         BigNumberConverters.register(registry);
-        // EnumConverters.registerEnum(MyEnum.class, registry); // 需指定枚举类
+        EnumConverters.register(registry);
     }
 }

@@ -1,115 +1,102 @@
 package com.tingfeng.util.java.base.bean.converter.defaults;
 
+import com.tingfeng.util.java.base.bean.converter.ConverterConstants;
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
-import com.tingfeng.util.java.base.lang.EnumUtils;
+import com.tingfeng.util.java.base.lang.base.IEnum;
+import com.tingfeng.util.java.base.lang.support.GenericTypeUtils;
+
+import java.util.Optional;
 
 /**
  * 枚举类型转换器注册
- * <p>
- * 由于 Java 泛型擦除，无法通过单一通用转换器覆盖所有 Enum 类型。
- * 提供 {@link #registerEnum(Class, ConverterRegistry)} 方法注册特定枚举类的转换器。
- * </p>
- * <p>
- * 每个枚举类注册以下转换器：
- * <ul>
- *   <li>String -> Enum（大小写敏感，order=10，先于忽略大小写匹配）</li>
- *   <li>String -> Enum（忽略大小写，order=20）</li>
- *   <li>Integer -> Enum（通过 ordinal，order=10）</li>
- *   <li>Enum -> String（通过 name）</li>
- *   <li>Enum -> Integer（通过 ordinal）</li>
- * </ul>
- * </p>
- * <p>
- * 示例：
- * <pre>
- * ConverterRegistry registry = ConverterUtils.getInstance();
- * EnumConverters.registerEnum(MyEnum.class, registry);
- * MyEnum result = ConverterUtils.convert("VALUE_NAME", MyEnum.class);
- * </pre>
  */
 public final class EnumConverters {
 
     private EnumConverters() {}
 
     /**
-     * 注册指定枚举类型的转换器到注册中心
+     * 注册所有枚举转换器到指定注册中心
      *
-     * @param enumClass 枚举类，非 null
-     * @param registry  转换器注册中心，非 null
-     * @param <E>       枚举类型
+     * @param registry 转换器注册中心
      */
-    @SuppressWarnings("unchecked")
-    public static <E extends Enum<E>> void registerEnum(Class<E> enumClass, ConverterRegistry registry) {
-        if (enumClass == null || registry == null) {
+    public static void register(ConverterRegistry registry) {
+        if (registry == null) {
             return;
         }
 
-        // String -> Enum（大小写敏感，order=10，先于忽略大小写匹配）
+        // ==================== Enum -> String ====================
+        // IEnum 且泛型为 String：条件Converter，ORDER_DEFAULT 优先
         registry.register(ConverterUtils.of(
-                String.class, enumClass,
-                10,
-                s -> {
-                    if (s == null || s.isEmpty()) {
-                        return false;
-                    }
-                    try {
-                        Enum.valueOf(enumClass, s);
-                        return true;
-                    } catch (IllegalArgumentException e) {
-                        return false;
-                    }
-                },
-                s -> {
-                    if (s == null) {
-                        return null;
-                    }
-                    return Enum.valueOf(enumClass, s);
-                }
+                Enum.class, String.class, ConverterConstants.ORDER_DEFAULT,
+                e -> GenericTypeUtils.isImplGenericInterface(e.getClass(), IEnum.class, String.class),
+                e -> ((IEnum<String>) e).getValue()
+        ));
+        // 普通枚举 -> String：非条件Converter，直接取 name()
+        registry.register(ConverterUtils.of(
+                Enum.class, String.class,
+                Enum::name
         ));
 
-        // String -> Enum（忽略大小写，order=20）
+        // ==================== Enum -> Integer ====================
+        // IEnum<Number>：条件Converter，ORDER_DEFAULT
         registry.register(ConverterUtils.of(
-                String.class, enumClass,
-                20,
-                s -> s != null && !s.isEmpty(),
-                s -> {
-                    if (s == null) {
-                        return null;
-                    }
-                    return EnumUtils.getEnumByName(enumClass, s);
-                }
+                Enum.class, Integer.class, ConverterConstants.ORDER_DEFAULT,
+                e -> GenericTypeUtils.isImplGenericInterface(e.getClass(), IEnum.class, Integer.class),
+                e -> ((IEnum<Integer>) e).getValue()
+        ));
+        // 普通枚举 -> Integer：非条件Converter
+        registry.register(ConverterUtils.of(
+                Enum.class, Integer.class,
+                Enum::ordinal
         ));
 
-        // Integer -> Enum（通过 ordinal，order=10）
+        // ==================== Enum -> Long ====================
         registry.register(ConverterUtils.of(
-                Integer.class, enumClass,
-                10,
-                ordinal -> {
-                    if (ordinal == null) {
-                        return false;
-                    }
-                    E[] constants = enumClass.getEnumConstants();
-                    return ordinal >= 0 && ordinal < constants.length;
-                },
-                ordinal -> {
-                    if (ordinal == null) {
-                        return null;
-                    }
-                    return EnumUtils.getByOrdinal(enumClass, ordinal);
-                }
+                Enum.class, Long.class, ConverterConstants.ORDER_DEFAULT,
+                e -> GenericTypeUtils.isImplGenericInterface(e.getClass(), IEnum.class, Long.class),
+                e -> ((IEnum<Long>) e).getValue()
+        ));
+        // ==================== Enum -> Long ====================
+        registry.register(ConverterUtils.of(
+                Enum.class, Long.class, ConverterConstants.ORDER_DEFAULT,
+                e -> GenericTypeUtils.isImplGenericInterface(e.getClass(), IEnum.class, Integer.class),
+                e -> Optional.ofNullable(((IEnum<Integer>) e).getValue()).map(Integer::longValue).orElse(null)
+        ));
+        registry.register(ConverterUtils.of(
+                Enum.class, Long.class,
+                e -> (long) e.ordinal()
         ));
 
-        // Enum -> String
+        // ==================== Enum -> Byte ====================
         registry.register(ConverterUtils.of(
-                enumClass, String.class,
-                e -> e == null ? null : e.name()
+                Enum.class, Byte.class, ConverterConstants.ORDER_DEFAULT,
+                e -> GenericTypeUtils.isImplGenericInterface(e.getClass(), IEnum.class, Short.class),
+                e -> ((IEnum<Byte>) e).getValue()
         ));
 
-        // Enum -> Integer
+        // ==================== Enum -> Short ====================
         registry.register(ConverterUtils.of(
-                enumClass, Integer.class,
-                e -> e == null ? null : e.ordinal()
+                Enum.class, Short.class, ConverterConstants.ORDER_DEFAULT,
+                e -> GenericTypeUtils.isImplGenericInterface(e.getClass(), IEnum.class, Short.class),
+                e -> ((IEnum<Short>) e).getValue()
+        ));
+
+        // ==================== Enum -> int ====================
+        registry.register(ConverterUtils.of(
+                Enum.class, int.class,
+                Enum::ordinal
+        ));
+
+        // ==================== Enum -> long ====================
+        registry.register(ConverterUtils.of(
+                Enum.class, long.class,
+                e -> (long) e.ordinal()
+        ));
+
+        registry.register(ConverterUtils.of(
+                Enum.class, short.class,
+                e -> (short) e.ordinal()
         ));
     }
 }
