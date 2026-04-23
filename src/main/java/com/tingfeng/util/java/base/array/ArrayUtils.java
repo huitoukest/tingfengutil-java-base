@@ -1441,9 +1441,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转boolean数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static boolean[] toBoolean(Boolean[] array) {
+	public static boolean[] unwrapper(Boolean[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1455,9 +1455,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转char数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static char[] toChar(Character[] array) {
+	public static char[] unwrapper(Character[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1469,9 +1469,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转byte数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static byte[] toByte(Byte[] array) {
+	public static byte[] unwrapper(Byte[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1483,9 +1483,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转short数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static short[] toShort(Short[] array) {
+	public static short[] unwrapper(Short[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1497,9 +1497,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转int数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static int[] toInt(Integer[] array) {
+	public static int[] unwrapper(Integer[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1511,9 +1511,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转long数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static long[] toLong(Long[] array) {
+	public static long[] unwrapper(Long[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1525,9 +1525,9 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转float数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static float[] toFloat(Float[] array) {
+	public static float[] unwrapper(Float[] array) {
 		if (array == null) {
 			return null;
 		}
@@ -1539,15 +1539,127 @@ public class ArrayUtils {
 	}
 
 	/**
-	 * 对象数组转double数组
+	 * 包装类型数组转基础类型数组
 	 */
-	public static double[] toDouble(Double[] array) {
+	public static double[] unwrapper(Double[] array) {
 		if (array == null) {
 			return null;
 		}
 		double[] result = new double[array.length];
 		for (int i = 0; i < array.length; i++) {
 			result[i] = array[i] != null ? array[i] : 0d;
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Boolean[] wrapper(boolean[] array) {
+		if (array == null) {
+			return null;
+		}
+		Boolean[] result = new Boolean[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Character[] wrapper(char[] array) {
+		if (array == null) {
+			return null;
+		}
+		Character[] result = new Character[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Byte[] wrapper(byte[] array) {
+		if (array == null) {
+			return null;
+		}
+		Byte[] result = new Byte[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Short[] wrapper(short[] array) {
+		if (array == null) {
+			return null;
+		}
+		Short[] result = new Short[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Integer[] wrapper(int[] array) {
+		if (array == null) {
+			return null;
+		}
+		Integer[] result = new Integer[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Long[] wrapper(long[] array) {
+		if (array == null) {
+			return null;
+		}
+		Long[] result = new Long[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Float[] wrapper(float[] array) {
+		if (array == null) {
+			return null;
+		}
+		Float[] result = new Float[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
+		}
+		return result;
+	}
+
+	/**
+	 * 基础类型数组转包装类型数组
+	 */
+	public static Double[] wrapper(double[] array) {
+		if (array == null) {
+			return null;
+		}
+		Double[] result = new Double[array.length];
+		for (int i = 0; i < array.length; i++) {
+			result[i] = array[i];
 		}
 		return result;
 	}

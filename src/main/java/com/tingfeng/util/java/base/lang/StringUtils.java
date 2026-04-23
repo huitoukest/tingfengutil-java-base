@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.lang;
 
 import com.tingfeng.util.java.base.lang.base.TrieNode;
 import com.tingfeng.util.java.base.common.constant.Constants;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
 import com.tingfeng.util.java.base.text.StringTemplateHelper;
@@ -9,8 +10,6 @@ import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
 import com.tingfeng.util.java.base.array.ArrayUtils;
 import com.tingfeng.util.java.base.text.RegExpUtils;
 import com.tingfeng.util.java.base.lang.support.ReflectUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -39,6 +38,25 @@ public class StringUtils {
     private static final int DEFAULT_MAX_SB_SIZE = 16;
     private static final int DEFAULT_INIT_SB_LENGTH = 128;
     private static final int DEFAULT_MAX_SB_LENGTH = 512;
+    /**
+     * Integer范围正则（用于预过滤）
+     * - 支持 +/- 符号
+     * - 忽略前导0
+     * - 10位数字精确边界判断
+     */
+    private static final String INTEGER_RANGE_REGEX =
+            "^[\\-\\+]?(0|[1-9][0-9]{0,9})$|" +
+            "^[\\-\\+]?1[0-9]{9}$|" +
+            "^[\\-\\+]?2[0-0][0-9]{8}$|" +
+            "^[\\-\\+]?21[0-4][0-9]{7}$|" +
+            "^[\\-\\+]?214[0-6][0-9]{6}$|" +
+            "^[\\-\\+]?2147[0-3][0-9]{5}$|" +
+            "^[\\-\\+]?21474[0-7][0-9]{4}$|" +
+            "^[\\-\\+]?214748[0-2][0-9]{3}$|" +
+            "^[\\-\\+]?2147483[0-5][0-9]{2}$|" +
+            "^[\\-\\+]?21474836[0-3][0-9]$|" +
+            "^\\+?214748364[0-7]$|" +
+            "^-214748364[0-8]$";
     /**
      * 公共的StringBuilder的资源，用于多线程时复用对象提高效率
      */
@@ -545,17 +563,6 @@ public class StringUtils {
     }
 
     /**
-     * str的一部分是否 是否匹配某个正则表达式
-     *
-     * @param str   字符串内容
-     * @param regex 正则表达式
-     * @return
-     */
-    public static boolean isMatch(String str, String regex) {
-        return RegExpUtils.isMatch(str, regex);
-    }
-
-    /**
      * 判断字符串是否为合法 BigInteger 格式
      * <p>支持：整数（含正负）、十六进制(0x/0X前缀)、八进制(0前缀)</p>
      *
@@ -570,7 +577,274 @@ public class StringUtils {
     }
 
     /**
-     * 判断字符串是否为合法 BigDecimal 格式
+     * 判断字符串是否为合法 Integer 格式（十进制）
+     * <p>使用正则匹配，性能优化：避免 parse 后的字符串比较</p>
+     *
+     * @param s 待判断字符串
+     * @return Tuple2[是否可转为Integer,前一个值为true的时候这里可能返回有效值或者null]
+     */
+    public static Tuple2<Boolean,Integer> safeParseInteger(String s) {
+        if (s == null || s.isEmpty()) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String trimmed = s.trim();
+        //可能是Integer长度范围之内的正则判断，考虑正负号支持
+        String intNumberRegex = INTEGER_RANGE_REGEX;
+        if (!RegExpUtils.isMatch(trimmed, intNumberRegex, true)) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        Integer value = ObjectUtils.tryDo(() -> Integer.valueOf(trimmed));
+        if (value == null) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String valueStr = value.toString();
+        // 正数需要同时比较 "100" 和 "+100" 两种格式
+        boolean matches = valueStr.equals(trimmed) || (value > 0 && ("+" + valueStr).equals(trimmed));
+        if (!matches) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        return new Tuple2<>(Boolean.TRUE, value);
+    }
+
+    /**
+     * 判断字符串是否为合法 Float 格式
+     * <p>使用正则预过滤 + 范围验证</p>
+     *
+     * @param s 待判断字符串
+     * @return Tuple2[是否可转为Float, 前一个值为true的时候这里可能返回有效值或者null]
+     */
+    public static Tuple2<Boolean, Float> safeParseFloat(String s) {
+        if (s == null || s.isEmpty()) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String trimmed = s.trim();
+        // Float 范围预过滤正则：支持正负号、小数点、科学计数法前缀
+        String floatRegex = "^[\\-\\+]?(0|[1-9][0-9]{0,38})(\\.\\d+)?([eE][\\-\\+]?[0-9]+)?$";
+        if (!RegExpUtils.isMatch(trimmed, floatRegex, true)) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        Float value = ObjectUtils.tryDo(() -> Float.valueOf(trimmed));
+        if (value == null) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String valueStr = value.toString().replace("E", "e");
+        String trimmedStr = trimmed.replace("E", "e");
+        boolean matches = valueStr.equals(trimmedStr) || (value > 0 && ("+" + valueStr).equals(trimmedStr));
+        if (!matches) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        return new Tuple2<>(Boolean.TRUE, value);
+    }
+
+    /**
+     * 判断字符串是否为合法 Double 格式
+     * <p>使用正则预过滤 + 范围验证</p>
+     *
+     * @param s 待判断字符串
+     * @return Tuple2[是否可转为Double, 前一个值为true的时候这里可能返回有效值或者null]
+     */
+    public static Tuple2<Boolean, Double> safeParseDouble(String s) {
+        if (s == null || s.isEmpty()) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String trimmed = s.trim();
+        // Double 范围预过滤正则
+        String doubleRegex = "^[\\-\\+]?(0|[1-9][0-9]{0,308})(\\.\\d+)?([eE][\\-\\+]?[0-9]+)?$";
+        if (!RegExpUtils.isMatch(trimmed, doubleRegex, true)) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        Double value = ObjectUtils.tryDo(() -> Double.valueOf(trimmed));
+        if (value == null) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String valueStr = value.toString().replace("E", "e");
+        String trimmedStr = trimmed.replace("E", "e");
+        boolean matches = valueStr.equals(trimmedStr) || (value > 0 && ("+" + valueStr).equals(trimmedStr));
+        if (!matches) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        return new Tuple2<>(Boolean.TRUE, value);
+    }
+
+    /**
+     * 判断字符串是否为合法 Byte 格式
+     * <p>使用正则预过滤 + 范围验证</p>
+     *
+     * @param s 待判断字符串
+     * @return Tuple2[是否可转为Byte, 前一个值为true的时候这里可能返回有效值或者null]
+     */
+    public static Tuple2<Boolean, Byte> safeParseByte(String s) {
+        if (s == null || s.isEmpty()) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String trimmed = s.trim();
+        // Byte 范围预过滤正则：支持 +/- 符号，3位数字
+        String byteRegex = "^[\\-\\+]?(0|[1-9][0-9]{0,2})$";
+        if (!RegExpUtils.isMatch(trimmed, byteRegex, true)) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        Byte value = ObjectUtils.tryDo(() -> Byte.valueOf(trimmed));
+        if (value == null) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String valueStr = value.toString();
+        boolean matches = valueStr.equals(trimmed) || (value > 0 && ("+" + valueStr).equals(trimmed));
+        if (!matches) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        return new Tuple2<>(Boolean.TRUE, value);
+    }
+
+    /**
+     * 判断字符串是否为合法 Short 格式
+     * <p>使用正则预过滤 + 范围验证</p>
+     *
+     * @param s 待判断字符串
+     * @return Tuple2[是否可转为Short, 前一个值为true的时候这里可能返回有效值或者null]
+     */
+    public static Tuple2<Boolean, Short> safeParseShort(String s) {
+        if (s == null || s.isEmpty()) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String trimmed = s.trim();
+        // Short 范围预过滤正则：支持 +/- 符号，5位数字
+        String shortRegex = "^[\\-\\+]?(0|[1-9][0-9]{0,4})$";
+        if (!RegExpUtils.isMatch(trimmed, shortRegex, true)) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        Short value = ObjectUtils.tryDo(() -> Short.valueOf(trimmed));
+        if (value == null) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String valueStr = value.toString();
+        boolean matches = valueStr.equals(trimmed) || (value > 0 && ("+" + valueStr).equals(trimmed));
+        if (!matches) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        return new Tuple2<>(Boolean.TRUE, value);
+    }
+
+    /**
+     * 判断字符串是否为合法 Long 格式
+     * <p>使用正则预过滤 + 范围验证</p>
+     *
+     * @param s 待判断字符串
+     * @return Tuple2[是否可转为Long, 前一个值为true的时候这里可能返回有效值或者null]
+     */
+    public static Tuple2<Boolean, Long> safeParseLong(String s) {
+        if (s == null || s.isEmpty()) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String trimmed = s.trim();
+        // 去除可能的后缀 L/l
+        boolean hasSuffix = trimmed.endsWith("L") || trimmed.endsWith("l");
+        String numPart = hasSuffix ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
+        // Long 范围预过滤正则：支持 +/- 符号，19位数字
+        String longRegex = "^[\\-\\+]?(0|[1-9][0-9]{0,18})$";
+        if (!RegExpUtils.isMatch(numPart, longRegex, true)) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        Long value = ObjectUtils.tryDo(() -> Long.valueOf(hasSuffix ? numPart : trimmed));
+        if (value == null) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        String valueStr = value.toString();
+        String toCompare = hasSuffix ? numPart : trimmed;
+        boolean matches = valueStr.equals(toCompare) || (value > 0 && ("+" + valueStr).equals(toCompare));
+        if (!matches) {
+            return new Tuple2<>(Boolean.FALSE, null);
+        }
+        return new Tuple2<>(Boolean.TRUE, value);
+    }
+
+    /**
+     * 判断字符串是否为合法 Boolean 格式
+     * <p>只匹配 "true" 或 "false"（不区分大小写）</p>
+     *
+     * @param s 待判断字符串
+     * @return 是否为合法 Boolean 格式
+     */
+    public static boolean isBoolean(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        String trimmed = s.trim();
+        return "true".equalsIgnoreCase(trimmed) || "false".equalsIgnoreCase(trimmed);
+    }
+
+    /**
+     * 判断字符串是否为合法十六进制整数格式
+     * <p>十六进制前缀 0x/0X，字符范围 0-9a-fA-F</p>
+     *
+     * @param s 待判断字符串
+     * @return 是否为合法十六进制格式
+     */
+    public static boolean isHex(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        String trimmed = s.trim();
+        boolean negative = trimmed.startsWith("-");
+        boolean positive = trimmed.startsWith("+");
+        String numPart = (negative || positive) ? trimmed.substring(1) : trimmed;
+        if (!numPart.startsWith("0x") && !numPart.startsWith("0X")) {
+            return false;
+        }
+        String hexPart = numPart.substring(2);
+        if (hexPart.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < hexPart.length(); i++) {
+            char c = hexPart.charAt(i);
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F'))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * 判断字符串是否为 URL 格式
+     * <p>使用正则匹配</p>
+     *
+     * @param s 待判断字符串
+     * @return 是否为合法 URL 格式
+     */
+    public static boolean isUrl(String s) {
+        if (s == null || s.isEmpty()) {
+            return false;
+        }
+        return RegExpUtils.isMatch(s.trim(), RegExpUtils.PatternStr.URL, true);
+    }
+
+    /**
+     * 比较两个数字字符串的大小（按字典序数字比较）
+     * <p>假设两个字符串只包含数字字符</p>
+     *
+     * @param a 数字字符串 A
+     * @param b 数字字符串 B
+     * @return 负数表示 a < b，零表示 a == b，正数表示 a > b
+     */
+    private static int compareDigits(String a, String b) {
+        if (a == null || b == null) {
+            throw new IllegalArgumentException("null argument");
+        }
+        int lenA = a.length();
+        int lenB = b.length();
+        if (lenA != lenB) {
+            return lenA - lenB;
+        }
+        for (int i = 0; i < lenA; i++) {
+            int cmp = a.charAt(i) - b.charAt(i);
+            if (cmp != 0) {
+                return cmp;
+            }
+        }
+        return 0;
+    }
+
+    /**
+     * 判断字符串是否为合法 BigInteger 格式
      * <p>支持：整数、浮点数（含正负）、科学计数法</p>
      *
      * @param s 待判断字符串

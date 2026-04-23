@@ -12,6 +12,7 @@ import java.io.*;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.function.Supplier;
 
 /**
  * 一些通用的对象工具类
@@ -620,4 +621,17 @@ public class ObjectUtils {
         return true;
     }
 
+    /**
+     * 尝试运行功能
+     * @param supplier
+     * @return null = 异常,成功返回运行的值
+     * @param <T>
+     */
+    public static <T> T tryDo(Supplier<T> supplier) {
+        try {
+            return supplier.get();
+        }catch (Exception e){
+            return null;
+        }
+    }
 }

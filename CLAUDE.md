@@ -1,100 +1,42 @@
 # CLAUDE.md
 
-## 项目定位
+## 行为准则
+- 不确定则问；多解先列；有更简方案即提。
+- 只写最小必要代码；200行可简至50行则重写。
+- 只改必须改的；严格匹配现有风格。
 
-**tingfengutil-java-base** 是 JDK 1.8 工具库，仅依赖 JDK + slf4j-log4j12，无第三方库。
+## 协作触发
+- 默认进入多Agent线性协作。
+- 手动触发：`@调度人`。
 
-## 构建
+## 角色与职责
+| 角色 | 核心职责 | 子文档 |
+|------|----------|--------|
+| 调度人 | 需求拆分、上下文压缩、记忆沉淀、流程调度 | `./.claude/agents/orchestrator.md` |
+| 架构师 | 方案设计、复用检查、扩展性审查 | `./.claude/agents/architect.md` |
+| 编码师 | 按设计实现代码与单测，遵守风格约束 | `./.claude/agents/coder.md` |
+| QA | 静态审查、需求验证、测试执行 | `./.claude/agents/qa.md` |
 
-```bash
-mvn clean compile
-mvn test -Dtest=ClassName
-mvn test -Dtest=ClassName#methodName
-mvn package -DskipTests
-```
+## 核心流程
+1. **调度人**拆分需求为可验证断言，写入 `/docs/memory.md` 需求列表。
+2. 取首个未完成需求，压缩上下文(>6K抽取方法摘要，>200行架构文档目录抽象)，派发架构师。
+3. **架构师**设计方案与复用举证，**若有疑问必须与用户确认**，不得擅自决定。
+4. 调度人审核设计，派发编码师实现。
+5. **编码师**编码与自测，**遇风格或逻辑疑点必须暂停询问用户**。
+6. **QA**审查验证，反馈问题。
+7. 调度人标记完成，循环至下一需求。
 
----
+## 疑问处理原则
+- **任何角色对需求、设计、实现存在不确定时，必须暂停并通过调度人向用户确认，严禁自行猜测并修改代码。**
 
-## AI 编码行为准则（最高优先级）
+## 记忆库
+- 路径：`/docs/memory.md`
+- 包含技术栈、需求列表、用户习惯、模块规范、可复用组件等。
+- 调度人负责增量更新与去重。
 
-每次编码任务必须首先遵守以下准则：
-
-### 1. Think Before Coding
-- 陈述假设。不确定则 **Ask**。
-- 多解并存则 **全部列出**。
-- 有更简方案则 **Say so**。困惑则 **Stop & Ask**。
-
-### 2. Simplicity First
-- 只写最小必要代码。不推测。
-- 不为单次使用建抽象。不写冗余错误处理。
-- 200行可简至50行则 **Rewrite**。
-
-### 3. Surgical Changes
-- 只改必须改的。不顺手优化。
-- **严格匹配现有风格**。
-- 仅清理**自己改动**造成的孤儿元素。
-
-### 4. Goal-Driven Execution
-- 任务转为可验证目标：
-  - "加验证" → 写无效输入测试，使其通过。
-  - "修Bug" → 写复现测试，使其通过。
-- 多步骤给简要计划：
-  ```
-  1. [步骤] → 验证: [检查点]
-  2. [步骤] → 验证: [检查点]
-  ```
-
----
-
-## 包结构
-
-```
-src/main/java/com/tingfeng/util/java/base/
-├── common/
-│   ├── utils/        # 静态工具类（Utils后缀）
-│   ├── bean/         # 数据结构
-│   ├── exception/    # 自定义异常
-│   ├── helper/       # 实例类（Helper后缀）
-│   ├── constant/     # 常量枚举
-│   ├── inter/        # 函数接口（I后缀）
-│   └── annotation/   # 注解
-├── file/             # 文件工具
-├── database/         # 数据库工具
-└── web/             # Web工具
-```
-
-## 命名规范
-
-| 类型 | 规则 | 示例 |
-|------|------|------|
-| 工具类 | Utils/Util 后缀 | `StringUtils`, `DateUtils` |
-| 实例类 | Helper 后缀 | `PoolHelper`, `PropertyHelper` |
-| 接口 | I 后缀 | `ConvertI`, `PoolMemberActionI` |
-| 转换方法 | `toB()` / `getAbyB()` | `IOUtils.toByteArray()` |
-
-## 规范引用
-
-- **编码标准**：`/skill coding-standards` - 优先级、设计原则
-- **测试规范**：`/skill testing-guide` - 单元测试模式
-- **架构原则**：`/skill architecture` - 类设计、模块划分
-- **模块设计**：按需查阅 `/skill io-utils-design` 等
-- **行为规范**：`doc/ai/Ai代码优化规则.md` - Think Before Coding、Simplicity First、Surgical Changes、Goal-Driven Execution
-
-## 关键约束
-
-1. **最小依赖** - 禁止引入 JavaEE/第三方库
-2. **统一异常** - 抛出自定义 RuntimeException，不抛检查型异常
-3. **资源管理** - 必须使用 try-with-resources
-4. **工具类封闭** - 构造器私有，静态方法
-5. **禁止自动提交** - AI自动修改代码后，禁止自动提交。提交代码必须由用户手动输入要求后触发
-6. **1.0.0版本提交规范** - plan 1.0.0完成后，将之前1.0.0开始的AI提交记录合并为**一个**提交记录，提交信息为"1.0.0初始化"
-
-## Maven
-
-```xml
-<dependency>
-  <groupId>com.tingfeng</groupId>
-  <artifactId>tingfengutil-java-base</artifactId>
-  <version>0.2.6</version>
-</dependency>
-```
+## 子文档索引
+- 调度人细则：`./.claude/agents/orchestrator.md`
+- 架构师细则：`./.claude/agents/architect.md`
+- 编码师细则：`./.claude/agents/coder.md`
+- QA细则：`./.claude/agents/qa.md`
+- 记忆库模板：`./.claude/memory_template.md`

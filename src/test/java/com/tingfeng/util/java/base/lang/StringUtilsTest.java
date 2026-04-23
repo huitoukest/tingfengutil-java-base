@@ -1,9 +1,7 @@
 package com.tingfeng.util.java.base.lang;
 
 import com.tingfeng.util.java.base.collection.CollectionUtils;
-import com.tingfeng.util.java.base.math.RandomUtils;
-import com.tingfeng.util.java.base.lang.StringUtils;
-import com.tingfeng.util.java.base.common.utils.TestUtils;
+import com.tingfeng.util.java.base.lang.base.Tuple2;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -678,5 +676,157 @@ public class StringUtilsTest {
             char c = katakana.charAt(i);
             Assert.assertTrue("日文片假名应该在正确的Unicode范围内", c >= 0x30A0 && c <= 0x30FF);
         }
+    }
+
+    @Test
+    public void testSafeParseInteger() {
+        // normal valid integers
+        Tuple2<Boolean, Integer> result1 = StringUtils.safeParseInteger("123");
+        Assert.assertTrue(result1.get_1());
+        Assert.assertEquals(Integer.valueOf(123), result1.get_2());
+
+        Tuple2<Boolean, Integer> result2 = StringUtils.safeParseInteger("-100");
+        Assert.assertTrue(result2.get_1());
+        Assert.assertEquals(Integer.valueOf(-100), result2.get_2());
+
+        // +100 should also pass for positive numbers
+        Tuple2<Boolean, Integer> result3 = StringUtils.safeParseInteger("+100");
+        Assert.assertTrue(result3.get_1());
+        Assert.assertEquals(Integer.valueOf(100), result3.get_2());
+
+        // invalid
+        Tuple2<Boolean, Integer> result4 = StringUtils.safeParseInteger(null);
+        Assert.assertFalse(result4.get_1());
+
+        Tuple2<Boolean, Integer> result5 = StringUtils.safeParseInteger("");
+        Assert.assertFalse(result5.get_1());
+
+        Tuple2<Boolean, Integer> result6 = StringUtils.safeParseInteger("abc");
+        Assert.assertFalse(result6.get_1());
+
+        // boundary values
+        Tuple2<Boolean, Integer> result7 = StringUtils.safeParseInteger("2147483647");
+        Assert.assertTrue(result7.get_1());
+
+        Tuple2<Boolean, Integer> result8 = StringUtils.safeParseInteger("-2147483648");
+        Assert.assertTrue(result8.get_1());
+    }
+
+    @Test
+    public void testSafeParseByte() {
+        Tuple2<Boolean, Byte> r1 = StringUtils.safeParseByte("127");
+        Assert.assertTrue(r1.get_1());
+        Assert.assertEquals(Byte.valueOf((byte)127), r1.get_2());
+
+        Tuple2<Boolean, Byte> r2 = StringUtils.safeParseByte("-128");
+        Assert.assertTrue(r2.get_1());
+        Assert.assertEquals(Byte.valueOf((byte)-128), r2.get_2());
+
+        Tuple2<Boolean, Byte> r3 = StringUtils.safeParseByte("+100");
+        Assert.assertTrue(r3.get_1());
+        Assert.assertEquals(Byte.valueOf((byte)100), r3.get_2());
+
+        Assert.assertFalse(StringUtils.safeParseByte(null).get_1());
+        Assert.assertFalse(StringUtils.safeParseByte("").get_1());
+        Assert.assertFalse(StringUtils.safeParseByte("abc").get_1());
+    }
+
+    @Test
+    public void testSafeParseShort() {
+        Tuple2<Boolean, Short> r1 = StringUtils.safeParseShort("32767");
+        Assert.assertTrue(r1.get_1());
+        Assert.assertEquals(Short.valueOf((short)32767), r1.get_2());
+
+        Tuple2<Boolean, Short> r2 = StringUtils.safeParseShort("-32768");
+        Assert.assertTrue(r2.get_1());
+        Assert.assertEquals(Short.valueOf((short)-32768), r2.get_2());
+
+        Tuple2<Boolean, Short> r3 = StringUtils.safeParseShort("+100");
+        Assert.assertTrue(r3.get_1());
+        Assert.assertEquals(Short.valueOf((short)100), r3.get_2());
+
+        Assert.assertFalse(StringUtils.safeParseShort(null).get_1());
+        Assert.assertFalse(StringUtils.safeParseShort("").get_1());
+        Assert.assertFalse(StringUtils.safeParseShort("abc").get_1());
+    }
+
+    @Test
+    public void testSafeParseLong() {
+        Tuple2<Boolean, Long> r1 = StringUtils.safeParseLong("9223372036854775807");
+        Assert.assertTrue(r1.get_1());
+        Assert.assertEquals(Long.valueOf(9223372036854775807L), r1.get_2());
+
+        Tuple2<Boolean, Long> r2 = StringUtils.safeParseLong("-9223372036854775808");
+        Assert.assertTrue(r2.get_1());
+        Assert.assertEquals(Long.valueOf(-9223372036854775808L), r2.get_2());
+
+        Tuple2<Boolean, Long> r3 = StringUtils.safeParseLong("+100");
+        Assert.assertTrue(r3.get_1());
+        Assert.assertEquals(Long.valueOf(100L), r3.get_2());
+
+        Tuple2<Boolean, Long> r4 = StringUtils.safeParseLong("100L");
+        Assert.assertTrue(r4.get_1());
+        Assert.assertEquals(Long.valueOf(100L), r4.get_2());
+
+        Assert.assertFalse(StringUtils.safeParseLong(null).get_1());
+        Assert.assertFalse(StringUtils.safeParseLong("").get_1());
+        Assert.assertFalse(StringUtils.safeParseLong("abc").get_1());
+    }
+
+    @Test
+    public void testSafeParseFloat() {
+        Tuple2<Boolean, Float> r1 = StringUtils.safeParseFloat("3.14");
+        Assert.assertTrue(r1.get_1());
+        Assert.assertEquals(Float.valueOf(3.14f), r1.get_2());
+
+        Tuple2<Boolean, Float> r2 = StringUtils.safeParseFloat("-3.14");
+        Assert.assertTrue(r2.get_1());
+        Assert.assertEquals(Float.valueOf(-3.14f), r2.get_2());
+
+        Tuple2<Boolean, Float> r3 = StringUtils.safeParseFloat("+3.14");
+        Assert.assertTrue(r3.get_1());
+        Assert.assertEquals(Float.valueOf(3.14f), r3.get_2());
+
+        Assert.assertFalse(StringUtils.safeParseFloat(null).get_1());
+        Assert.assertFalse(StringUtils.safeParseFloat("").get_1());
+        Assert.assertFalse(StringUtils.safeParseFloat("abc").get_1());
+    }
+
+    @Test
+    public void testSafeParseDouble() {
+        Tuple2<Boolean, Double> r1 = StringUtils.safeParseDouble("3.1415926");
+        Assert.assertTrue(r1.get_1());
+        Assert.assertEquals(Double.valueOf(3.1415926), r1.get_2());
+
+        Tuple2<Boolean, Double> r2 = StringUtils.safeParseDouble("-3.1415926");
+        Assert.assertTrue(r2.get_1());
+        Assert.assertEquals(Double.valueOf(-3.1415926), r2.get_2());
+
+        Tuple2<Boolean, Double> r3 = StringUtils.safeParseDouble("+3.1415926");
+        Assert.assertTrue(r3.get_1());
+        Assert.assertEquals(Double.valueOf(3.1415926), r3.get_2());
+
+        Assert.assertFalse(StringUtils.safeParseDouble(null).get_1());
+        Assert.assertFalse(StringUtils.safeParseDouble("").get_1());
+        Assert.assertFalse(StringUtils.safeParseDouble("abc").get_1());
+    }
+
+    @Test
+    public void testIsHex() {
+        // valid hex
+        Assert.assertTrue(StringUtils.isHex("0x0"));
+        Assert.assertTrue(StringUtils.isHex("0xABC"));
+        Assert.assertTrue(StringUtils.isHex("0XDEF123"));
+        Assert.assertTrue(StringUtils.isHex("0xabcdef"));
+        Assert.assertTrue(StringUtils.isHex("-0xABC"));
+        Assert.assertTrue(StringUtils.isHex("+0xABC"));
+        // lowercase hex
+        Assert.assertTrue(StringUtils.isHex("0x1a2b3c"));
+        // invalid
+        Assert.assertFalse(StringUtils.isHex("0x"));
+        Assert.assertFalse(StringUtils.isHex("0xGHI"));
+        Assert.assertFalse(StringUtils.isHex("abc"));
+        Assert.assertFalse(StringUtils.isHex(null));
+        Assert.assertFalse(StringUtils.isHex(""));
     }
 }

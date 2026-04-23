@@ -433,86 +433,166 @@ public class ArrayUtilsTest {
     }
 
     @Test
-    public void testToBoolean() {
+    public void testUnwrapperBoolean() {
         Boolean[] array = {true, null, false, true};
-        boolean[] result = ArrayUtils.toBoolean(array);
+        boolean[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertTrue(result[0]);
         Assert.assertFalse(result[1]);
         Assert.assertFalse(result[2]);
         Assert.assertTrue(result[3]);
-        Assert.assertNull(ArrayUtils.toBoolean(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Boolean[]) null));
     }
 
     @Test
-    public void testToChar() {
+    public void testUnwrapperChar() {
         Character[] array = {'a', null, 'c', 'd'};
-        char[] result = ArrayUtils.toChar(array);
+        char[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals('a', result[0]);
         Assert.assertEquals('\0', result[1]);
         Assert.assertEquals('c', result[2]);
-        Assert.assertNull(ArrayUtils.toChar(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Character[]) null));
     }
 
     @Test
-    public void testToByte() {
+    public void testUnwrapperByte() {
         Byte[] array = {1, null, 3, 4};
-        byte[] result = ArrayUtils.toByte(array);
+        byte[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals(1, result[0]);
         Assert.assertEquals(0, result[1]);
-        Assert.assertNull(ArrayUtils.toByte(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Byte[]) null));
     }
 
     @Test
-    public void testToShort() {
+    public void testUnwrapperShort() {
         Short[] array = {1, null, 3, 4};
-        short[] result = ArrayUtils.toShort(array);
+        short[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals(1, result[0]);
         Assert.assertEquals(0, result[1]);
-        Assert.assertNull(ArrayUtils.toShort(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Short[]) null));
     }
 
     @Test
-    public void testToInt() {
+    public void testUnwrapperInt() {
         Integer[] array = {1, null, 3, 4};
-        int[] result = ArrayUtils.toInt(array);
+        int[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals(1, result[0]);
         Assert.assertEquals(0, result[1]);
-        Assert.assertNull(ArrayUtils.toInt(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Integer[]) null));
     }
 
     @Test
-    public void testToLong() {
+    public void testUnwrapperLong() {
         Long[] array = {1L, null, 3L, 4L};
-        long[] result = ArrayUtils.toLong(array);
+        long[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals(1L, result[0]);
         Assert.assertEquals(0L, result[1]);
-        Assert.assertNull(ArrayUtils.toLong(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Long[]) null));
     }
 
     @Test
-    public void testToFloat() {
+    public void testUnwrapperFloat() {
         Float[] array = {1.1f, null, 3.3f, 4.4f};
-        float[] result = ArrayUtils.toFloat(array);
+        float[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals(1.1f, result[0], 0.001);
         Assert.assertEquals(0f, result[1], 0.001);
-        Assert.assertNull(ArrayUtils.toFloat(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Float[]) null));
     }
 
     @Test
-    public void testToDouble() {
+    public void testUnwrapperDouble() {
         Double[] array = {1.1, null, 3.3, 4.4};
-        double[] result = ArrayUtils.toDouble(array);
+        double[] result = ArrayUtils.unwrapper(array);
         Assert.assertEquals(4, result.length);
         Assert.assertEquals(1.1, result[0], 0.001);
         Assert.assertEquals(0d, result[1], 0.001);
-        Assert.assertNull(ArrayUtils.toDouble(null));
+        Assert.assertNull(ArrayUtils.unwrapper((Double[]) null));
+    }
+
+    @Test
+    public void testWrapperByte() {
+        byte[] array = {1, 2, 3, 4};
+        Byte[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Byte.valueOf((byte)1), result[0]);
+        Assert.assertEquals(Byte.valueOf((byte)2), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((byte[]) null));
+    }
+
+    @Test
+    public void testWrapperShort() {
+        short[] array = {1, 2, 3, 4};
+        Short[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Short.valueOf((short)1), result[0]);
+        Assert.assertEquals(Short.valueOf((short)2), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((short[]) null));
+    }
+
+    @Test
+    public void testWrapperInt() {
+        int[] array = {1, 2, 3, 4};
+        Integer[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Integer.valueOf(1), result[0]);
+        Assert.assertEquals(Integer.valueOf(2), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((int[]) null));
+    }
+
+    @Test
+    public void testWrapperLong() {
+        long[] array = {1L, 2L, 3L, 4L};
+        Long[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Long.valueOf(1L), result[0]);
+        Assert.assertEquals(Long.valueOf(2L), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((long[]) null));
+    }
+
+    @Test
+    public void testWrapperFloat() {
+        float[] array = {1.1f, 2.2f, 3.3f, 4.4f};
+        Float[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Float.valueOf(1.1f), result[0]);
+        Assert.assertEquals(Float.valueOf(2.2f), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((float[]) null));
+    }
+
+    @Test
+    public void testWrapperDouble() {
+        double[] array = {1.1, 2.2, 3.3, 4.4};
+        Double[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Double.valueOf(1.1), result[0]);
+        Assert.assertEquals(Double.valueOf(2.2), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((double[]) null));
+    }
+
+    @Test
+    public void testWrapperBoolean() {
+        boolean[] array = {true, false, true, false};
+        Boolean[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Boolean.TRUE, result[0]);
+        Assert.assertEquals(Boolean.FALSE, result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((boolean[]) null));
+    }
+
+    @Test
+    public void testWrapperChar() {
+        char[] array = {'a', 'b', 'c', 'd'};
+        Character[] result = ArrayUtils.wrapper(array);
+        Assert.assertEquals(4, result.length);
+        Assert.assertEquals(Character.valueOf('a'), result[0]);
+        Assert.assertEquals(Character.valueOf('b'), result[1]);
+        Assert.assertNull(ArrayUtils.wrapper((char[]) null));
     }
 
     // ==================== 统计方法测试 ====================
