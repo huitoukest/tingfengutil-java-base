@@ -34,6 +34,10 @@
 - 包含技术栈、需求列表、用户习惯、模块规范、可复用组件等。
 - 调度人负责增量更新与去重。
 
+## 规范沉淀
+- **项目配置与规范文档统一存入 `.claude/` 目录**
+- 示例：Windows命令执行规范 → `.claude/windows-command-spec.md`
+
 ## 子文档索引
 - 调度人细则：`./.claude/agents/orchestrator.md`
 - 架构师细则：`./.claude/agents/architect.md`

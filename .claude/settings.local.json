@@ -22,7 +22,7 @@
       "Bash(git branch:*)",
       "Bash(git push:*)",
       "Bash(mkdir:*)",
-      "Bash(git mv:*)",
+      "Bash(git mv:*)"
     ]
   }
 }
