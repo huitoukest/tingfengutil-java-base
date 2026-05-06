@@ -29,5 +29,7 @@ public final class DefaultConverters {
         UrlConverters.register(registry);
         BigNumberConverters.register(registry);
         EnumConverters.register(registry);
+        OptionalConverters.register(registry);
+        ObjectConverters.register(registry);
     }
 }

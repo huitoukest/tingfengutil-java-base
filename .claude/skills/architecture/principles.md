@@ -124,3 +124,27 @@ throw new com.tingfeng.util.java.base.common.exception.io.IOException("message",
 | 文件 | `FileUtils` | `file/` |
 | 树结构 | `TreeNode`, `GenericTreeNode` | `common/bean/` |
 | 池化 | `PoolHelper` | `common/helper/` |
+
+## Converter 转换器规范
+
+### 分类原则
+每个转换器类专注于**同一源类型类别 → 转为其它类型**：
+- 源类型为 Date/LocalDateTime/LocalDate/Duration/Period → 归入 `DateTimeConverters`
+- 源类型为 Number/Long/Integer → 归入 `NumberConverters`
+- 源类型为 String → 归入 `StringConverters`
+
+### 转换方向限制
+- `Long → Date/LocalDateTime/LocalDate`：属于 `NumberConverters`（源是数值）
+- `Date → Long/String`：属于 `DateTimeConverters`（源是日期）
+- `Duration/Period → Long/String`：属于 `DateTimeConverters`（源是时间）
+
+### 转换器文件命名
+- 聚合注册入口：`DefaultConverters.java`
+- 分类转换器：`XxxConverters.java`（如 `DateTimeConverters`、`ArrayConverters`）
+
+### 时间转字符串默认格式
+- `yyyy-MM-dd HH:mm:ss`（FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE）
+
+### Optional 转换器
+- 仅提供拆箱功能：`Optional<T> → T`（条件：非空）
+- 不提供装箱功能（用户可自行使用 `Optional.ofNullable()`）

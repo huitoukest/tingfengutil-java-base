@@ -6,9 +6,13 @@ import com.tingfeng.util.java.base.datetime.DateFormat;
 import com.tingfeng.util.java.base.datetime.DateUtils;
 import com.tingfeng.util.java.base.datetime.LocalDateUtils;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -100,6 +104,36 @@ public final class DateTimeConverters {
         registry.register(ConverterUtils.of(
                 LocalDate.class, Long.class,
                 LocalDateUtils::toMills
+        ));
+
+        // ==================== Duration -> X ====================
+        registry.register(ConverterUtils.of(
+                Duration.class, Long.class,
+                Duration::toMillis
+        ));
+        registry.register(ConverterUtils.of(
+                Duration.class, Integer.class,
+                d -> (int) d.getSeconds()
+        ));
+        registry.register(ConverterUtils.of(
+                Duration.class, String.class,
+                Duration::toString
+        ));
+
+        // ==================== Period -> X ====================
+        registry.register(ConverterUtils.of(
+                Period.class, String.class,
+                Period::toString
+        ));
+        registry.register(ConverterUtils.of(
+                Period.class, int[].class,
+                p -> new int[]{p.getYears(), p.getMonths(), p.getDays()}
+        ));
+
+        // ==================== ZonedDateTime -> String ====================
+        registry.register(ConverterUtils.of(
+                ZonedDateTime.class, String.class,
+                zdt -> zdt.format(DateTimeFormatter.ofPattern(DateFormat.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE))
         ));
     }
 }

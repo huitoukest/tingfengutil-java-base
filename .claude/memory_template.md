@@ -22,6 +22,14 @@
 ## 模块级特殊准则
 - 模块名：[准则描述]
 
+## Converter 转换器规范
+- **分类原则**：同一源类型类别 → 转为其它类型
+- **转换方向限制**：
+  - Long/Integer → 时间类型 → `NumberConverters`
+  - Date/LocalDateTime/Duration/Period → 其它类型 → `DateTimeConverters`
+- **时间转字符串默认格式**：`yyyy-MM-dd HH:mm:ss`
+- **Optional 转换器**：仅提供拆箱功能（`Optional<T> → T`）
+
 ## 可复用组件清单
 | 组件/类 | 功能 | 位置 |
 
