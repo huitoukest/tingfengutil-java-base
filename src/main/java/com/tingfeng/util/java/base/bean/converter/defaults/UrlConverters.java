@@ -2,7 +2,6 @@ package com.tingfeng.util.java.base.bean.converter.defaults;
 
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
-import lombok.SneakyThrows;
 
 import java.io.File;
 import java.net.URI;
@@ -16,7 +15,6 @@ public final class UrlConverters {
 
     private UrlConverters() {}
 
-    @SneakyThrows
     public static void register(ConverterRegistry registry) {
         registry.register(ConverterUtils.of(
                 URL.class, String.class, URL::toString
@@ -25,10 +23,14 @@ public final class UrlConverters {
                 URI.class, String.class, URI::toString
         ));
         registry.register(ConverterUtils.of(
-                URI.class, URL.class, URI::toURL
+                URI.class, URL.class, uri -> {
+                    try { return uri.toURL(); } catch (java.net.MalformedURLException e) { throw new RuntimeException(e); }
+                }
         ));
         registry.register(ConverterUtils.of(
-                URL.class, URI.class, URL::toURI
+                URL.class, URI.class, url -> {
+                    try { return url.toURI(); } catch (java.net.URISyntaxException e) { throw new RuntimeException(e); }
+                }
         ));
         registry.register(ConverterUtils.of(
                 URI.class, File.class, uri -> Paths.get(uri).toFile()

@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.bean.converter;
 
 import com.tingfeng.util.java.base.bean.converter.defaults.DefaultConverters;
 
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -26,6 +27,29 @@ public class ConverterUtils {
             }
         }
         return INSTANCE;
+    }
+
+    // ==================== 获取转换器 ====================
+
+    /**
+     * 获取转换器
+     * @param sourceType 源类型
+     * @param target 目标类型
+     * @return Converter，或 null
+     */
+    public static <S, T> Converter<S, T> getConverter(Class<S> sourceType, Class<T> target) {
+        return getInstance().getConverter(sourceType, target);
+    }
+
+    /**
+     * 获取转换器（按实例值查找）
+     * @param source 源对象实例
+     * @param target 目标类型
+     * @return Converter，或 null
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static <S, T> Converter<S, T> getConverter(S source, Class<T> target) {
+        return getInstance().getConverterByValue(source, (Class<S>) source.getClass(), target);
     }
 
     // ==================== Converter 工厂方法 ====================

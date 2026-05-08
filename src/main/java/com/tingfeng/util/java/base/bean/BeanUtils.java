@@ -1,7 +1,8 @@
 package com.tingfeng.util.java.base.bean;
 
 import com.tingfeng.util.java.base.bean.base.BeanCopyFun;
-import com.tingfeng.util.java.base.bean.converter.ConverterUtil;
+import com.tingfeng.util.java.base.bean.converter.Converter;
+import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
 import com.tingfeng.util.java.base.lang.base.UnionKey;
 import com.tingfeng.util.java.base.lang.base.Tuple2;
 import com.tingfeng.util.java.base.lang.ObjectUtils;
@@ -597,9 +598,9 @@ public class BeanUtils {
                             }
                             Class<?>[] parameterTypes = propertyDescriptor.getWriteMethod().getParameterTypes();
                             if (!parameterTypes[0].equals(String.class)) {
-                                Function<String, ?> converter = ConverterUtil.getConverter(String.class, parameterTypes[0]);
+                                Converter<String, ?> converter = ConverterUtils.getConverter(String.class, parameterTypes[0]);
                                 if (converter != null) {
-                                    filedValue = Optional.ofNullable(srcFiledValue).map(converter::apply).orElse(null);
+                                    filedValue = converter.convert(srcFiledValue);
                                 }
                             }
                             try {
@@ -639,9 +640,9 @@ public class BeanUtils {
                         try {
                             Object targetValue = paramObj;
                             if(!fieldClass.equals(String.class)){
-                                Function<String, ?> converter = ConverterUtil.getConverter(String.class, fieldClass);
+                                Converter<String, ?> converter = ConverterUtils.getConverter(String.class, fieldClass);
                                 if(converter != null){
-                                    targetValue = Optional.ofNullable(paramObj).map(converter::apply).orElse(null);
+                                    targetValue = converter.convert(paramObj);
                                 }
                             }
                             if(targetMethod != null){

@@ -76,6 +76,7 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public <S, T> ConverterSearchResult<S, T> findConverters(Class<S> source, Class<T> target) {
         if (source == null || target == null) {
             return new ConverterSearchResult<>(Collections.emptyList(), null);
@@ -89,7 +90,7 @@ public class DefaultConverterRegistry implements ConverterRegistry {
         // 2. 获取普通 Converter
         Converter<?, ?> converter = converters.get(key);
 
-        return new ConverterSearchResult<>((List) conditionList, converter);
+        return new ConverterSearchResult<>((List) conditionList, (Converter) converter);
     }
 
     @Override
@@ -107,7 +108,8 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     }
 
     @Override
-    public <T> T convert(Object source, Class<T> target) {
+    @SuppressWarnings("unchecked")
+    public <S,T> T convert(S source, Class<T> target) {
         if (source == null) {
             return null;
         }
@@ -115,27 +117,42 @@ public class DefaultConverterRegistry implements ConverterRegistry {
             throw new ConverterException("target type is null");
         }
 
-        Class<?> sourceType = source.getClass();
+        Class<S> sourceType = (Class<S>) source.getClass();
         if (sourceType.equals(target)) {
             return (T) source;
         }
 
-        // 目标为基础类型：先找基础类型转换器，没有则找包装类型转换器，结果为null则跳过
+        // 目标为基础类型：先找基础类型转换器，没有则找包装类型转换器
         if (ClassUtils.isPrimitive(target)) {
-            return convertToPrimitive(source, sourceType, target);
+            T result = convertToPrimitive(source, sourceType, target);
+            if (result != null) {
+                return result;
+            }
+            throw new ConverterException(
+                    String.format("No converter found from %s to %s", sourceType.getName(), target.getName()));
         }
 
         // 目标为包装类型 或 来源为基础类型：先找自身，找不到则找对应类型
         if (ClassUtils.isWrapper(target) || ClassUtils.isPrimitive(sourceType)) {
-            return convertToWrapper(source, sourceType, target);
+            T result = convertToWrapper(source, sourceType, target);
+            if (result != null) {
+                return result;
+            }
+            throw new ConverterException(
+                    String.format("No converter found from %s to %s", sourceType.getName(), target.getName()));
         }
 
         // 来源为包装类型：优先自身，找不到且值不为null则尝试基础类型转换器
-        return convertAuto(source, sourceType, target);
+        T result = convertAuto(source, sourceType, target);
+        if (result != null) {
+            return result;
+        }
+        throw new ConverterException(
+                String.format("No converter found from %s to %s", sourceType.getName(), target.getName()));
     }
 
     @Override
-    public <T> T convert(Object source, Class<T> target, T defaultValue) {
+    public <S, T> T convert(S source, Class<T> target, T defaultValue) {
         if (source == null) {
             return defaultValue;
         }
@@ -147,6 +164,47 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     }
 
     // ==================== 转换辅助方法 ====================
+
+    /**
+     * 获取匹配的转换器
+     * @param source 源对象实例（用于 matches 检查）
+     * @param sourceType 源类型
+     * @param target 目标类型
+     * @return 匹配的 Converter，或 null
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <S, T> Converter<S, T> getConverterByValue(S source, Class<S> sourceType, Class<T> target) {
+        if (source == null || sourceType == null || target == null) {
+            return null;
+        }
+        ConverterSearchResult<S, T> result = findConverters(sourceType, target);
+
+        // 1. 遍历条件转换器，找 matches(source) 返回 true 的
+        for (ConditionConverter<S, T> cc : result.getConditionConverters()) {
+            if (cc.matches(source)) {
+                return cc;
+            }
+        }
+
+        // 2. 返回普通转换器
+        return result.getConverter();
+    }
+
+    /**
+     * 获取转换器（仅按类型）
+     * @param sourceType 源类型
+     * @param target 目标类型
+     * @return 普通 Converter，或 null
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public <S, T> Converter<S, T> getConverter(Class<S> sourceType, Class<T> target) {
+        if (sourceType == null || target == null) {
+            return null;
+        }
+        ConverterSearchResult<S, T> result = findConverters(sourceType, target);
+        // 只返回普通 Converter，条件转换器由 getConverterByValue 处理
+        return result.getConverter();
+    }
 
     /**
      * 从查找结果中查找转换器
@@ -174,39 +232,37 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     /**
      * 转换为基础类型
      * <p>
-     * 规则：先找基础类型转换器，没有则找包装类型转换器，转换结果为null则表示无效
+     * 规则：先找基础类型转换器，没有则找包装类型转换器，找不到返回 null
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private <T> T convertToPrimitive(Object source, Class<?> sourceType, Class<T> target) {
         // 1. 先尝试基础类型转换器
-        ConverterSearchResult primitiveResult = findConverters(sourceType, target);
-        Object converted = find(primitiveResult, source);
-        if (converted != null) {
-            return (T) converted;
+        Converter<Object, T> converter = getConverterByValue(source, (Class<Object>) sourceType, target);
+        if (converter != null) {
+            return converter.convert(source);
         }
 
         // 2. 找不到基础类型转换器，尝试包装类型转换器
         Class<?> wrapperTarget = ClassUtils.toWrapper(target);
-        ConverterSearchResult wrapperResult = findConverters(sourceType, wrapperTarget);
-        converted = find(wrapperResult, source);
-        if (converted != null) {
-            return (T) converted;
+        converter = getConverterByValue(source, (Class<Object>) sourceType, (Class) wrapperTarget);
+        if (converter != null) {
+            return converter.convert(source);
         }
 
-        throw new ConverterException(
-                String.format("No converter found from %s to %s", sourceType.getName(), target.getName()));
+        return null;
     }
 
     /**
      * 使用包装类型转换器转换
      * <p>
-     * 规则：目标为包装类型 或 来源为基础类型时，先找自身，找不到则找对应类型
+     * 规则：目标为包装类型 或 来源为基础类型时，先找自身，找不到则找对应类型，找不到返回 null
      */
-    private <T> T convertToWrapper(Object source, Class<?> sourceType, Class<T> target) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <S,T> T convertToWrapper(S source, Class<S> sourceType, Class<T> target) {
         // 1. 先找自身转换器
-        ConverterSearchResult result = findConverters(sourceType, target);
-        Object converted = find(result, source);
-        if (converted != null) {
-            return (T) converted;
+        Converter<S, T> converter = getConverterByValue(source,  sourceType, target);
+        if (converter != null) {
+            return converter.convert(source);
         }
 
         // 2. 找不到则找对应类型（wrapper↔primitive）
@@ -214,44 +270,40 @@ public class DefaultConverterRegistry implements ConverterRegistry {
                 ? ClassUtils.toWrapper(target)
                 : ClassUtils.toPrimitive(target);
         if (correspondingType != null) {
-            ConverterSearchResult fallbackResult = findConverters(sourceType, correspondingType);
-            converted = find(fallbackResult, source);
-            if (converted != null) {
-                return (T) converted;
+            converter = getConverterByValue(source, (Class<Object>) sourceType, (Class) correspondingType);
+            if (converter != null) {
+                return converter.convert(source);
             }
         }
 
-        throw new ConverterException(
-                String.format("No converter found from %s to %s", sourceType.getName(), target.getName()));
+        return null;
     }
 
     /**
      * 来源为包装类型时的转换
      * <p>
-     * 规则：优先自身转换器，找不到且值不为null则尝试基础类型转换器
+     * 规则：优先自身转换器，找不到且值不为null则尝试基础类型转换器，找不到返回 null
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private <T> T convertAuto(Object source, Class<?> sourceType, Class<T> target) {
         // 1. 优先使用包装类型自身转换器
-        ConverterSearchResult result = findConverters(sourceType, target);
-        Object converted = find(result, source);
-        if (converted != null) {
-            return (T) converted;
+        Converter<Object, T> converter = getConverterByValue(source, (Class<Object>) sourceType, target);
+        if (converter != null) {
+            return (T) converter.convert(source);
         }
 
         // 2. 找不到且值不为null，尝试基础类型转换器
         if (source != null) {
             Class<?> primitiveTarget = ClassUtils.toPrimitive(target);
             if (primitiveTarget != null) {
-                ConverterSearchResult primitiveResult = findConverters(sourceType, primitiveTarget);
-                converted = find(primitiveResult, source);
-                if (converted != null) {
-                    return (T) converted;
+                converter = getConverterByValue(source, (Class<Object>) sourceType, (Class) primitiveTarget);
+                if (converter != null) {
+                    return (T) converter.convert(source);
                 }
             }
         }
 
-        throw new ConverterException(
-                String.format("No converter found from %s to %s", sourceType.getName(), target.getName()));
+        return null;
     }
 
     // ==================== 私有方法 ====================

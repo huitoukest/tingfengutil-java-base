@@ -57,7 +57,7 @@ public interface ConverterRegistry {
      * @param <T> 目标类型
      * @return 转换后的对象
      */
-    <T> T convert(Object source, Class<T> target);
+    <S,T> T convert(S source, Class<T> target);
 
     /**
      * 执行转换，失败返回默认值
@@ -67,7 +67,7 @@ public interface ConverterRegistry {
      * @param <T> 目标类型
      * @return 转换后的对象，失败返回默认值
      */
-    <T> T convert(Object source, Class<T> target, T defaultValue);
+    <S,T> T convert(S source, Class<T> target, T defaultValue);
 
     /**
      * 清空所有已注册的转换器
