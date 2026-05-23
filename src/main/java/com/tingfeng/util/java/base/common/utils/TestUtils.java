@@ -1,9 +1,9 @@
 package com.tingfeng.util.java.base.common.utils;
 
 import com.tingfeng.util.java.base.lang.base.*;
-import com.tingfeng.util.java.base.lang.ex.TestExecutionException;
-import com.tingfeng.util.java.base.lang.ex.TestInterruptedException;
-import com.tingfeng.util.java.base.lang.ex.TestTimeoutException;
+import com.tingfeng.util.java.base.lang.exception.test.TestExecutionException;
+import com.tingfeng.util.java.base.lang.exception.test.TestInterruptedException;
+import com.tingfeng.util.java.base.lang.exception.test.TestTimeoutException;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;

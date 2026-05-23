@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.lang.ex;
+package com.tingfeng.util.java.base.lang.exception.test;
 
 /**
  * 测试中断异常
