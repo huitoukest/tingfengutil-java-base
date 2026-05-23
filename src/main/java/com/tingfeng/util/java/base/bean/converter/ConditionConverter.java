@@ -16,11 +16,4 @@ public interface ConditionConverter<S, T> extends Converter<S, T> {
      */
     boolean matches(S source);
 
-    /**
-     * 排序标识，值越小优先级越高，默认 0
-     * @return 排序值
-     */
-    default int order() {
-        return ConverterConstants.ORDER_DEFAULT;
-    }
 }

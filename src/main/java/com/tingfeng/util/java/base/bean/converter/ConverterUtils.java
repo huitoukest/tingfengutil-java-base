@@ -2,7 +2,6 @@ package com.tingfeng.util.java.base.bean.converter;
 
 import com.tingfeng.util.java.base.bean.converter.defaults.DefaultConverters;
 
-import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 

@@ -21,6 +21,9 @@
 - 🔴 **commons-logging 1.2 仅 WebServiceUtils 使用** — 新增代码应避免引入更多第三方依赖
 - 🔴 **WebServiceUtils 有重试逻辑** — postToWebService 递归重试，注意递归深度
 
+- 🔴 **`ReadWriteArrayList.removeIf()` 无效** — 因其 `iterator()` 返回 `new ArrayList<>(list)` 快照副本，继承自 `Collection` 默认实现的 `removeIf()` 操作的是副本而非底层列表。应使用索引逆序遍历 + `remove(int)` 替代
+- 🔴 **`ReadWriteArrayList.sort()` 可用** — 已显式重写 `sort()`，可安全使用
+
 ## 修改红线
 
 | 文件 | 约束 |

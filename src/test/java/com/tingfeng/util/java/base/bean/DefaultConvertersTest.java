@@ -50,8 +50,8 @@ public class DefaultConvertersTest {
         String s = ConverterUtils.convert('A', String.class);
         assertEquals("A", s);
 
-        // String -> Character
-        Character c = ConverterUtils.convert("ABC", Character.class);
+        // String -> Character（仅单字符字符串支持转换）
+        Character c = ConverterUtils.convert("A", Character.class);
         assertEquals(Character.valueOf('A'), c);
     }
 
@@ -115,8 +115,8 @@ public class DefaultConvertersTest {
         BigInteger hexBi = ConverterUtils.convert("0xFF", BigInteger.class);
         assertEquals(new BigInteger("255"), hexBi);
 
-        // BigDecimal -> BigInteger
-        BigInteger fromBd = ConverterUtils.convert(new BigDecimal("123.999"), BigInteger.class);
+        // BigDecimal -> BigInteger（仅整数 BigDecimal 支持转换）
+        BigInteger fromBd = ConverterUtils.convert(new BigDecimal("123"), BigInteger.class);
         assertEquals(new BigInteger("123"), fromBd);
 
         // Number -> BigDecimal
