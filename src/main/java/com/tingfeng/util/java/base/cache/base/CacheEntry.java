@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class CacheItem<K,V> {
+public class CacheEntry<K,V> {
     private K key;
     /**
      * 缓存的值
