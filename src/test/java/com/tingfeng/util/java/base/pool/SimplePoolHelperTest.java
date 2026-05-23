@@ -30,31 +30,25 @@ public class SimplePoolHelperTest {
            CountDownLatch latch = new CountDownLatch(threadSize);
 
            for(int i = 0;i < threadSize ;i++){
-               new Thread(()->{
+               new Thread(() -> {
+                   StringBuilder sb = simplePoolHelper.get();
+                   sb.setLength(0);
+                   sb.append("1");
                    try {
-                       StringBuilder sb = simplePoolHelper.get();
-                       sb.setLength(0);
-                       sb.append("1");
-                       try {
-                           Thread.sleep(2);
-                       } catch (InterruptedException e) {
-                           Thread.currentThread().interrupt();
-                       }
-                       sb.append("2");
-                       System.out.println(sb.toString());
-                       simplePoolHelper.release(sb);
-                   } finally {
-                       latch.countDown();
+                       Thread.sleep(2);
+                   } catch (InterruptedException e) {
+                       Thread.currentThread().interrupt();
                    }
+                   sb.append("2");
+                   Assert.assertEquals("12", sb.toString());
+                   simplePoolHelper.release(sb);
+                   latch.countDown();
                }).start();
            }
 
            // 等待所有线程完成，最多等待10秒
            boolean completed = latch.await(10, TimeUnit.SECONDS);
-           if (!completed) {
-               System.out.println("测试超时，强制结束");
-           }
-           System.out.println("over");
+           Assert.assertTrue("所有任务应该完成", completed);
 
            // 验证池状态
            Assert.assertEquals("使用中的资源数量应该为0", 0, simplePoolHelper.getUseSize());
@@ -90,12 +84,10 @@ public class SimplePoolHelperTest {
             @Override
             public void close() throws IOException {
                 closed = true;
-                System.out.println("Resource " + id + " closed");
             }
         }
 
         // 使用 try-with-resources
-        final TestResource testResource = new TestResource();
         try (SimplePoolHelper<TestResource> pool = new SimplePoolHelper<>(2, () -> new TestResource())) {
             // 获取资源
             TestResource resource1 = pool.get();
@@ -117,8 +109,7 @@ public class SimplePoolHelperTest {
             Assert.assertEquals("使用中的资源数量应该为0", 0, pool.getUseSize());
             Assert.assertEquals("空闲资源数量应该为2", 2, pool.getIdleSize());
         }
-        // 这里 pool 会自动关闭
-        // 资源应该被关闭
+        // 这里 pool 会自动关闭，池内资源应该被关闭
     }
 
     /**

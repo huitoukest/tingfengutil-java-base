@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.lang;
 
 import com.BaseTest;
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
+import org.junit.Assert;
 import org.junit.Test;
 
 /**
@@ -26,17 +27,15 @@ public class StringAppendTest extends BaseTest {
     @Test
     public void stringBuilderSiginTest(){
         StringBuilder stringBuilder = new StringBuilder();
-        //一共循环2亿次
-        printTime(200,100000,(j)->{
+        //一共循环1万次（10线程×1000）
+        printTime(10,1000,(j)->{
            synchronized (stringBuilder){
                stringBuilder.setLength(0);
                stringBuilder.append("123123");
                stringBuilder.append("99999");
                stringBuilder.append("888888888888888888888888888888888888");
                String s = stringBuilder.toString();
-               if(j % 100000 == 0){
-                    System.out.println(s);
-               }
+               Assert.assertNotNull(s);
            }
         });
     }
@@ -46,17 +45,15 @@ public class StringAppendTest extends BaseTest {
      */
     @Test
     public void stringBuilderPoolTest(){
-        //一共循环2亿次
-        printTime(200,100000,(j)->{
+        //一共循环1万次（10线程×1000）
+        printTime(10,1000,(j)->{
             tokenStringBuilderPool.run(stringBuilder->{
                 stringBuilder.setLength(0);
                 stringBuilder.append("123123");
                 stringBuilder.append("99999");
                 stringBuilder.append("888888888888888888888888888888888888");
                 String s = stringBuilder.toString();
-                if(j % 100000 == 0){
-                    System.out.println(s);
-                }
+                Assert.assertNotNull(s);
                 return null;
             });
         });

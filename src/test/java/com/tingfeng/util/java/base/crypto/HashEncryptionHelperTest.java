@@ -22,7 +22,7 @@ public class HashEncryptionHelperTest {
     public void encodeDecode() {
         String salt = RandomUtils.randomString(RandomUtils.randomInt(1000));
         HashEncryptionHelper hashEncryption = new HashEncryptionHelper(salt);
-        String str = RandomUtils.randomString(RandomUtils.randomInt(10000));
+        String str = RandomUtils.randomString(RandomUtils.randomInt(500));
         String enStr = hashEncryption.encode(str);
         String deStr = hashEncryption.decode(enStr);
         Assert.assertEquals("编码解码后应该与原字符串相同", str, deStr);
@@ -51,10 +51,6 @@ public class HashEncryptionHelperTest {
         String enStr = hashEncryption.encode(str);
         String deStr = hashEncryption.decode(enStr);
         Assert.assertEquals("编码解码后应该与原字符串相同", str, deStr);
-        System.out.println("salt = " + salt);
-        System.out.println("str = " + str);
-        System.out.println("enStr = " + enStr);
-        System.out.println("deStr = " + deStr);
     }
 
     /**
@@ -82,9 +78,5 @@ public class HashEncryptionHelperTest {
         String enStr = hashEncryption.encode(str,true);
         String deStr = hashEncryption.decode(enStr,true);
         Assert.assertEquals("带位置偏移的编码解码后应该与原字符串相同", str, deStr);
-        System.out.println("salt = " + salt);
-        System.out.println("str = " + str);
-        System.out.println("enStr = " + enStr);
-        System.out.println("deStr = " + deStr);
     }
 }

@@ -144,19 +144,18 @@ public class FractionOptimizationTest {
     @Test
     public void testPerformanceOptimization() {
         IntFraction fraction = new IntFraction(100, 200); // 需要简化的分数
-        
+
         long startTime = System.nanoTime();
-        
+
         // 多次调用 simpleFraction，应该利用缓存
         for (int i = 0; i < 1000; i++) {
             IntFraction simplified = fraction.simpleFraction();
             Assert.assertEquals("应该得到相同的结果", "1/2", simplified.getValue());
         }
-        
+
         long endTime = System.nanoTime();
         long duration = endTime - startTime;
-        
-        System.out.println("1000次简化操作耗时: " + (duration / 1000000) + "ms");
+
         Assert.assertTrue("性能应该很优秀", duration < 100000000); // 应该小于 100ms
     }
 
@@ -219,13 +218,12 @@ public class FractionOptimizationTest {
     public void testPercentage() {
         IntFraction half = new IntFraction(1, 2);
         String percentage = half.toPercentage(2);
-        
+
         Assert.assertEquals("1/2 应该是 50.00%", "50.00%", percentage);
-        
+
         IntFraction third = new IntFraction(1, 3);
         String percentage2 = third.toPercentage(4);
-        
-        System.out.println("1/3 的百分数表示: " + percentage2);
+
         Assert.assertTrue("应该包含百分号", percentage2.contains("%"));
     }
 
@@ -237,10 +235,9 @@ public class FractionOptimizationTest {
         // 测试超大数的分数运算
         BigFraction big1 = new BigFraction("12345678901234567890/1");
         BigFraction big2 = new BigFraction("98765432109876543210/1");
-        
+
         BigFraction result = big1.add(big2);
-        System.out.println("大数相加结果: " + result.getValue());
-        
+
         Assert.assertNotNull("结果不应为 null", result);
         Assert.assertTrue("结果应该是正数", result.isPositive());
     }

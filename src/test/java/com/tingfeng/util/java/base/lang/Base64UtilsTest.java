@@ -36,22 +36,30 @@ public class Base64UtilsTest {
     }
 
     /**
-     * 2s , 4 * 4 百万次
+     * 2s , 4 * 4 百万次 - 减少到 4 * 1000
      */
     @Test
     public void urlSafeUrlBatchTest(){
-        TestUtils.printTime(4,100000,(th,integer) -> {
+        TestUtils.printTime(4,1000,(th,integer) -> {
             urlSafeUrlTest();
-            if(integer % 50000 == 0){
-                System.out.println("th:" + th + ",urlSafeUrlBatchTest:" + integer);
-            }
         });
     }
 
     @Test
     public void urlSafeUrlUseTest(){
-        System.out.println(Base64Utils.enCodeBase64UrlSafeString(MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256,"1577934671000,2s5d4c1d0d3g6x91234".getBytes(Charset.forName(Constants.CharSet.UTF8)))));
-        System.out.println(Base64Utils.enCodeBase64UrlSafeString("1577934671000,2s5d4c1d0d3g6x9"));
-        System.out.println(Base64Utils.deCodeBase64UrlSafeString("MTU3NzkzNDY3MTAwMA=="));
+        // SHA256 编码结果
+        String shaResult = Base64Utils.enCodeBase64UrlSafeString(MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256,"1577934671000,2s5d4c1d0d3g6x91234".getBytes(Charset.forName(Constants.CharSet.UTF8))));
+        Assert.assertNotNull(shaResult);
+        Assert.assertTrue(shaResult.length() > 0);
+
+        // 字符串编码并验证 round-trip
+        String original = "1577934671000,2s5d4c1d0d3g6x9";
+        String encoded = Base64Utils.enCodeBase64UrlSafeString(original);
+        Assert.assertNotNull(encoded);
+        Assert.assertEquals(original, Base64Utils.deCodeBase64UrlSafeString(encoded));
+
+        // 解码验证
+        String decoded = Base64Utils.deCodeBase64UrlSafeString("MTU3NzkzNDY3MTAwMA==");
+        Assert.assertEquals("1577934671000", decoded);
     }
 }

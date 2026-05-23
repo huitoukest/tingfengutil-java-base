@@ -18,48 +18,39 @@ public class DateUtilsTest extends TestCase {
 
     @Test
     public void testTestFormatPerformance() {
-        //准备 10w 个待处理的数据,后续单线程/5多线程处理测试性能情况
+        //准备 1w 个待处理的数据（从10w减少到1w）
         long currentTimeMillis = System.currentTimeMillis();
-        List<Date> dates = IntStream.range(0,100000)
+        List<Date> dates = IntStream.range(0,10000)
                 .mapToObj(index -> new Date(currentTimeMillis - index * 1000))
                 .collect(Collectors.toList());
-        //测试单线程性能
-        TestUtils.printTime(1,100000,index -> {
+        //测试单线程性能 - 减少到1w次
+        TestUtils.printTime(1,10000,index -> {
             String dateStr = DateUtils.format(dates.get(index), FORMAT_YYYYMMDDHHMMSSSSS_CHN);
-            if(index % 20000 == 0){
-                System.out.println(dateStr);
-            }
+            assertNotNull(dateStr);
         });
-        //测试多线程性能
-        TestUtils.printTime(5,20000,(i,j) -> {
-            String dateStr = DateUtils.format(dates.get(i * 20000 + j), FORMAT_YYYYMMDDHHMMSSSSS_CHN);
-            if((i * 20000 + j) % 20000 == 0){
-                System.out.println(dateStr);
-            }
+        //测试多线程性能 - 减少到2000次（5线程共1w次）
+        TestUtils.printTime(5,2000,(i,j) -> {
+            String dateStr = DateUtils.format(dates.get(i * 2000 + j), FORMAT_YYYYMMDDHHMMSSSSS_CHN);
+            assertNotNull(dateStr);
         });
     }
 
     @Test
     public void testParsePerformance() {
-        //准备 10w 个待处理的数据,后续单线程/5多线程处理测试性能情况
+        //准备 1w 个待处理的数据（从10w减少到1w）
         long currentTimeMillis = System.currentTimeMillis();
-        List<String> dates = IntStream.range(0,100000)
+        List<String> dates = IntStream.range(0,10000)
                 .mapToObj(index -> DateUtils.getDateString(new Date(currentTimeMillis - index * 1000)))
                 .collect(Collectors.toList());
-        //测试单线程性能
-        TestUtils.printTime(1,100000,index -> {
-            Date date = null;
-                date = DateUtils.parse(dates.get(index),DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
-            if(index % 20000 == 0){
-                System.out.println(date);
-            }
+        //测试单线程性能 - 减少到1w次
+        TestUtils.printTime(1,10000,index -> {
+            Date date = DateUtils.parse(dates.get(index),DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
+            assertNotNull(date);
         });
-        //测试多线程性能
-        TestUtils.printTime(5,20000,(i,j) -> {
-            Date date = DateUtils.parse(dates.get(i * 20000 + j),DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
-            if((i * 20000 + j) % 20000 == 0){
-                System.out.println(date);
-            }
+        //测试多线程性能 - 减少到2000次（5线程共1w次）
+        TestUtils.printTime(5,2000,(i,j) -> {
+            Date date = DateUtils.parse(dates.get(i * 2000 + j),DateUtils.FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
+            assertNotNull(date);
         });
     }
 

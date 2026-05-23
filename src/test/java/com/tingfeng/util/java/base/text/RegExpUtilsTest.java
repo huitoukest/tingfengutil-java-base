@@ -306,7 +306,7 @@ public class RegExpUtilsTest {
                 + "((\\d{2})\\D*(\\d{2})\\D*(\\d{2})\\D*(\\d{3})){0,1}$";
         String content = time.replaceFirst(regEx, "$1@$2@$3@$5@$6@$7@$8");
         content = content.replaceAll("@", "\\\n");
-        System.out.println(content);
+        Assert.assertNotNull(content);
     }
 
     @Test
@@ -314,33 +314,31 @@ public class RegExpUtilsTest {
         String str = "HTTP/1.1 200 OK";
         Pattern pattern = RegExpUtils.getPattern(RegExpUtils.PatternStr.HTTP_STATUS);
         Matcher m = pattern.matcher(str);
-        if(m.find()) {
-            System.out.println(m.group(1));;
-        }
+        Assert.assertTrue(m.find());
+        Assert.assertEquals("200", m.group(1));
     }
 
     @Test
     public void isMathTest(){
         String str = "HTTP/1.1 200 OK";
         boolean result = RegExpUtils.isMatch(str,"^HTTP.*");
-        System.out.println(result);
+        Assert.assertTrue(result);
     }
 
     @Test
     public void speedTest(){
-        TestUtils.printTime(10,500000,index -> {
+        // 性能测试保持8线程但减少循环次数到10000
+        TestUtils.printTime(8,10000,index -> {
             String str = "HTTP/1.1 200 OK";
             Pattern pattern = Pattern.compile("^HTTP.[\\d\\.].{1,20}");
             boolean result = pattern.matcher(str).find();
             Assert.assertTrue(result);
         });
 
-        TestUtils.printTime(10,500000,index -> {
+        TestUtils.printTime(8,10000,index -> {
             String str = "HTTP/1.1 200 OK";
             boolean result = RegExpUtils.isMatch(str,"^HTTP.[\\d\\.].{1,20}");
             Assert.assertTrue(result);
         });
-
-
     }
 }

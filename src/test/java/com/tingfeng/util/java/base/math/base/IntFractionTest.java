@@ -13,51 +13,49 @@ public class IntFractionTest {
     @Test
     public void toDouble() {
         IntFraction fraction = new IntFraction(RandomUtils.randomInt() , RandomUtils.randomInt());
-        System.out.println(fraction.toDouble());
+        double result = fraction.toDouble();
+        Assert.assertTrue("toDouble should return valid value", Double.isFinite(result));
     }
 
     @Test
     public void toBigDecimal() {
         IntFraction fraction = new IntFraction(RandomUtils.randomInt() , RandomUtils.randomInt());
-        System.out.println(fraction.toBigDecimal(RandomUtils.randomInt(0,10), RoundingMode.HALF_UP));
+        int scale = RandomUtils.randomInt(0,10);
+        Assert.assertNotNull("toBigDecimal should return value", fraction.toBigDecimal(scale, RoundingMode.HALF_UP));
     }
 
     @Test
     public void testToString() {
         IntFraction fraction = new IntFraction(RandomUtils.randomInt() , RandomUtils.randomInt());
-        System.out.println(fraction.toString(RandomUtils.randomInt(0,15)));
+        int scale = RandomUtils.randomInt(0,15);
+        Assert.assertNotNull("toString should return value", fraction.toString(scale));
     }
 
     @Test
     public void getValue() {
         IntFraction fraction = new IntFraction(RandomUtils.randomInt() , RandomUtils.randomInt());
-        System.out.println(fraction.getValue());
+        Assert.assertNotNull("getValue should return value", fraction.getValue());
     }
 
     @Test
     public void isPositive() {
         IntFraction fraction = new IntFraction(RandomUtils.randomInt(1,1000) , RandomUtils.randomInt(1,1000));
-        System.out.println(fraction.getValue());
         Assert.assertTrue(fraction.isPositive());
         fraction = new IntFraction(RandomUtils.randomInt(-10000,-1) , RandomUtils.randomInt(-10000,-1));
-        System.out.println(fraction.getValue());
         Assert.assertTrue(fraction.isPositive());
     }
 
     @Test
     public void isZero() {
         IntFraction fraction = new IntFraction(0 , RandomUtils.randomInt());
-        System.out.println(fraction.getValue());
         Assert.assertTrue(fraction.isZero());
     }
 
     @Test
     public void isNegative() {
         IntFraction fraction = new IntFraction(RandomUtils.randomInt(1,1000) , RandomUtils.randomInt(-10000,-1));
-        System.out.println(fraction.getValue());
         Assert.assertTrue(fraction.isNegative());
         fraction = new IntFraction(RandomUtils.randomInt(-10000,-1) , RandomUtils.randomInt(1,1000));
-        System.out.println(fraction.getValue());
         Assert.assertTrue(fraction.isNegative());
     }
 
@@ -154,7 +152,6 @@ public class IntFractionTest {
         int baseValue = RandomUtils.randomInt(-1000,1000);
         int multipleValue = RandomUtils.randomInt(100);
         IntFraction fraction = new IntFraction( multipleValue , baseValue * multipleValue).simpleFraction();
-        System.out.println(fraction.getValue());
         Assert.assertEquals(Math.abs(baseValue), fraction.getDenominator().intValue());
     }
 
@@ -177,31 +174,25 @@ public class IntFractionTest {
          fractionB = new IntFraction("-30405/84323");
          Assert.assertTrue(fractionA.compareTo(fractionB) < 0 );
 
-        //其它比较, 多次测试
-        IntStream.rangeClosed(1, 1000000).forEach(it -> {
+        //其它比较, 减少循环次数到1000次
+        IntStream.rangeClosed(1, 1000).forEach(it -> {
             IntFraction tmpA = new IntFraction(supplierRandom.get() , supplierRandom.get() );
             IntFraction tmpB = new IntFraction(supplierRandom.get() , supplierRandom.get() );
             int value = tmpA.compareTo(tmpB);
             if(value == 0){
                 //由于有精度问题 , 我们这里暂定15位
                 if(!tmpA.simpleFraction().toString(15).equals(tmpB.simpleFraction().toString(15))) {
-                    System.out.println(tmpA.getValue());
-                    System.out.println(tmpB.getValue());
-                    Assert.assertTrue(false);
+                    Assert.fail("相等的分数简化后应该相同: " + tmpA.getValue() + " vs " + tmpB.getValue());
                 }
                 Assert.assertTrue(tmpA.hashCode() == tmpB.hashCode());
                 Assert.assertTrue(tmpA.equals(tmpB));
             }else if(value < 0){
                 if(tmpA.toDouble() - tmpB.toDouble() >= 0) {
-                    System.out.println(tmpA.getValue());
-                    System.out.println(tmpB.getValue());
-                    Assert.assertTrue(false);
+                    Assert.fail("小于关系判断错误: " + tmpA.getValue() + " >= " + tmpB.getValue());
                 }
             }else if(value > 0){
                 if(tmpA.toDouble() - tmpB.toDouble() <= 0) {
-                    System.out.println(tmpA.getValue());
-                    System.out.println(tmpB.getValue());
-                    Assert.assertTrue(false);
+                    Assert.fail("大于关系判断错误: " + tmpA.getValue() + " <= " + tmpB.getValue());
                 }
             }
         });

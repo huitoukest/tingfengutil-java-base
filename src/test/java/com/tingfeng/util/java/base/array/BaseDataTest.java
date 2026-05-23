@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.array;
 
 import java.lang.reflect.Array;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 public class BaseDataTest {
@@ -12,11 +13,11 @@ public class BaseDataTest {
         int [] ints = {1,2,5,4,3,0};
         Object [] objects = {};
          
-        System.out.println(ints.getClass().isAssignableFrom(int [].class));
-        System.out.println(strs.getClass().isAssignableFrom(String [].class));
-        System.out.println(objects.getClass().isAssignableFrom(Object [].class));
-        System.out.println(ints.getClass().isAssignableFrom(Object [].class));
-        System.out.println(ints.getClass().isArray());
-        System.out.println(Array.getLength(ints));
+        Assert.assertTrue(ints.getClass().isAssignableFrom(int [].class));
+        Assert.assertTrue(strs.getClass().isAssignableFrom(String [].class));
+        Assert.assertTrue(objects.getClass().isAssignableFrom(Object [].class));
+        Assert.assertFalse(ints.getClass().isAssignableFrom(Object [].class));
+        Assert.assertTrue(ints.getClass().isArray());
+        Assert.assertEquals(6, Array.getLength(ints));
     }
 }

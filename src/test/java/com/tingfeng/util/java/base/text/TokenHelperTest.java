@@ -15,9 +15,47 @@ public class TokenHelperTest {
 
     static TokenHelper tokenHelper = new TokenHelper();
 
-    @Test
+@Test
     public void test(){
-        test(true);
+        ArrayList<String> list = new ArrayList<>();
+
+        list.add("\\,");
+        list.add("\\");
+        list.add("123456");
+        list.add("\\,");
+        this.test(false,list);
+        list.clear();
+
+        list.add("\\");
+        list.add("\\");
+        list.add("123456");
+        list.add("\\");
+        this.test(false,list);
+        list.clear();
+
+        list.add("");
+        list.add("\\");
+        list.add("123456");
+        list.add("\\,");
+        list.add("");
+        list.add("");
+        list.add("");
+        this.test(false,list);
+        list.clear();
+        //分别存入空串，用户id，过期时间，token类型，空串
+        list.add("");
+        list.add("");
+        list.add("123456");
+        list.add("\\,");
+        list.add("123456");
+        list.add(String.valueOf(System.currentTimeMillis()));
+        list.add("2");
+        list.add(",,5,6,7,,");
+        list.add("");
+        list.add("\\");
+        list.add("");
+
+        this.test(false,list);
     }
 
     private void test(boolean  isPrint){
@@ -59,19 +97,12 @@ public class TokenHelperTest {
         list.add("\\");
         list.add("");
 
-        test(isPrint,list);
-
-        if(isPrint){
-            System.out.println();
-        }
+        test(false,list);
     }
 
     public void test(boolean isPrint,ArrayList<String> list) {
         String token  = tokenHelper.getToken(list,"123456");
         List<String> obj = tokenHelper.parseToken(token, (contents) -> contents.get(2) ,(contents) -> contents);
-        if(isPrint) {
-            System.out.println(JSON.toJSONString(obj));
-        }
         Assert.assertEquals(JSON.toJSONString(obj),JSON.toJSONString(list));
     }
 
@@ -185,7 +216,7 @@ public class TokenHelperTest {
     }
 
     /**
-     * 100w 8s，每秒12w 个
+     * 测试速度 - 保持多线程但减少循环次数到10w
      */
     @Test
     public void testSpeed(){
@@ -195,19 +226,15 @@ public class TokenHelperTest {
         list.add("123456");
         list.add("\\,");
         long startTime = System.currentTimeMillis();
-        for(int i = 0;i < 1000000 ;i++){
-            if(i % 100000 == 0) {
-                test(true,list);
-            }else {
-                test(false,list);
-            }
+        for(int i = 0;i < 100000 ;i++){
+            test(false,list);
         }
-        System.out.println("use time:" + (System.currentTimeMillis() - startTime));
+        long duration = System.currentTimeMillis() - startTime;
+        Assert.assertTrue("执行时间应该在合理范围内", duration < 30000);
     }
 
     /**
-     *  100w 数据 3s ，30w/s
-     * @throws InterruptedException
+     * 测试速度 - 保持5线程但减少循环次数到10w
      */
     @Test
     public void testSpeed2() throws InterruptedException {
@@ -216,12 +243,8 @@ public class TokenHelperTest {
         list.add("\\");
         list.add("123456");
         list.add("\\,");
-        TestUtils.printTime(5,200000,integer -> {
-            if (integer % 100000 == 0) {
-                test(true,list);
-            } else {
-                test(false,list);
-            }
+        TestUtils.printTime(5,100000,integer -> {
+            test(false,list);
         });
     }
 }

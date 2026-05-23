@@ -40,7 +40,8 @@ public class BeanUtilsTest {
         TestUtils.printTime(1,100000,i -> {
             BeanUtils.copyProperties(target,b,"age");
         });
-        System.out.println(JSON.toJSONString(target));
+        Assert.assertNotNull(target);
+        Assert.assertNotNull(JSON.toJSONString(target));
     }
 
     @Test
@@ -51,7 +52,8 @@ public class BeanUtilsTest {
         map.put("user.updateDateTime",new Date());
         map.put("user.interval",110);
         User user = BeanUtils.getBeanByMap(User.class,map);
-        System.out.println(JSON.toJSONString(user));
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(JSON.toJSONString(user));
     }
 
     @Test
@@ -65,7 +67,8 @@ public class BeanUtilsTest {
         wechatServiceUserInfo.setQr_scene_str("xxxxx");
         BeanUtils.copyProperties(wechatServiceFansInfo,wechatServiceUserInfo);
 
-        System.out.println(JSON.toJSONString(wechatServiceFansInfo));
+        Assert.assertNotNull(wechatServiceFansInfo);
+        Assert.assertNotNull(JSON.toJSONString(wechatServiceFansInfo));
     }
 
     @Test
@@ -82,7 +85,8 @@ public class BeanUtilsTest {
         b.setParentFiled("parent");
         Map<String,Object> map = BeanUtils.toMap(b);
         String str = JSON.toJSONString(map);
-        System.out.println(str);
+        Assert.assertTrue(str.contains("age"));
+        Assert.assertTrue(str.contains("parentFiled"));
         User parseB = JSON.parseObject(str,User.class);
         Assert.assertEquals( b.getUser().getC() , parseB.user.getC());
     }
@@ -119,7 +123,7 @@ public class BeanUtilsTest {
 
     @Test
     public void copyTest2(){
-        int count = 10000000;
+        int count = 100000;
         SaveParentDTO saveParentDTO = new SaveParentDTO();
         saveParentDTO.setParent_id(111L);
         saveParentDTO.setStudent_name(RandomUtils.randomString(25));
@@ -134,7 +138,7 @@ public class BeanUtilsTest {
 
     @Test
     public void copyTest3(){
-        int count = 10000000;
+        int count = 100000;
         SaveParentDTO saveParentDTO = new SaveParentDTO();
         saveParentDTO.setParent_id(111L);
         saveParentDTO.setStudent_name(RandomUtils.randomString(25));
@@ -282,8 +286,6 @@ public class BeanUtilsTest {
         // 测试忽略某些属性
         Map<String, Object> map = BeanUtils.toMap(user, User::getAge, User::getC);
         Assert.assertNotNull(map);
-        // 输出map内容，查看实际包含的属性
-        System.out.println("toMap result: " + JSON.toJSONString(map));
         // 由于toMap方法使用getter方法，所以age会被忽略，但userName应该存在
         // updateDateTime是公共字段，没有getter方法，所以不会被toMap方法获取
         Assert.assertTrue(map.containsKey("userName"));

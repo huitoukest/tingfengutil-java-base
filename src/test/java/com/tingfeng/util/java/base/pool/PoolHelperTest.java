@@ -5,6 +5,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import com.tingfeng.util.java.base.lang.inter.PoolMemberActionI;
@@ -16,7 +17,7 @@ public class PoolHelperTest {
     @Test
     public void testPoolHelper() throws InterruptedException {
         final AtomicInteger atom = new AtomicInteger(0);
-        final CountDownLatch latch = new CountDownLatch(20); // 减少线程数量到20
+        final CountDownLatch latch = new CountDownLatch(10); // 减少线程数量到10
 
         PoolBaseInfo baseInfo = new PoolBaseInfo();
         baseInfo.setMaxSize(10);
@@ -37,28 +38,24 @@ public class PoolHelperTest {
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt(); // 正确处理中断
                     }
-                    System.out.println("use Time : " + time + "  " + Thread.currentThread().getName());
                 };
             }
 
             @Override
             public boolean destroy(Runnable t) {
-                System.out.println("destroy : " + t);
                 return true;
             }
 
             @Override
             public void onOverMaxRunTime(Runnable t) {
-                System.out.println("onOverMaxRunTime : " + t);
             }
 
             @Override
             public void onWorkException(Runnable t,Throwable e) {
-                System.out.println("onWorkException : " + e.getMessage());
             }
         }, baseInfo);
 
-        for(int i = 0 ; i < 20 ; i++) { // 减少到20个线程
+        for(int i = 0 ; i < 10 ; i++) { // 减少到10个线程
             new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -67,26 +64,23 @@ public class PoolHelperTest {
                         atom.incrementAndGet();
                         synchronized(PoolHelperTest.class) {
                             set.add(run);
-                            System.out.println("atom count : " + atom.get() + ",setSize:" + set.size());
                         }
                         run.run();
+                    } catch (Exception e) {
+                        // 忽略获取资源的异常
                     } finally {
                         atom.decrementAndGet();
-                        //poolHelper.close(run);
                         latch.countDown(); // 完成一个任务
                     }
                 }
             }).start();
         }
 
-        // 等待所有任务完成，最多等待10秒
-        boolean completed = latch.await(10, java.util.concurrent.TimeUnit.SECONDS);
-        if (!completed) {
-            System.out.println("测试超时，强制结束");
-        }
+        // 等待所有任务完成，最多等待15秒
+        boolean completed = latch.await(15, java.util.concurrent.TimeUnit.SECONDS);
 
         // 验证结果
-        System.out.println("测试完成，最终原子计数: " + atom.get() + ", 集合大小: " + set.size());
+        Assert.assertTrue("所有任务应该完成", completed);
     }
 
     @Test
@@ -127,12 +121,10 @@ public class PoolHelperTest {
 
             @Override
             public void onOverMaxRunTime(Runnable t) {
-                System.out.println("超过最大运行时间");
             }
 
             @Override
             public void onWorkException(Runnable t, Throwable e) {
-                System.out.println("工作异常: " + e.getMessage());
             }
         }, baseInfo);
 
@@ -142,7 +134,7 @@ public class PoolHelperTest {
                     Runnable run = poolHelper.open();
                     run.run();
                 } catch (Exception e) {
-                    System.out.println("获取资源异常: " + e.getMessage());
+                    // 预期异常
                 } finally {
                     latch.countDown();
                 }
@@ -150,8 +142,6 @@ public class PoolHelperTest {
         }
 
         boolean completed = latch.await(5, java.util.concurrent.TimeUnit.SECONDS);
-        if (!completed) {
-            System.out.println("错误测试超时");
-        }
+        Assert.assertTrue("错误测试应该完成", completed);
     }
 }

@@ -4,6 +4,7 @@ package com;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
 import com.tingfeng.util.java.base.lang.support.ReflectUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -38,7 +39,7 @@ public class BaseTest {
             try {
                 Thread.sleep(2);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
             }
         }
         System.out.println("use time:" + (System.currentTimeMillis() - startTime));
@@ -67,15 +68,15 @@ public class BaseTest {
 
     @Test
     public void typeTest(){
-        System.out.println(isCharTypeArray(ReflectUtils.getField(A.class,"chars")));
-        System.out.println(isCharTypeArray(ReflectUtils.getField(A.class,"bytes")));
+        Assert.assertTrue(isCharTypeArray(ReflectUtils.getField(A.class,"chars")));
+        Assert.assertFalse(isCharTypeArray(ReflectUtils.getField(A.class,"bytes")));
     }
 
     @Test
     public void typeTest2(){
         Class<Integer> integerClass = int.class;
-        System.out.println(integerClass.getName());
-        System.out.println(Integer.class.getName());
+        Assert.assertEquals("int", integerClass.getName());
+        Assert.assertEquals("java.lang.Integer", Integer.class.getName());
     }
 
 }

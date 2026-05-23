@@ -103,7 +103,7 @@ public class StringUtilsTest {
     public void unescape() {
         String str = "\\\\123";
         String unescape = StringUtils.unescape(str);
-        System.out.println(unescape);
+        Assert.assertNotNull(unescape);
     }
 
     @Test

@@ -104,8 +104,7 @@ public class StringTemplateHelperTest {
 
 
     /**
-     * 简单测试下性能 8线程8000w = 16.3s
-     * 1kw = 2s;
+     * 简单测试下性能 - 保持8线程但减少循环次数到1000
      */
     @Test
     public void generatorSpeedTest(){
@@ -116,7 +115,7 @@ public class StringTemplateHelperTest {
         params.put("c","cccc");
         String expecStr = "${}}{${aaaa},我们看bbbbcccc好cccc${d}你}${bbbb";
         StringTemplateHelper helper = new StringTemplateHelper(content,CollectionUtils.createSet("a","b","c"));
-        TestUtils.printTime(8,10000,(thread,index) -> {
+        TestUtils.printTime(8,1000,(thread,index) -> {
             helper.generate(params);
         });
     }
@@ -127,17 +126,14 @@ public class StringTemplateHelperTest {
         String endFlag = "}";
         String content = "亲,${a}你的花费余额为${b}元,月份${c}${d}元";
         Set<String> params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
-        System.out.println(JSON.toJSONString(params));
         Assert.assertTrue(CollectionUtils.eq(Arrays.asList("a","b","c","d").stream().collect(Collectors.toSet()), params));
 
         content = "${d}${a}你好,顾客${a}你的花费余额为${${b}}元,月份${{c}元";
         params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
-        System.out.println(JSON.toJSONString(params));
         Assert.assertTrue(CollectionUtils.eq(Arrays.asList("a","d","{c","${b").stream().collect(Collectors.toSet()), params));
 
         content = "${}}{${${a}},我们看${b}${c}好${c}${d}你}${${b}";
         params = StringTemplateHelper.parseParam(startFlag, endFlag, content);
-        System.out.println(JSON.toJSONString(params));
         Assert.assertTrue(CollectionUtils.eq(Arrays.asList("b","c","d","${a","${b").stream().collect(Collectors.toSet()), params));
     }
 

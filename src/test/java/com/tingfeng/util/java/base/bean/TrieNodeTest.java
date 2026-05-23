@@ -299,12 +299,8 @@ public class TrieNodeTest {
         long prefixTime = System.nanoTime() - startTime;
 
         // 性能应该在可接受范围内
-        System.out.println("插入 1000 个单词耗时: " + (insertTime / 1000000) + "ms");
-        System.out.println("查找 1000 个单词耗时: " + (searchTime / 1000000) + "ms");
-        System.out.println("前缀检查 100 次耗时: " + (prefixTime / 1000000) + "ms");
-
-        Assert.assertTrue("插入性能应该良好", insertTime < 100000000); // 100ms
-        Assert.assertTrue("查找性能应该良好", searchTime < 50000000);  // 50ms
-        Assert.assertTrue("前缀检查性能应该良好", prefixTime < 10000000); // 10ms
+        Assert.assertTrue("插入 1000 个单词耗时: " + (insertTime / 1000000) + "ms", insertTime < 100000000); // 100ms
+        Assert.assertTrue("查找 1000 个单词耗时: " + (searchTime / 1000000) + "ms", searchTime < 50000000);  // 50ms
+        Assert.assertTrue("前缀检查 100 次耗时: " + (prefixTime / 1000000) + "ms", prefixTime < 10000000); // 10ms
     }
 }

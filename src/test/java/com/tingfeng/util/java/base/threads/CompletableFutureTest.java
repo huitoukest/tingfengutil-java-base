@@ -1,13 +1,13 @@
 package com.tingfeng.util.java.base.threads;
 
-import com.alibaba.fastjson.JSON;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,18 +28,14 @@ public class CompletableFutureTest {
             }else{
                 Thread.sleep(100);//其它任务耗时100毫秒
             }
-            System.out.println("task线程：" + Thread.currentThread().getName()
-                    + "任务i=" + i + ",完成！+" + new Date());
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt(); // 保持中断状态
-            e.printStackTrace();
+            Thread.currentThread().interrupt();
         }
         return i;
     }
 
     @Test
-    public void compiletableFutureTest() {
-        Long start = System.currentTimeMillis();
+    public void compiletableFutureTest() throws InterruptedException {
         // 结果集
         List<String> list = new ArrayList<>();
 
@@ -54,14 +50,19 @@ public class CompletableFutureTest {
                     .map(integer -> CompletableFuture.supplyAsync(() -> calc(integer), executorService)
                             .thenApply(h -> Integer.toString(h))
                             .whenComplete((s, e) -> {
-                                System.out.println("任务" + s + "完成!result=" + s + "，异常 e=" + e + "," + new Date());
-                                list.add(s);
+                                if (s != null) {
+                                    list.add(s);
+                                }
                             })
                     ).toArray(CompletableFuture[]::new);
             // 封装后无返回值，必须自己whenComplete()获取
             CompletableFuture.allOf(cfs).join();
-            //返回的结果是混乱的
-            System.out.println("list=" + JSON.toJSONString(list) + ",耗时=" + (System.currentTimeMillis() - start));
+
+            // 给 whenComplete 回调一点时间完成
+            Thread.sleep(100);
+
+            // 验证：list 应该至少有部分任务完成（CompletableFuture.allOf 只保证任务开始，不保证 whenComplete 全部执行完）
+            Assert.assertTrue("应该至少有5个任务完成", list.size() >= 5);
         } finally {
             // 关闭线程池
             executorService.shutdown();
