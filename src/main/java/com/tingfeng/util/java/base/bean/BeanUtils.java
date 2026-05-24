@@ -1,5 +1,8 @@
 package com.tingfeng.util.java.base.bean;
 
+import com.tingfeng.util.java.base.bean.copier.BeanCopier;
+import com.tingfeng.util.java.base.bean.copier.CopyOptions;
+import com.tingfeng.util.java.base.bean.copier.MapValueProvider;
 import com.tingfeng.util.java.base.bean.base.BeanCopyFun;
 import com.tingfeng.util.java.base.bean.converter.Converter;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
@@ -34,7 +37,9 @@ import java.util.stream.IntStream;
  * @author huitoukest
  * 做一个方法，可以将一个JavaBean风格对象的属性值拷贝到另一个对象的同名属性中 (如果不存在同名属性的就不拷贝）
  * @version 20180917
+ * @deprecated 请使用 {@link BeanUtil} 替代
  **/
+@Deprecated
 public class BeanUtils {
     private static final Log logger = LogFactory.getLog(BeanUtils.class);
 
@@ -66,19 +71,15 @@ public class BeanUtils {
      * @param exceptFields 需要排除的字段
      * @param <T>
      * @return
+     * @deprecated 请使用 {@link BeanUtil#toList(List, Class, CopyOptions)} 替代
      */
+    @Deprecated
     public static <T> List<T> copyListProperties(List<? extends Object> sourceList, Class<T> targetClass, String... exceptFields) {
-        List<T> targetList = new ArrayList<T>();
-        try {
-            for (Object o : sourceList) {
-                T t = targetClass.newInstance();
-                copyProperties(t, o, exceptFields);
-                targetList.add(t);
-            }
-        } catch (Exception e) {
-            throw new BaseException(e);
+        CopyOptions options = null;
+        if (exceptFields != null && exceptFields.length > 0) {
+            options = CopyOptions.create().setIgnoreProperties(Arrays.asList(exceptFields));
         }
-        return targetList;
+        return BeanUtil.toList(sourceList, targetClass, options);
     }
 
     /**
@@ -88,9 +89,15 @@ public class BeanUtils {
      * @param target
      * @param source
      * @param exceptFields 对于来源对象中的某些属性不进行拷贝
+     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object, CopyOptions)} 替代
      */
+    @Deprecated
     public static void copyProperties(Object target, Object source, String... exceptFields) {
-        copyProperties(target, source, true, exceptFields);
+        CopyOptions options = null;
+        if (exceptFields != null && exceptFields.length > 0) {
+            options = CopyOptions.create().setIgnoreProperties(Arrays.asList(exceptFields));
+        }
+        BeanUtil.copyProperties(source, target, options);
     }
 
     /**
@@ -101,13 +108,15 @@ public class BeanUtils {
      * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
      *                           true = 仅仅 copy 符合bean标准的属性
      * @param exceptFields
+     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object, CopyOptions)} 替代
      */
+    @Deprecated
     public static void copyProperties(Object target, Object source, boolean strictBeanCopyMode, String... exceptFields) {
         List<String> list = null;
         if (exceptFields != null) {
             list = Arrays.asList(exceptFields);
         }
-        copyProperties(target, source,strictBeanCopyMode, list);
+        copyProperties(target, source, strictBeanCopyMode, list);
     }
 
     /**
@@ -118,13 +127,15 @@ public class BeanUtils {
      * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
      *                           true = 仅仅 copy 符合bean标准的属性
      * @param exceptFields
+     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object, CopyOptions)} 替代
      */
+    @Deprecated
     public static void copyProperties(Object target, Object source, boolean strictBeanCopyMode, Collection<String> exceptFields) {
-        if (strictBeanCopyMode) {
-            copyProperties(target, source, null, null, exceptFields);
-        } else {
-            copyPropertiesNotStrict(target, source, null, null, exceptFields);
+        CopyOptions options = CopyOptions.create().setIgnoreProperties(exceptFields);
+        if (!strictBeanCopyMode) {
+            options.setForceFieldAccess(true);
         }
+        BeanUtil.copyProperties(source, target, options);
     }
 
     /**
@@ -177,7 +188,9 @@ public class BeanUtils {
      * @param sourceCls
      * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
      * @return
+     * @deprecated 保留原实现，请使用 {@link BeanCopier} 替代
      */
+    @Deprecated
     public static Map<String, Tuple2<Field, Field>> getBeanCopyFieldMap(Class targetCls, Class sourceCls, boolean useCache) {
         Map<String, Tuple2<Field, Field>> map = null;
         UnionKey unionKey = new UnionKey(targetCls,sourceCls);
@@ -209,7 +222,9 @@ public class BeanUtils {
      * @param sourceCls
      * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
      * @return
+     * @deprecated 保留原实现，请使用 {@link BeanCopier} 替代
      */
+    @Deprecated
     public static Map<String, BeanCopyFun> getBeanCopyFunMap(Class targetCls, Class sourceCls, boolean useCache) {
         Map<String, BeanCopyFun> map = null;
         UnionKey unionKey = new UnionKey(targetCls,sourceCls);
@@ -298,10 +313,11 @@ public class BeanUtils {
      *
      * @param target
      * @param source
+     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object)} 替代
      */
+    @Deprecated
     public static void copyProperties(Object target, Object source) {
-        String[] args = null;
-        copyProperties(target, source, args);
+        BeanUtil.copyProperties(source, target);
     }
 
     /**
@@ -311,14 +327,11 @@ public class BeanUtils {
      *
      * @param cls 目标类型
      * @param map map中保存的是当前对象的属性和值得键值对
+     * @deprecated 请使用 {@link BeanUtil#toBean(ValueProvider, Class)} 替代
      */
+    @Deprecated
     public static <T> T getBeanByMap(Class<T> cls, Map<String, ?> map) {
-        try {
-            T t = cls.newInstance();
-            return getBeanByMap(t, map);
-        } catch (Exception e) {
-            throw new BaseException(e);
-        }
+        return BeanUtil.toBean(new MapValueProvider(map), cls);
     }
 
     /**
@@ -328,25 +341,11 @@ public class BeanUtils {
      *
      * @param t   目标对象
      * @param map map中保存的是当前对象的属性和值得键值对
+     * @deprecated 请使用 {@link BeanCopier#copyFromProvider} 替代
      */
+    @Deprecated
     public static <T> T getBeanByMap(T t, Map<String, ?> map) {
-        Set<String> keySet = map.keySet();
-        for (String fieldName : keySet) {
-            Object object = map.get(fieldName);
-            try {
-                Class<?> typeClass = ReflectUtils.getTypeByFieldName(t.getClass(), fieldName);
-                Object valueObject = ObjectUtils.getObject(typeClass, object);
-                if (valueObject == null) {
-                    continue;
-                }
-                ReflectUtils.setFieldValue(true, t, fieldName, new Object[]{valueObject}, valueObject.getClass());
-            } catch (Exception e) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("getBeanByMap error:", e);
-                }
-                continue;
-            }
-        }
+        BeanCopier.copyFromProvider(new MapValueProvider(map), t, null);
         return t;
     }
 
@@ -406,31 +405,13 @@ public class BeanUtils {
      * @param predicate    传入源对象的 Tuple2[字段名称,字段值 ] ; 返回是否进行拷贝true or false; null 时不生效
      * @param mapper       传入源对象的 Tuple2[字段名称,字段值 ] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
      * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
+     * @deprecated 请使用 {@link BeanCopier} 替代
      */
+    @Deprecated
     public static void copyPropertiesNotStrict(Object target, Object source, Predicate<Tuple2<String, Object>> predicate, Function<Tuple2<String, Object>, Object> mapper, Collection<String> exceptFields){
-        Map<String, BeanCopyFun> map = getBeanCopyFunMap(target.getClass(), source.getClass(), true);
-        Set<String> exceptSet = null;
-        if (exceptFields != null && !(exceptFields instanceof Set)) {
-            exceptSet = exceptFields.stream().collect(Collectors.toSet());
-        }
-        Set<Map.Entry<String, BeanCopyFun>> entries = map.entrySet();
-        try{
-            for (Map.Entry<String, BeanCopyFun> entry : entries) {
-                if (exceptSet != null && exceptSet.contains(entry.getKey())) {
-                    continue;
-                }
-                Object value = entry.getValue().read(source);
-                Tuple2<String, Object> tuple2 = null;
-                if (predicate == null || predicate.test(tuple2 = new Tuple2<>(entry.getKey(), value))) {
-                    if (mapper != null) {
-                        value = mapper.apply(tuple2);
-                    }
-                    entry.getValue().write(target, value);
-                }
-            }
-        }catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e){
-            throw new BaseException(e);
-        }
+        // 简化逻辑，委托到 BeanCopier
+        CopyOptions options = CopyOptions.create().setForceFieldAccess(true).setIgnoreProperties(exceptFields);
+        BeanCopier.copy(source, target, options);
     }
 
     /**
@@ -439,7 +420,9 @@ public class BeanUtils {
      * @param sourceCls
      * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
      * @return
+     * @deprecated 保留原实现，请使用 {@link BeanCopier} 替代
      */
+    @Deprecated
     public static Map<String, Tuple2<Method, Method>> getBeanCopyMethodMap(Class targetCls, Class sourceCls, boolean useCache) {
         Map<String, Tuple2<Method, Method>> map = null;
         if (useCache) {
@@ -506,29 +489,18 @@ public class BeanUtils {
      * @param ignoreProperties 忽略的 对象Property 值, 例如 通过Lambda使用bean的get方法引用即可; 如  User::getId ; 如果不传则不使用
      * @param <T>              必须是标准的java bean.
      * @return
+     * @deprecated 请使用 {@link BeanUtil#toMap(Object, String...)} 替代
      */
+    @Deprecated
     public static <T> Map<String, Object> toMap(T obj, PropertyFunction<T, ?>... ignoreProperties) {
-        try {
-            BeanInfo beanInfo = Introspector.getBeanInfo(obj.getClass());
-            PropertyDescriptor[] descriptors = beanInfo.getPropertyDescriptors();
-            Set<String> columnNames = Arrays.asList(ignoreProperties).stream()
-                    .map(LambdaUtils::getFieldName).collect(Collectors.toSet());
-			columnNames.add("class");
-            return Arrays.asList(descriptors).stream()
-                    .filter(it -> !columnNames.contains(it.getName()))
-                    .filter(it -> it.getReadMethod() != null)
-                    .map(it -> {
-                        try {
-                            return new Tuple2<String, Object>(it.getName(), it.getReadMethod().invoke(obj));
-                        } catch (IllegalAccessException | InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    })
-					.filter(it -> null != it.get_2())
-					.collect(Collectors.toMap(Tuple2::get_1, Tuple2::get_2));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        String[] ignoreFields = null;
+        if (ignoreProperties != null && ignoreProperties.length > 0) {
+            ignoreFields = new String[ignoreProperties.length];
+            for (int i = 0; i < ignoreProperties.length; i++) {
+                ignoreFields[i] = LambdaUtils.getFieldName(ignoreProperties[i]);
+            }
         }
+        return BeanUtil.toMap(obj, ignoreFields);
     }
 
     /**

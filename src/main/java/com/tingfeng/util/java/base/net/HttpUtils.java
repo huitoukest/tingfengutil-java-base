@@ -3,7 +3,6 @@ package com.tingfeng.util.java.base.net;
 import com.tingfeng.util.java.base.net.base.HttpResponseInfo;
 import com.tingfeng.util.java.base.common.constant.Constants;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
-import com.tingfeng.util.java.base.bean.BeanUtils;
 import com.tingfeng.util.java.base.text.RegExpUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import org.apache.commons.logging.Log;
