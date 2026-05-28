@@ -31,6 +31,12 @@ public class CopyOptions {
     /** 是否使用转换器，默认为true */
     private boolean useConverter = true;
 
+    /** 是否忽略属性名大小写，默认为false */
+    private boolean ignoreCase = false;
+
+    /** 转换器不匹配时是否忽略错误，默认为true */
+    private boolean ignoreNoMatchConverterError = true;
+
     /**
      * 私有构造器，禁止外部直接实例化
      */
@@ -116,6 +122,28 @@ public class CopyOptions {
     }
 
     /**
+     * 设置是否忽略属性名大小写。
+     *
+     * @param ignoreCase 是否忽略大小写
+     * @return this
+     */
+    public CopyOptions setIgnoreCase(boolean ignoreCase) {
+        this.ignoreCase = ignoreCase;
+        return this;
+    }
+
+    /**
+     * 设置转换器不匹配时是否忽略错误。
+     *
+     * @param ignoreNoMatchConverterError 是否忽略转换器不匹配错误
+     * @return this
+     */
+    public CopyOptions setIgnoreNoMatchConverterError(boolean ignoreNoMatchConverterError) {
+        this.ignoreNoMatchConverterError = ignoreNoMatchConverterError;
+        return this;
+    }
+
+    /**
      * 获取是否忽略null值。
      *
      * @return 是否忽略null
@@ -163,6 +191,24 @@ public class CopyOptions {
         return useConverter;
     }
 
+    /**
+     * 获取是否忽略属性名大小写。
+     *
+     * @return 是否忽略大小写
+     */
+    public boolean isIgnoreCase() {
+        return ignoreCase;
+    }
+
+    /**
+     * 获取转换器不匹配时是否忽略错误。
+     *
+     * @return 是否忽略转换器不匹配错误
+     */
+    public boolean isIgnoreNoMatchConverterError() {
+        return ignoreNoMatchConverterError;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -175,12 +221,15 @@ public class CopyOptions {
         return ignoreNull == that.ignoreNull
                 && forceFieldAccess == that.forceFieldAccess
                 && useConverter == that.useConverter
+                && ignoreCase == that.ignoreCase
+                && ignoreNoMatchConverterError == that.ignoreNoMatchConverterError
                 && Objects.equals(ignoreProperties, that.ignoreProperties)
                 && Objects.equals(fieldMapping, that.fieldMapping);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ignoreNull, ignoreProperties, fieldMapping, forceFieldAccess, useConverter);
+        return Objects.hash(ignoreNull, ignoreProperties, fieldMapping, forceFieldAccess, useConverter,
+                ignoreCase, ignoreNoMatchConverterError);
     }
 }

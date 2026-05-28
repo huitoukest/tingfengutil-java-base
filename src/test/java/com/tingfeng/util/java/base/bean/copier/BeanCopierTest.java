@@ -1,7 +1,6 @@
 package com.tingfeng.util.java.base.bean.copier;
 
-import com.tingfeng.util.java.base.bean.BeanUtilsTest.SaveParentDTO;
-import com.tingfeng.util.java.base.bean.BeanUtilsTest.SaveParentDTO2;
+import com.tingfeng.util.java.base.bean.BeanUtilsTest;
 import com.tingfeng.util.java.base.bean.User;
 import org.junit.Assert;
 import org.junit.Test;
@@ -64,7 +63,7 @@ public class BeanCopierTest {
      */
     @Test
     public void testCopyCrossType() {
-        SaveParentDTO source = new SaveParentDTO();
+        BeanUtilsTest.SaveParentDTO source = new BeanUtilsTest.SaveParentDTO();
         source.setParent_id(1001L);
         source.setStudent_id(2001L);
         source.setStudent_name("张三");
@@ -76,7 +75,7 @@ public class BeanCopierTest {
         source.setParentMobilePhone("13800138000");
         source.setMobileCountryCode("+86");
 
-        SaveParentDTO2 target = new SaveParentDTO2();
+        BeanUtilsTest.SaveParentDTO2 target = new BeanUtilsTest.SaveParentDTO2();
         BeanCopier.copy(source, target, null);
 
         // 验证所有共同属性正确拷贝
@@ -208,7 +207,7 @@ public class BeanCopierTest {
     @Test
     public void testCopyNoCommonProperties() {
         // 两个完全不同的类型，无共同属性
-        SaveParentDTO source = new SaveParentDTO();
+        BeanUtilsTest.SaveParentDTO source = new BeanUtilsTest.SaveParentDTO();
         source.setParent_id(1001L);
 
         User target = new User();
@@ -327,18 +326,18 @@ public class BeanCopierTest {
     @Test
     public void testBeanDescCacheMultipleClasses() {
         // 测试多个不同类别的缓存
-        SaveParentDTO source1 = new SaveParentDTO();
+        BeanUtilsTest.SaveParentDTO source1 = new BeanUtilsTest.SaveParentDTO();
         source1.setParent_id(1001L);
         source1.setStudent_name("Student1");
 
-        SaveParentDTO2 target1 = new SaveParentDTO2();
+        BeanUtilsTest.SaveParentDTO2 target1 = new BeanUtilsTest.SaveParentDTO2();
         BeanCopier.copy(source1, target1, null);
 
-        SaveParentDTO source2 = new SaveParentDTO();
+        BeanUtilsTest.SaveParentDTO source2 = new BeanUtilsTest.SaveParentDTO();
         source2.setParent_id(2002L);
         source2.setStudent_name("Student2");
 
-        SaveParentDTO2 target2 = new SaveParentDTO2();
+        BeanUtilsTest.SaveParentDTO2 target2 = new BeanUtilsTest.SaveParentDTO2();
         BeanCopier.copy(source2, target2, null);
 
         // 验证结果独立且正确

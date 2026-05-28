@@ -19,6 +19,21 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>Converter 支持多个（因冒泡注册可能产生多个同类型对的副本），后注册的不覆盖，按排序规则确定优先级</li>
  *   <li>支持冒泡注册：注册时自动遍历父类链+接口链，为父类型产生冒泡副本</li>
  * </ul>
+ * <p>
+ * 冒泡注册（bubble）机制说明：
+ * <ul>
+ *   <li>注册时通过对 targetType 的父类链+接口链递归创建副本</li>
+ *   <li>bubbleLevel 控制冒泡深度：BUBBLE_UNLIMITED=-1 表示无限制，冒泡到 Object 为止</li>
+ *   <li>冒泡副本的优先级低于原始注册（registrationOrder 递增：原始为 0，冒泡一层 +1）</li>
+ *   <li>排序时精确注册始终优先于冒泡副本</li>
+ * </ul>
+ * <p>
+ * 冒泡副本类说明：
+ * <ul>
+ *   <li>BubbledConverter：普通 Converter 的冒泡副本，转换逻辑委托给原始 Converter</li>
+ *   <li>BubbledConditionConverter：ConditionConverter 的冒泡副本，额外委托 matches() 方法</li>
+ *   <li>两者均实现原始 Converter 的所有接口方法，仅覆盖 registrationOrder/bubbleLevel/targetType</li>
+ * </ul>
  */
 public class DefaultConverterRegistry implements ConverterRegistry {
 

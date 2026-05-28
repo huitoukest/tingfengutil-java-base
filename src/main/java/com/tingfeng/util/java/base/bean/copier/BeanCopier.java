@@ -72,7 +72,14 @@ public class BeanCopier {
         Set<String> ignoreProperties = options.getIgnoreProperties();
         boolean ignoreNull = options.isIgnoreNull();
         boolean useConverter = options.isUseConverter();
-        java.util.Map<String, String> fieldMapping = options.getFieldMapping();
+        boolean ignoreNoMatchConverterError = options.isIgnoreNoMatchConverterError();
+        Map<String, String> fieldMapping = options.getFieldMapping();
+
+        // 构建 source 小写名→原名映射（ignoreCase 时使用）
+        Map<String, String> sourceLowerNameMap = null;
+        if (options.isIgnoreCase()) {
+            sourceLowerNameMap = buildLowerCaseNameMap(sourceDesc.getPropertyNames());
+        }
 
         // 遍历 target 属性
         for (String propName : targetPropertyNames) {
@@ -87,7 +94,14 @@ public class BeanCopier {
                 sourceFieldName = fieldMapping.getOrDefault(propName, propName);
             }
 
-            // c. source 取值
+            // c. resolveSourceFieldName：处理精确+大小写不敏感匹配
+            sourceFieldName = resolveSourceFieldName(sourceDesc, sourceFieldName, sourceLowerNameMap);
+            if (sourceFieldName == null) {
+                // 无匹配 → 跳过
+                continue;
+            }
+
+            // d. source 取值
             Object value;
             try {
                 value = sourceDesc.getPropertyValue(source, sourceFieldName);
@@ -96,12 +110,12 @@ public class BeanCopier {
                 continue;
             }
 
-            // d. null 判断
+            // e. null 判断
             if (value == null && ignoreNull) {
                 continue;
             }
 
-            // e. 类型转换
+            // f. 类型转换
             if (value != null) {
                 Class<?> targetType = getTargetPropertyType(targetDesc, propName);
                 if (targetType != null && !value.getClass().equals(targetType) && useConverter) {
@@ -111,7 +125,20 @@ public class BeanCopier {
                                 .convert(value, (Class<Object>) targetType, value);
                         value = convertedValue;
                     } catch (Exception e) {
-                        // 转换失败 → 跳过该属性，debug 日志记录
+                        // 转换失败
+                        boolean hasConverter = !ConverterRegistry.getInstance()
+                                .findConverters(value.getClass(), targetType).isEmpty();
+                        if (hasConverter) {
+                            // 场景A：有Converter但转换失败 → 直接抛异常，不受 ignoreNoMatchConverterError 控制
+                            throw new com.tingfeng.util.java.base.lang.exception.BaseException(
+                                    "Property conversion failed: " + propName, e);
+                        }
+                        // 场景B：无Converter类型不匹配 → 受 ignoreNoMatchConverterError 控制
+                        if (!ignoreNoMatchConverterError) {
+                            throw new com.tingfeng.util.java.base.lang.exception.BaseException(
+                                    "Property conversion failed: " + propName, e);
+                        }
+                        // ignoreNoMatchConverterError=true → 跳过该属性
                         if (logger.isDebugEnabled()) {
                             logger.debug("Property conversion failed: " + propName + ", skipping", e);
                         }
@@ -120,7 +147,7 @@ public class BeanCopier {
                 }
             }
 
-            // f. 赋值
+            // g. 赋值
             try {
                 targetDesc.setPropertyValue(target, propName, value);
             } catch (BaseException e) {
@@ -179,7 +206,13 @@ public class BeanCopier {
         Set<String> ignoreProperties = options.getIgnoreProperties();
         boolean ignoreNull = options.isIgnoreNull();
         boolean useConverter = options.isUseConverter();
-        java.util.Map<String, String> fieldMapping = options.getFieldMapping();
+        boolean ignoreNoMatchConverterError = options.isIgnoreNoMatchConverterError();
+        Map<String, String> fieldMapping = options.getFieldMapping();
+
+        // 构建 source 小写名→原名映射（ignoreCase 时使用，copyFromProvider 无 sourceDesc，用 null 传参）
+        Map<String, String> sourceLowerNameMap = null;
+        // 注意：copyFromProvider 不需要 ignoreCase 因为它是通过 provider.containsKey() 检查的
+        // 这里只为保持方法签名一致性
 
         // 遍历 target 属性
         for (String propName : targetPropertyNames) {
@@ -218,7 +251,20 @@ public class BeanCopier {
                                 .convert(value, (Class<Object>) targetType, value);
                         value = convertedValue;
                     } catch (Exception e) {
-                        // 转换失败 → 跳过该属性，debug 日志记录
+                        // 转换失败
+                        boolean hasConverter = !ConverterRegistry.getInstance()
+                                .findConverters(value.getClass(), targetType).isEmpty();
+                        if (hasConverter) {
+                            // 场景A：有Converter但转换失败 → 直接抛异常
+                            throw new com.tingfeng.util.java.base.lang.exception.BaseException(
+                                    "Property conversion failed: " + propName, e);
+                        }
+                        // 场景B：无Converter类型不匹配 → 受 ignoreNoMatchConverterError 控制
+                        if (!ignoreNoMatchConverterError) {
+                            throw new com.tingfeng.util.java.base.lang.exception.BaseException(
+                                    "Property conversion failed: " + propName, e);
+                        }
+                        // ignoreNoMatchConverterError=true → 跳过该属性
                         if (logger.isDebugEnabled()) {
                             logger.debug("Property conversion failed: " + propName + ", skipping", e);
                         }
@@ -303,7 +349,7 @@ public class BeanCopier {
      * @param beanClass 要描述的类
      * @return BeanDesc 实例
      */
-    static BeanDesc getOrCreateBeanDesc(Class<?> beanClass) {
+    public static BeanDesc getOrCreateBeanDesc(Class<?> beanClass) {
         UnionKey key = new UnionKey(beanClass, beanClass);
         BeanDesc desc = BEAN_DESC_CACHE.get(key);
         if (desc == null) {
@@ -384,5 +430,125 @@ public class BeanCopier {
         }
 
         return result;
+    }
+
+    /**
+     * 构建小写名→原属性名的映射（用于 ignoreCase 匹配）
+     *
+     * @param propertyNames 属性名集合
+     * @return 小写名→原名映射
+     */
+    private static Map<String, String> buildLowerCaseNameMap(Set<String> propertyNames) {
+        Map<String, String> lowerMap = new java.util.HashMap<>();
+        if (propertyNames != null) {
+            for (String name : propertyNames) {
+                lowerMap.put(name.toLowerCase(), name);
+            }
+        }
+        return lowerMap;
+    }
+
+    /**
+     * 解析 source 属性名，支持4级优先级匹配：
+     * <ol>
+     *   <li>精确匹配 + 同类型</li>
+     *   <li>大小写不敏感匹配 + 同类型</li>
+     *   <li>精确匹配 + 不同类型</li>
+     *   <li>大小写不敏感匹配 + 不同类型</li>
+     * </ol>
+     *
+     * @param sourceDesc source 的 BeanDesc
+     * @param sourceFieldName 要解析的属性名
+     * @param sourceLowerNameMap 小写名→原名映射（ignoreCase 时非null）
+     * @return 解析后的属性名，若无匹配则返回 null
+     */
+    private static String resolveSourceFieldName(BeanDesc sourceDesc, String sourceFieldName,
+                                                   Map<String, String> sourceLowerNameMap) {
+        Set<String> propertyNames = sourceDesc.getPropertyNames();
+
+        // 获取 target 属性类型（用于同类型判断）
+        Class<?> targetPropType = null;
+        try {
+            java.lang.reflect.Field pdMapField = BeanDesc.class.getDeclaredField("pdMap");
+            pdMapField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, java.beans.PropertyDescriptor> pdMap =
+                    (java.util.Map<String, java.beans.PropertyDescriptor>) pdMapField.get(sourceDesc);
+            java.beans.PropertyDescriptor pd = pdMap.get(sourceFieldName);
+            if (pd != null) {
+                targetPropType = pd.getPropertyType();
+            }
+        } catch (Exception ignored) {
+        }
+
+        // 优先级1: 精确匹配 + 同类型
+        if (propertyNames.contains(sourceFieldName)) {
+            // 检查类型是否一致
+            Class<?> sourceType = getPropertyType(sourceDesc, sourceFieldName);
+            if (sourceType != null && targetPropType != null && sourceType.equals(targetPropType)) {
+                return sourceFieldName;
+            }
+        }
+
+        // 优先级2: 大小写不敏感匹配 + 同类型
+        if (sourceLowerNameMap != null) {
+            String lowerName = sourceFieldName.toLowerCase();
+            String matchedName = sourceLowerNameMap.get(lowerName);
+            if (matchedName != null) {
+                Class<?> sourceType = getPropertyType(sourceDesc, matchedName);
+                if (sourceType != null && targetPropType != null && sourceType.equals(targetPropType)) {
+                    return matchedName;
+                }
+            }
+        }
+
+        // 优先级3: 精确匹配 + 不同类型
+        if (propertyNames.contains(sourceFieldName)) {
+            return sourceFieldName;
+        }
+
+        // 优先级4: 大小写不敏感匹配 + 不同类型
+        if (sourceLowerNameMap != null) {
+            String lowerName = sourceFieldName.toLowerCase();
+            String matchedName = sourceLowerNameMap.get(lowerName);
+            if (matchedName != null) {
+                return matchedName;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * 获取 BeanDesc 中指定属性名的类型
+     *
+     * @param desc BeanDesc
+     * @param propName 属性名
+     * @return 属性类型，或 null
+     */
+    private static Class<?> getPropertyType(BeanDesc desc, String propName) {
+        try {
+            java.lang.reflect.Field pdMapField = BeanDesc.class.getDeclaredField("pdMap");
+            pdMapField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, java.beans.PropertyDescriptor> pdMap =
+                    (java.util.Map<String, java.beans.PropertyDescriptor>) pdMapField.get(desc);
+            java.beans.PropertyDescriptor pd = pdMap.get(propName);
+            if (pd != null) {
+                return pd.getPropertyType();
+            }
+
+            java.lang.reflect.Field fieldMapField = BeanDesc.class.getDeclaredField("fieldMap");
+            fieldMapField.setAccessible(true);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, java.lang.reflect.Field> fieldMap =
+                    (java.util.Map<String, java.lang.reflect.Field>) fieldMapField.get(desc);
+            java.lang.reflect.Field field = fieldMap.get(propName);
+            if (field != null) {
+                return field.getType();
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
     }
 }

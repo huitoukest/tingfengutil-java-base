@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author huitoukest
  */
-class BeanDesc {
+public class BeanDesc {
 
     /** BeanDesc实例缓存，容量512 */
     private static final SimpleCacheHelper<Class<?>, BeanDesc> CACHE =
@@ -97,6 +97,32 @@ class BeanDesc {
         Set<String> allNames = new java.util.HashSet<>(names);
         allNames.addAll(fieldMap.keySet());
         return allNames;
+    }
+
+    /**
+     * 根据属性名获取实际属性名（大小写不敏感匹配）。
+     * <p>
+     * 先尝试精确匹配，若不存在则遍历所有属性名进行大小写不敏感比较。
+     *
+     * @param name 要查找的属性名
+     * @return 实际属性名，若未找到则返回null
+     */
+    public String getPropertyNameIgnoreCase(String name) {
+        if (name == null) {
+            return null;
+        }
+        // 先尝试精确匹配
+        if (pdMap.containsKey(name) || fieldMap.containsKey(name)) {
+            return name;
+        }
+        // 大小写不敏感遍历
+        String lowerName = name.toLowerCase();
+        for (String propertyName : getPropertyNames()) {
+            if (propertyName.toLowerCase().equals(lowerName)) {
+                return propertyName;
+            }
+        }
+        return null;
     }
 
     /**

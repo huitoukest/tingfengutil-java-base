@@ -27,7 +27,8 @@ public class LambdaUtils {
             // 利用jdk的SerializedLambda 解析方法引用
             java.lang.invoke.SerializedLambda serializedLambda = (SerializedLambda) method.invoke(func);
             String getter = serializedLambda.getImplMethodName();
-            return BeanUtils.getFieldNameByGetter(getter);
+            //todo 待实现
+            return null;
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

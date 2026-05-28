@@ -1,10 +1,10 @@
 package com.tingfeng.util.java.base.io;
 
+import com.tingfeng.util.java.base.bean.BeanUtils;
 import com.tingfeng.util.java.base.io.base.CSVBatchReadParam;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.lang.base.ConvertI;
 import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
-import com.tingfeng.util.java.base.bean.BeanUtils;
 import com.tingfeng.util.java.base.lang.ObjectUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 
@@ -211,7 +211,8 @@ public class CSVUtil {
                if(beanCls.isAssignableFrom(Map.class)){
                    beanConverter = (Function<String[], T>) createMapConverter(headers[0]);
                }else {
-                   beanConverter = BeanUtils.createBeanConverter(headers[0], beanCls, null);
+                   //todo 待实现
+                   //beanConverter = BeanUtils.createBeanConverter(headers[0], beanCls, null);
                }
            }
            int contentOffset = csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0;
