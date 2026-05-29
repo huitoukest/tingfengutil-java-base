@@ -42,3 +42,5 @@ captures/
 /export-build.sh
 .idea
 annotation
+/.opencode/
+/.code/workspace/

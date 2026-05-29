@@ -100,6 +100,15 @@ public class BeanDesc {
     }
 
     /**
+     * 获取所有Field属性的名称集合（仅fieldMap的key集合）
+     *
+     * @return Field属性名称集合
+     */
+    public Set<String> getFieldNames() {
+        return new java.util.HashSet<>(fieldMap.keySet());
+    }
+
+    /**
      * 根据属性名获取实际属性名（大小写不敏感匹配）。
      * <p>
      * 先尝试精确匹配，若不存在则遍历所有属性名进行大小写不敏感比较。
@@ -136,18 +145,37 @@ public class BeanDesc {
     }
 
     /**
+     * 获取指定属性名的类型。
+     * <p>
+     * 先尝试从 PropertyDescriptor 获取，若无则从 Field 获取。
+     *
+     * @param propName 属性名
+     * @return 属性类型，若不存在则返回 null
+     */
+    public Class<?> getPropertyType(String propName) {
+        PropertyDescriptor pd = pdMap.get(propName);
+        if (pd != null) {
+            return pd.getPropertyType();
+        }
+        Field field = fieldMap.get(propName);
+        if (field != null) {
+            return field.getType();
+        }
+        return null;
+    }
+
+    /**
      * 获取属性值：先尝试PD.getReadMethod.invoke，失败则降级使用field.get
      *
      * @param bean 要读取的bean实例
      * @param name 属性名称
-     * @return 属性值
-     * @throws BaseException 如果读取失败
+     * @return 属性值结果，包含属性值和访问模式
      */
-    public Object getPropertyValue(Object bean, String name) {
+    public PropertyResult<Object> getPropertyValue(Object bean, String name) {
         PropertyDescriptor pd = pdMap.get(name);
         if (pd != null && pd.getReadMethod() != null) {
             try {
-                return pd.getReadMethod().invoke(bean);
+                return PropertyResult.of(pd.getReadMethod().invoke(bean), PropertyAccessMode.GETTER_METHOD);
             } catch (Exception e) {
                 // 降级到field方式
             }
@@ -157,13 +185,13 @@ public class BeanDesc {
         if (field != null) {
             try {
                 field.setAccessible(true);
-                return field.get(bean);
+                return PropertyResult.of(field.get(bean), PropertyAccessMode.FIELD_ACCESS);
             } catch (IllegalAccessException e) {
-                throw new BaseException("Failed to get property value: " + name, e);
+                // 降级到下一个
             }
         }
 
-        throw new BaseException("Property not found: " + name);
+        return PropertyResult.notFound();
     }
 
     /**
@@ -172,14 +200,14 @@ public class BeanDesc {
      * @param bean 要写入的bean实例
      * @param name 属性名称
      * @param value 要设置的值
-     * @throws BaseException 如果写入失败
+     * @return 是否设置成功
      */
-    public void setPropertyValue(Object bean, String name, Object value) {
+    public boolean setPropertyValue(Object bean, String name, Object value) {
         PropertyDescriptor pd = pdMap.get(name);
         if (pd != null && pd.getWriteMethod() != null) {
             try {
                 pd.getWriteMethod().invoke(bean, value);
-                return;
+                return true;
             } catch (Exception e) {
                 // 降级到field方式
             }
@@ -190,12 +218,12 @@ public class BeanDesc {
             try {
                 field.setAccessible(true);
                 field.set(bean, value);
-                return;
+                return true;
             } catch (IllegalAccessException e) {
-                throw new BaseException("Failed to set property value: " + name, e);
+                // 保留IllegalAccessException包装，不阻断流程
             }
         }
 
-        throw new BaseException("Property not found: " + name);
+        return false;
     }
 }

@@ -1,12 +1,22 @@
 package com.tingfeng.util.java.base.bean;
 
 import com.tingfeng.util.java.base.bean.copier.BeanCopier;
+import com.tingfeng.util.java.base.bean.copier.BeanDesc;
 import com.tingfeng.util.java.base.bean.copier.CopyOptions;
+import com.tingfeng.util.java.base.bean.copier.MapValueProvider;
+import com.tingfeng.util.java.base.bean.copier.PropertyResult;
 import com.tingfeng.util.java.base.bean.copier.ValueProvider;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
+import lombok.extern.slf4j.Slf4j;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +32,7 @@ import java.util.Map;
  *
  * @author huitoukest
  */
+@Slf4j
 public final class BeanUtils {
 
     /**
@@ -167,6 +178,43 @@ public final class BeanUtils {
         }
     }
 
+    // ========== toBean from Map ==========
+
+    /**
+     * 从 Map 创建 Bean 实例（便捷方法，内部包装 MapValueProvider）。
+     * <p>
+     * 等价于 {@code toBean(new MapValueProvider(map), targetClass)}。
+     *
+     * @param map         Map 数据源
+     * @param targetClass 目标类型
+     * @param <T>        目标类型泛型
+     * @return 目标类型实例，map 或 targetClass 为 null 时返回 null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Map<String, ?> map, Class<T> targetClass) {
+        if (map == null || targetClass == null) {
+            return null;
+        }
+        return toBean(new MapValueProvider(map), targetClass);
+    }
+
+    /**
+     * 从 Map 创建 Bean 实例，支持配置选项。
+     *
+     * @param map         Map 数据源
+     * @param targetClass 目标类型
+     * @param options     拷贝选项
+     * @param <T>        目标类型泛型
+     * @return 目标类型实例，map 或 targetClass 为 null 时返回 null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Map<String, ?> map, Class<T> targetClass, CopyOptions options) {
+        if (map == null || targetClass == null) {
+            return null;
+        }
+        return toBean(new MapValueProvider(map), targetClass, options);
+    }
+
     // ========== toMap ==========
 
     /**
@@ -253,6 +301,72 @@ public final class BeanUtils {
         return result;
     }
 
+    /**
+     * 批量拷贝：将 List 中的元素转换为目标类型，支持泛型类型推断。
+     * <p>
+     * 通过 TypeReference 保留泛型信息，自动提取目标类型并执行批量拷贝。
+     * <p>
+     * 注意：TypeReference 的泛型参数 T 是目标元素类型，而非容器类型。
+     * 例如 {@code new TypeReference<User>() {}} 表示目标类型为 User。
+     *
+     * @param sources  源列表
+     * @param typeRef 泛型类型引用，如 {@code new TypeReference<User>() {}}
+     * @param <T>    目标元素类型
+     * @return 目标类型的 List，sources 为 null 或空时返回空 List
+     * @throws BaseException 如果目标类无法实例化
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> toList(List<?> sources, TypeReference<T> typeRef) {
+        if (sources == null || sources.isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        Type type = typeRef.getType();
+        Class<?> elementClass = resolveElementClass(type);
+        if (elementClass == null) {
+            throw new BaseException("Cannot resolve element class from TypeReference");
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (Object source : sources) {
+            if (source == null) {
+                continue;
+            }
+            result.add((T) toBean(source, elementClass));
+        }
+        return result;
+    }
+
+    /**
+     * 从 TypeReference 中解析元素类型。
+     * <p>
+     * T 直接是目标元素类型，例如 User。
+     *
+     * @param type TypeReference.getType() 返回的 Type
+     * @return 元素类型
+     */
+    private static Class<?> resolveElementClass(Type type) {
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        }
+        // 对于简单泛型情况，如 TypeReference<User>，type 是 Class
+        // 对于容器泛型情况，如 TypeReference<List<User>>，type 是 ParameterizedType
+        if (type instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) type;
+            Type rawType = pt.getRawType();
+            if (rawType instanceof Class) {
+                Class<?> rawClass = (Class<?>) rawType;
+                // 如果是 List/Collection 类型，提取泛型参数作为元素类型
+                if (List.class.isAssignableFrom(rawClass) || Collection.class.isAssignableFrom(rawClass)) {
+                    Type[] typeArgs = pt.getActualTypeArguments();
+                    if (typeArgs != null && typeArgs.length > 0 && typeArgs[0] instanceof Class) {
+                        return (Class<?>) typeArgs[0];
+                    }
+                }
+                return rawClass;
+            }
+        }
+        return null;
+    }
+
     // ========== isEmpty ==========
 
     /**
@@ -273,8 +387,8 @@ public final class BeanUtils {
             if ("class".equals(name)) {
                 continue;
             }
-            Object value = BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyValue(bean, name);
-            if (value != null) {
+            PropertyResult<Object> result = BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyValue(bean, name);
+            if (result.exists() && result.getValue() != null) {
                 return false;
             }
         }
@@ -291,6 +405,203 @@ public final class BeanUtils {
      */
     public static boolean isNotEmpty(Object bean) {
         return !isEmpty(bean);
+    }
+
+    // ========== deepCopy ==========
+
+    /**
+     * 深拷贝对象，返回完全独立的副本。
+     * <p>
+     * 支持以下类型：
+     * <ul>
+     *   <li>基本类型及包装类型 — 直接返回</li>
+     *   <li>String、BigDecimal 等不可变类型 — 直接返回引用</li>
+     *   <li>数组 — 深拷贝元素</li>
+     *   <li>Collection — 深拷贝元素</li>
+     *   <li>Map — 深拷贝 key 和 value</li>
+     *   <li>普通 Java Bean — 递归反射拷贝属性</li>
+     * </ul>
+     * <p>
+     * 循环引用检测：通过 IdentityHashMap 记录已拷贝对象，
+     * 遇到重复引用时直接返回已创建的副本。
+     *
+     * @param source 源对象
+     * @param <T>    对象类型
+     * @return 完全独立的副本，source 为 null 时返回 null
+     * @throws BaseException 如果拷贝过程中发生反射异常
+     */
+    public static <T> T deepCopy(T source) {
+        return deepCopy(source, new IdentityHashMap<>());
+    }
+
+    /**
+     * 深拷贝对象（内部递归方法）。
+     *
+     * @param source  源对象
+     * @param visited 已拷贝对象映射（用于循环引用检测）
+     * @param <T>     对象类型
+     * @return 完全独立的副本
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopy(T source, IdentityHashMap<Object, Object> visited) {
+        if (source == null) {
+            return null;
+        }
+
+        // 1. 不可变类型直接返回引用
+        if (isImmutableType(source)) {
+            return source;
+        }
+
+        // 2. 循环引用检测
+        if (visited.containsKey(source)) {
+            return (T) visited.get(source);
+        }
+
+        Class<?> clazz = source.getClass();
+
+        // 3. 数组类型
+        if (clazz.isArray()) {
+            return deepCopyArray(source, visited);
+        }
+
+        // 4. Collection 类型
+        if (source instanceof Collection) {
+            return deepCopyCollection((Collection<?>) source, visited);
+        }
+
+        // 5. Map 类型
+        if (source instanceof Map) {
+            return deepCopyMap((Map<?, ?>) source, visited);
+        }
+
+        // 6. 普通 Java Bean — 递归反射拷贝
+        return deepCopyBean(source, visited);
+    }
+
+    /**
+     * 判断是否为不可变类型（直接返回引用，不深拷贝）。
+     */
+    private static boolean isImmutableType(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        // 基本类型包装类、String、BigDecimal、BigInteger、Class、URI、URL、UUID、enum
+        return obj instanceof String
+                || obj instanceof Boolean
+                || obj instanceof Byte
+                || obj instanceof Short
+                || obj instanceof Integer
+                || obj instanceof Long
+                || obj instanceof Float
+                || obj instanceof Double
+                || obj instanceof Character
+                || obj instanceof BigDecimal
+                || obj instanceof BigInteger
+                || obj instanceof Class
+                || obj instanceof java.net.URI
+                || obj instanceof java.net.URL
+                || obj instanceof java.util.UUID
+                || obj instanceof Enum;
+    }
+
+    /**
+     * 深拷贝数组。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyArray(T source, IdentityHashMap<Object, Object> visited) {
+        Class<?> clazz = source.getClass();
+        Class<?> componentType = clazz.getComponentType();
+
+        visited.put(source, null);
+
+        if (componentType.isPrimitive()) {
+            // 基本类型数组：使用 Array.newInstance 创建新数组并拷贝元素
+            int length = java.lang.reflect.Array.getLength(source);
+            Object destArray = java.lang.reflect.Array.newInstance(componentType, length);
+            System.arraycopy(source, 0, destArray, 0, length);
+            return (T) destArray;
+        } else {
+            // 对象数组递归深拷贝每个元素
+            Object[] srcArray = (Object[]) source;
+            Object[] destArray = (Object[]) java.lang.reflect.Array.newInstance(componentType, srcArray.length);
+            visited.put(source, destArray);
+            for (int i = 0; i < srcArray.length; i++) {
+                destArray[i] = deepCopy(srcArray[i], visited);
+            }
+            return (T) destArray;
+        }
+    }
+
+    /**
+     * 深拷贝 Collection。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyCollection(Collection<?> source, IdentityHashMap<Object, Object> visited) {
+        // 记录当前映射关系，防止 Collection 内部元素循环引用
+        visited.put(source, null);
+
+        Collection<Object> result = new ArrayList<>(source.size());
+        visited.put(source, result);
+
+        for (Object item : source) {
+            result.add(deepCopy(item, visited));
+        }
+        return (T) result;
+    }
+
+    /**
+     * 深拷贝 Map。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyMap(Map<?, ?> source, IdentityHashMap<Object, Object> visited) {
+        // 记录当前映射关系，防止 Map 内部 key/value 循环引用
+        visited.put(source, null);
+
+        Map<Object, Object> result = new java.util.HashMap<>(source.size());
+        visited.put(source, result);
+
+        for (Map.Entry<?, ?> entry : source.entrySet()) {
+            Object keyCopy = deepCopy(entry.getKey(), visited);
+            Object valueCopy = deepCopy(entry.getValue(), visited);
+            result.put(keyCopy, valueCopy);
+        }
+        return (T) result;
+    }
+
+    /**
+     * 深拷贝普通 Java Bean。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyBean(T source, IdentityHashMap<Object, Object> visited) {
+        Class<?> clazz = source.getClass();
+
+        // 创建新实例
+        T target;
+        try {
+            target = (T) clazz.newInstance();
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new BaseException("Failed to deep copy: no default constructor for " + clazz.getName(), e);
+        }
+
+        // 先放入 visited，防止循环引用
+        visited.put(source, target);
+
+        // 遍历所有属性
+        BeanDesc desc = BeanCopier.getOrCreateBeanDesc(clazz);
+        for (String propName : desc.getPropertyNames()) {
+            if ("class".equals(propName)) {
+                continue;
+            }
+            PropertyResult<Object> propResult = desc.getPropertyValue(source, propName);
+            if (!propResult.exists()) {
+                continue;
+            }
+            Object value = propResult.getValue();
+            Object copiedValue = deepCopy(value, visited);
+            desc.setPropertyValue(target, propName, copiedValue);
+        }
+        return target;
     }
 
     // ========== hasNullField ==========
@@ -311,8 +622,11 @@ public final class BeanUtils {
             if ("class".equals(name)) {
                 continue;
             }
-            Object value = BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyValue(bean, name);
-            if (value == null) {
+            PropertyResult<Object> result = BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyValue(bean, name);
+            if (!result.exists()) {
+                return true;
+            }
+            if (result.getValue() == null) {
                 return true;
             }
         }

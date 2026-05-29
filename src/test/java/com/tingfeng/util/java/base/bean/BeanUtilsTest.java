@@ -10,6 +10,8 @@ import org.junit.Test;
 
 import java.util.*;
 
+import com.tingfeng.util.java.base.bean.TypeReference;
+
 /**
  * BeanUtil门面类单元测试
  * <p>
@@ -132,6 +134,60 @@ public class BeanUtilsTest {
     }
 
     /**
+     * 泛型类型推断测试：toList with TypeReference
+     * <p>
+     * 注意：TypeReference 的泛型参数是目标元素类型，如 User，
+     * 而非容器类型如 List<User>。
+     */
+    @Test
+    public void testToListWithTypeReference() {
+        List<User> sources = new ArrayList<>();
+        User user1 = new User();
+        user1.setAge(20);
+        user1.setC(1L);
+        user1.userName = "User1";
+        sources.add(user1);
+
+        User user2 = new User();
+        user2.setAge(30);
+        user2.setC(2L);
+        user2.userName = "User2";
+        sources.add(user2);
+
+        // 使用 TypeReference 保留泛型信息，泛型参数是目标元素类型 User
+        List<User> targets = BeanUtils.toList(sources, new TypeReference<User>() {});
+
+        Assert.assertEquals(2, targets.size());
+        Assert.assertEquals(user1.getAge(), targets.get(0).getAge());
+        Assert.assertEquals(user1.getC(), targets.get(0).getC());
+        Assert.assertEquals(user1.userName, targets.get(0).userName);
+        Assert.assertEquals(user2.getAge(), targets.get(1).getAge());
+        Assert.assertEquals(user2.getC(), targets.get(1).getC());
+        Assert.assertEquals(user2.userName, targets.get(1).userName);
+    }
+
+    /**
+     * 泛型类型推断测试：sources 为 null 时返回空列表
+     */
+    @Test
+    public void testToListWithTypeReferenceNull() {
+        List<User> result = BeanUtils.toList(null, new TypeReference<User>() {});
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    /**
+     * 泛型类型推断测试：sources 为空时返回空列表
+     */
+    @Test
+    public void testToListWithTypeReferenceEmpty() {
+        List<User> sources = new ArrayList<>();
+        List<User> result = BeanUtils.toList(sources, new TypeReference<User>() {});
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.isEmpty());
+    }
+
+    /**
      * 场景4：带条件过滤的拷贝 — ignoreNull + ignoreProperties
      */
     @Test
@@ -243,6 +299,40 @@ public class BeanUtilsTest {
         Assert.assertEquals("MapUser", user.userName);
     }
 
+    /**
+     * 场景6补充：toBean(Map, Class) 便捷方法
+     */
+    @Test
+    public void testToBeanFromMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 30);
+        map.put("c", 500L);
+        map.put("userName", "MapUser");
+
+        User user = BeanUtils.toBean(map, User.class);
+
+        Assert.assertNotNull(user);
+        Assert.assertEquals(30, user.getAge());
+        Assert.assertEquals(Long.valueOf(500L), user.getC());
+        Assert.assertEquals("MapUser", user.userName);
+    }
+
+    @Test
+    public void testToBeanFromMapWithOptions() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 30);
+        map.put("c", 500L);
+        map.put("userName", "MapUser");
+
+        CopyOptions options = CopyOptions.create().setIgnoreProperties("age");
+        User user = BeanUtils.toBean(map, User.class, options);
+
+        Assert.assertNotNull(user);
+        Assert.assertEquals(0, user.getAge()); // age被忽略
+        Assert.assertEquals(Long.valueOf(500L), user.getC());
+        Assert.assertEquals("MapUser", user.userName);
+    }
+
     // ========== 边界测试 ==========
 
     /**
@@ -269,13 +359,14 @@ public class BeanUtilsTest {
 
     @Test
     public void testToBeanSourceNull() {
-        User user = BeanUtils.toBean(null, User.class);
+        User user = BeanUtils.toBean((Object) null, User.class);
         Assert.assertNull(user);
     }
 
     @Test
     public void testToBeanFromProviderNull() {
-        User user = BeanUtils.toBean((MapValueProvider) null, User.class);
+        MapValueProvider provider = null;
+        User user = BeanUtils.toBean(provider, User.class);
         Assert.assertNull(user);
     }
 
@@ -377,6 +468,870 @@ public class BeanUtilsTest {
 
         public void setValue(int value) {
             this.value = value;
+        }
+    }
+
+    // ========== deepCopy 测试 ==========
+
+    /**
+     * 深拷贝测试：deepCopy(null) 返回 null
+     */
+    @Test
+    public void testDeepCopyNull() {
+        User result = BeanUtils.deepCopy((User) null);
+        Assert.assertNull(result);
+    }
+
+    /**
+     * 深拷贝测试：不可变类型（String）直接返回相同引用
+     */
+    @Test
+    public void testDeepCopyImmutableType() {
+        String source = "hello";
+        String result = BeanUtils.deepCopy(source);
+        Assert.assertSame(source, result); // 相同引用，未创建新对象
+    }
+
+    /**
+     * 深拷贝测试：基本类型包装类直接返回相同引用
+     */
+    @Test
+    public void testDeepCopyWrapperTypes() {
+        Integer intSource = Integer.valueOf(100);
+        Long longSource = Long.valueOf(200L);
+        String strSource = "test";
+
+        Assert.assertSame(intSource, BeanUtils.deepCopy(intSource));
+        Assert.assertSame(longSource, BeanUtils.deepCopy(longSource));
+        Assert.assertSame(strSource, BeanUtils.deepCopy(strSource));
+    }
+
+    /**
+     * 深拷贝测试：普通 Bean 返回完全独立副本，修改副本不影响原始对象
+     */
+    @Test
+    public void testDeepCopyBean() {
+        User source = new User();
+        source.setAge(25);
+        source.setC(100L);
+        source.userName = "OriginalUser";
+
+        User result = BeanUtils.deepCopy(source);
+
+        // 副本值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getC(), result.getC());
+        Assert.assertEquals(source.userName, result.userName);
+
+        // 修改副本不影响原始对象
+        result.setAge(99);
+        result.setC(999L);
+        result.userName = "ModifiedUser";
+
+        Assert.assertNotEquals(source.getAge(), result.getAge());
+        Assert.assertNotEquals(source.getC(), result.getC());
+        Assert.assertNotEquals(source.userName, result.userName);
+    }
+
+    /**
+     * 深拷贝测试：嵌套对象深拷贝，非浅拷贝
+     */
+    @Test
+    public void testDeepCopyNestedObject() {
+        User source = new User();
+        source.setAge(25);
+        source.setC(100L);
+        source.userName = "OuterUser";
+
+        User result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同但非同一对象
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertNotSame(source, result);
+    }
+
+    /**
+     * 深拷贝测试：数组深拷贝
+     */
+    @Test
+    public void testDeepCopyArray() {
+        int[] intArray = {1, 2, 3};
+        String[] strArray = {"a", "b", "c"};
+
+        int[] intResult = BeanUtils.deepCopy(intArray);
+        String[] strResult = BeanUtils.deepCopy(strArray);
+
+        // 值相同
+        Assert.assertArrayEquals(intArray, intResult);
+        Assert.assertArrayEquals(strArray, strResult);
+
+        // 非同一引用
+        Assert.assertNotSame(intArray, intResult);
+        Assert.assertNotSame(strArray, strResult);
+
+        // 修改副本不影响原始
+        intResult[0] = 999;
+        strResult[0] = "modified";
+        Assert.assertNotEquals(intArray[0], intResult[0]);
+        Assert.assertNotEquals(strArray[0], strResult[0]);
+    }
+
+    /**
+     * 深拷贝测试：Collection 深拷贝
+     */
+    @Test
+    public void testDeepCopyCollection() {
+        List<String> source = new ArrayList<>();
+        source.add("item1");
+        source.add("item2");
+        source.add("item3");
+
+        List<String> result = BeanUtils.deepCopy(source);
+
+        // 值相同
+        Assert.assertEquals(source.size(), result.size());
+        for (int i = 0; i < source.size(); i++) {
+            Assert.assertEquals(source.get(i), result.get(i));
+        }
+
+        // 非同一引用
+        Assert.assertNotSame(source, result);
+
+        // 修改副本不影响原始
+        result.set(0, "modified");
+        Assert.assertNotEquals(source.get(0), result.get(0));
+    }
+
+    /**
+     * 深拷贝测试：Map 深拷贝
+     */
+    @Test
+    public void testDeepCopyMap() {
+        Map<String, Integer> source = new HashMap<>();
+        source.put("key1", 100);
+        source.put("key2", 200);
+
+        Map<String, Integer> result = BeanUtils.deepCopy(source);
+
+        // 值相同
+        Assert.assertEquals(source.size(), result.size());
+        Assert.assertEquals(source.get("key1"), result.get("key1"));
+        Assert.assertEquals(source.get("key2"), result.get("key2"));
+
+        // 非同一引用
+        Assert.assertNotSame(source, result);
+
+        // 修改副本不影响原始
+        result.put("key1", 999);
+        Assert.assertNotEquals(source.get("key1"), result.get("key1"));
+    }
+
+    /**
+     * 深拷贝测试：循环引用（A→B→A）不栈溢出
+     */
+    @Test
+    public void testDeepCopyCircularReference() {
+        Node a = new Node("A");
+        Node b = new Node("B");
+        a.target = b;
+        b.target = a; // 循环引用
+
+        Node aCopy = BeanUtils.deepCopy(a);
+
+        // 拷贝成功，值正确
+        Assert.assertEquals("A", aCopy.name);
+        Assert.assertNotNull(aCopy.target);
+        Assert.assertEquals("B", aCopy.target.name);
+
+        // 循环引用检测：aCopy.target.target 应该是 aCopy 本身
+        Assert.assertSame(aCopy.target.target, aCopy);
+
+        // 原始对象不受影响
+        Assert.assertNotSame(a.target, aCopy.target);
+    }
+
+    // ========== copyProperties 新增测试（6个）==========
+
+    /**
+     * copyProperties 嵌套Bean测试：source.user 有值时验证浅拷贝（共享引用）
+     */
+    @Test
+    public void testCopyNestedBean() {
+        User innerUser = new User();
+        innerUser.setAge(30);
+        innerUser.userName = "InnerUser";
+
+        User source = new User();
+        source.setAge(25);
+        source.userName = "OuterUser";
+        source.user = innerUser;
+
+        User target = new User();
+        BeanUtils.copyProperties(source, target);
+
+        // 基本属性拷贝成功
+        Assert.assertEquals(source.getAge(), target.getAge());
+        Assert.assertEquals(source.userName, target.userName);
+
+        // 嵌套对象是同一个引用（浅拷贝）
+        Assert.assertSame(source.user, target.user);
+        Assert.assertEquals(innerUser.getAge(), target.user.getAge());
+        Assert.assertEquals(innerUser.userName, target.user.userName);
+
+        // 修改 innerUser 的值会影响 source 和 target
+        innerUser.setAge(99);
+        Assert.assertEquals(source.user.getAge(), target.user.getAge());
+    }
+
+    /**
+     * copyProperties 嵌套Bean + List测试：childList 浅拷贝共享引用
+     */
+    @Test
+    public void testCopyNestedBeanWithList() {
+        User child1 = new User();
+        child1.setAge(10);
+        child1.userName = "Child1";
+
+        User child2 = new User();
+        child2.setAge(20);
+        child2.userName = "Child2";
+
+        List<User> childList = new ArrayList<>();
+        childList.add(child1);
+        childList.add(child2);
+
+        User source = new User();
+        source.setAge(25);
+        source.childList = childList;
+
+        User target = new User();
+        BeanUtils.copyProperties(source, target);
+
+        // 基本属性拷贝成功
+        Assert.assertEquals(source.getAge(), target.getAge());
+
+        // childList 是同一个引用（浅拷贝）
+        Assert.assertSame(source.childList, target.childList);
+        Assert.assertEquals(2, target.childList.size());
+        Assert.assertEquals("Child1", target.childList.get(0).userName);
+
+        // 修改列表元素影响双方
+        child1.setAge(999);
+        Assert.assertEquals(source.childList.get(0).getAge(), target.childList.get(0).getAge());
+    }
+
+    /**
+     * copyProperties 嵌套Bean + Map测试：map 浅拷贝共享引用
+     */
+    @Test
+    public void testCopyNestedBeanWithMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", 100);
+
+        User source = new User();
+        source.setAge(25);
+        source.setMap(map);
+
+        User target = new User();
+        BeanUtils.copyProperties(source, target);
+
+        // 基本属性拷贝成功
+        Assert.assertEquals(source.getAge(), target.getAge());
+
+        // map 是同一个引用（浅拷贝）
+        Assert.assertSame(source.getMap(), target.getMap());
+        Assert.assertEquals("value1", target.getMap().get("key1"));
+        Assert.assertEquals(100, target.getMap().get("key2"));
+
+        // 修改 map 内容影响双方
+        map.put("key3", "value3");
+        Assert.assertEquals(source.getMap().get("key3"), target.getMap().get("key3"));
+    }
+
+    /**
+     * copyProperties 嵌套Bean + Array测试：otherNames 数组共享引用
+     */
+    @Test
+    public void testCopyNestedBeanWithArray() {
+        String[] names = {"Alice", "Bob", "Charlie"};
+
+        User source = new User();
+        source.setAge(25);
+        source.setOtherNames(names);
+
+        User target = new User();
+        BeanUtils.copyProperties(source, target);
+
+        // 基本属性拷贝成功
+        Assert.assertEquals(source.getAge(), target.getAge());
+
+        // otherNames 是同一个引用（浅拷贝）
+        Assert.assertSame(source.getOtherNames(), target.getOtherNames());
+        Assert.assertEquals(3, target.getOtherNames().length);
+        Assert.assertEquals("Alice", target.getOtherNames()[0]);
+
+        // 修改数组内容影响双方
+        target.getOtherNames()[0] = "Modified";
+        Assert.assertEquals(source.getOtherNames()[0], target.getOtherNames()[0]);
+    }
+
+    /**
+     * copyProperties 继承属性测试：BaseUser.parentFiled 继承属性拷贝
+     */
+    @Test
+    public void testCopyWithInheritedProperty() {
+        User source = new User();
+        source.setAge(25);
+        source.setParentFiled("ParentValue");
+
+        User target = new User();
+        BeanUtils.copyProperties(source, target);
+
+        // 继承属性拷贝成功
+        Assert.assertEquals("ParentValue", target.getParentFiled());
+
+        // 修改 target 不影响 source
+        target.setParentFiled("Modified");
+        Assert.assertNotEquals(source.getParentFiled(), target.getParentFiled());
+    }
+
+    /**
+     * copyProperties 循环引用测试：A.user=B, B.user=A 循环引用不栈溢出
+     * <p>
+     * 验证浅拷贝正确复制循环引用结构，不栈溢出
+     */
+    @Test
+    public void testCopyCircularReferenceNested() {
+        User a = new User();
+        a.setAge(30);
+        a.userName = "A";
+
+        User b = new User();
+        b.setAge(40);
+        b.userName = "B";
+
+        a.user = b;
+        b.user = a; // 循环引用
+
+        User targetA = new User();
+        BeanUtils.copyProperties(a, targetA);
+
+        // 基本属性拷贝成功
+        Assert.assertEquals(a.getAge(), targetA.getAge());
+        Assert.assertEquals(a.userName, targetA.userName);
+
+        // 嵌套对象是同一个引用（浅拷贝）
+        Assert.assertSame(a.user, targetA.user);
+        Assert.assertEquals("B", targetA.user.userName);
+
+        // 循环引用验证：targetA.user.user 应等于 a（因为 a.user = b, b.user = a）
+        // 即 targetA.user(b) -> user(a) 与原始 a 是同一对象
+        Assert.assertSame(a, targetA.user.user);
+
+        // 验证 targetA.user 是 b（与 a.user 相同引用）
+        Assert.assertSame(b, targetA.user);
+    }
+
+    // ========== toBean 新增测试（6个）==========
+
+    /**
+     * toBean Map value 为 Map 测试：Map value 为 Map 直接存储
+     * <p>
+     * 注意：当前实现不会递归转换嵌套 Map 为 Bean，
+     * 嵌套 Map 会作为 Map 类型值直接存储到目标属性中
+     */
+    @Test
+    public void testToBeanMapWithNestedMap() {
+        Map<String, Object> nestedMap = new HashMap<>();
+        nestedMap.put("innerKey", "innerValue");
+        nestedMap.put("innerNum", 42);
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 25);
+        map.put("map", nestedMap);
+
+        User user = BeanUtils.toBean(map, User.class);
+
+        Assert.assertNotNull(user);
+        Assert.assertEquals(25, user.getAge());
+        Assert.assertNotNull(user.getMap());
+        // 嵌套 Map 作为 Map<String, Object> 存在
+        Assert.assertTrue(user.getMap().containsKey("innerKey"));
+    }
+
+    /**
+     * toBean Map value 为 List测试：Map value 为 List 转为 List<String>
+     */
+    @Test
+    public void testToBeanMapWithListValue() {
+        List<String> names = new ArrayList<>();
+        names.add("name1");
+        names.add("name2");
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 25);
+        map.put("homeNames", names);
+
+        User user = BeanUtils.toBean(map, User.class);
+
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(user.getHomeNames());
+        Assert.assertEquals(2, user.getHomeNames().size());
+        Assert.assertEquals("name1", user.getHomeNames().get(0));
+    }
+
+    /**
+     * toBean Map value 为数组测试：Map value 为数组
+     */
+    @Test
+    public void testToBeanMapWithArrayValue() {
+        String[] names = {"Alice", "Bob"};
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 25);
+        map.put("otherNames", names);
+
+        User user = BeanUtils.toBean(map, User.class);
+
+        Assert.assertNotNull(user);
+        Assert.assertNotNull(user.getOtherNames());
+        Assert.assertEquals(2, user.getOtherNames().length);
+        Assert.assertEquals("Alice", user.getOtherNames()[0]);
+    }
+
+    /**
+     * toBean Map复杂嵌套测试：Map 同时含 Bean+List+Map+数组
+     */
+    @Test
+    public void testToBeanMapWithComplexNesting() {
+        List<String> homeNames = new ArrayList<>();
+        homeNames.add("Home1");
+        homeNames.add("Home2");
+
+        Map<String, Object> nestedMap = new HashMap<>();
+        nestedMap.put("nestedKey", "nestedValue");
+
+        String[] otherNames = {"Other1", "Other2"};
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 30);
+        map.put("userName", "ComplexUser");
+        map.put("homeNames", homeNames);
+        map.put("map", nestedMap);
+        map.put("otherNames", otherNames);
+
+        User user = BeanUtils.toBean(map, User.class);
+
+        Assert.assertNotNull(user);
+        Assert.assertEquals(30, user.getAge());
+        Assert.assertEquals("ComplexUser", user.userName);
+        Assert.assertNotNull(user.getHomeNames());
+        Assert.assertEquals(2, user.getHomeNames().size());
+        Assert.assertNotNull(user.getMap());
+        Assert.assertNotNull(user.getOtherNames());
+        Assert.assertEquals(2, user.getOtherNames().length);
+    }
+
+    /**
+     * toBean 跨类型转换嵌套测试：验证 user 字段类型不匹配时的行为
+     * <p>
+     * 注意：当尝试将 Map 赋值给 User 类型的 user 字段时会抛出 IllegalArgumentException，
+     * 这是因为类型不匹配无法设置字段值
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testToBeanCrossTypeWithNested() {
+        Map<String, Object> innerData = new HashMap<>();
+        innerData.put("age", 30);
+        innerData.put("userName", "InnerUser");
+
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 25);
+        map.put("user", innerData);
+
+        // 尝试将 Map 赋值给 User 类型的 user 字段会抛出异常
+        BeanUtils.toBean(map, User.class);
+    }
+
+    // ========== toMap 新增测试（5个）==========
+
+    /**
+     * toMap 嵌套Bean测试：嵌套 User → toMap 后嵌套结构
+     */
+    @Test
+    public void testToMapWithNestedBean() {
+        User innerUser = new User();
+        innerUser.setAge(30);
+        innerUser.userName = "InnerUser";
+
+        User source = new User();
+        source.setAge(25);
+        source.userName = "OuterUser";
+        source.user = innerUser;
+
+        Map<String, Object> map = BeanUtils.toMap(source);
+
+        Assert.assertNotNull(map);
+        Assert.assertEquals(25, map.get("age"));
+        Assert.assertEquals("OuterUser", map.get("userName"));
+
+        // 嵌套 user 应转为一个 Map 结构
+        Object userObj = map.get("user");
+        Assert.assertNotNull(userObj);
+        Assert.assertTrue(userObj instanceof User);
+        User userResult = (User) userObj;
+        Assert.assertEquals(30, userResult.getAge());
+        Assert.assertEquals("InnerUser", userResult.userName);
+    }
+
+    /**
+     * toMap List属性测试：List<User> → toMap 表现
+     * <p>
+     * 注意：当前实现直接返回原始对象引用，不会递归转换 List 元素
+     */
+    @Test
+    public void testToMapWithListProperty() {
+        User child1 = new User();
+        child1.setAge(10);
+        child1.userName = "Child1";
+
+        User child2 = new User();
+        child2.setAge(20);
+        child2.userName = "Child2";
+
+        List<User> childList = new ArrayList<>();
+        childList.add(child1);
+        childList.add(child2);
+
+        User source = new User();
+        source.setAge(25);
+        source.childList = childList;
+
+        Map<String, Object> map = BeanUtils.toMap(source);
+
+        Assert.assertNotNull(map);
+        Assert.assertEquals(25, map.get("age"));
+
+        // childList 保持为 List<User> 引用
+        Object childListObj = map.get("childList");
+        Assert.assertNotNull(childListObj);
+        Assert.assertTrue(childListObj instanceof List);
+        @SuppressWarnings("unchecked")
+        List<User> resultList = (List<User>) childListObj;
+        Assert.assertEquals(2, resultList.size());
+        Assert.assertEquals("Child1", resultList.get(0).userName);
+    }
+
+    /**
+     * toMap Array属性测试：String[] → toMap 表现
+     */
+    @Test
+    public void testToMapWithArrayProperty() {
+        String[] names = {"Alice", "Bob", "Charlie"};
+
+        User source = new User();
+        source.setAge(25);
+        source.setOtherNames(names);
+
+        Map<String, Object> map = BeanUtils.toMap(source);
+
+        Assert.assertNotNull(map);
+        Assert.assertEquals(25, map.get("age"));
+
+        // otherNames 应保持数组形式
+        Object otherNamesObj = map.get("otherNames");
+        Assert.assertNotNull(otherNamesObj);
+        Assert.assertTrue(otherNamesObj instanceof String[]);
+        String[] resultNames = (String[]) otherNamesObj;
+        Assert.assertEquals(3, resultNames.length);
+        Assert.assertEquals("Alice", resultNames[0]);
+    }
+
+    /**
+     * toMap Map属性测试：Map → toMap 嵌套表现
+     */
+    @Test
+    public void testToMapWithMapProperty() {
+        Map<String, Object> innerMap = new HashMap<>();
+        innerMap.put("key1", "value1");
+        innerMap.put("key2", 100);
+
+        User source = new User();
+        source.setAge(25);
+        source.setMap(innerMap);
+
+        Map<String, Object> map = BeanUtils.toMap(source);
+
+        Assert.assertNotNull(map);
+        Assert.assertEquals(25, map.get("age"));
+
+        // map 属性应保持为 Map
+        Object mapObj = map.get("map");
+        Assert.assertNotNull(mapObj);
+        Assert.assertTrue(mapObj instanceof Map);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resultMap = (Map<String, Object>) mapObj;
+        Assert.assertEquals("value1", resultMap.get("key1"));
+        Assert.assertEquals(100, resultMap.get("key2"));
+    }
+
+    /**
+     * toMap 深度嵌套测试：深度嵌套 Bean → toMap 多层结构
+     * <p>
+     * 注意：当前实现返回原始对象引用，不会递归转换为 Map
+     */
+    @Test
+    public void testToMapWithDeepNesting() {
+        // 构造三层嵌套
+        User level3 = new User();
+        level3.setAge(30);
+        level3.userName = "Level3";
+
+        User level2 = new User();
+        level2.setAge(20);
+        level2.userName = "Level2";
+        level2.user = level3;
+
+        User level1 = new User();
+        level1.setAge(10);
+        level1.userName = "Level1";
+        level1.user = level2;
+
+        Map<String, Object> map = BeanUtils.toMap(level1);
+
+        Assert.assertNotNull(map);
+        Assert.assertEquals(10, map.get("age"));
+
+        // 嵌套 user 返回原始对象引用
+        Object level1UserObj = map.get("user");
+        Assert.assertNotNull(level1UserObj);
+        Assert.assertTrue(level1UserObj instanceof User);
+        User level1Result = (User) level1UserObj;
+        Assert.assertEquals(20, level1Result.getAge());
+        Assert.assertEquals("Level2", level1Result.userName);
+    }
+
+    // ========== deepCopy 补充测试（4个）==========
+
+    /**
+     * 深拷贝嵌套User测试：修复嵌套深拷贝（设置 user 属性）
+     */
+    @Test
+    public void testDeepCopyBeanWithNestedUser() {
+        User innerUser = new User();
+        innerUser.setAge(30);
+        innerUser.userName = "InnerUser";
+
+        User source = new User();
+        source.setAge(25);
+        source.userName = "OuterUser";
+        source.user = innerUser;
+
+        User result = BeanUtils.deepCopy(source);
+
+        // 副本值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.userName, result.userName);
+
+        // user 属性是不同的引用（深拷贝）
+        Assert.assertNotSame(source.user, result.user);
+        Assert.assertEquals(innerUser.getAge(), result.user.getAge());
+        Assert.assertEquals(innerUser.userName, result.user.userName);
+
+        // 修改内部对象不影响原始
+        result.user.setAge(999);
+        Assert.assertNotEquals(source.user.getAge(), result.user.getAge());
+    }
+
+    /**
+     * 深拷贝 childList 测试：List<User> 深拷贝后元素独立
+     */
+    @Test
+    public void testDeepCopyBeanWithChildList() {
+        User child1 = new User();
+        child1.setAge(10);
+        child1.userName = "Child1";
+
+        User child2 = new User();
+        child2.setAge(20);
+        child2.userName = "Child2";
+
+        List<User> childList = new ArrayList<>();
+        childList.add(child1);
+        childList.add(child2);
+
+        User source = new User();
+        source.setAge(5);
+        source.childList = childList;
+
+        User result = BeanUtils.deepCopy(source);
+
+        // 副本值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(2, result.childList.size());
+
+        // childList 是新的 List，但元素也是新的（深拷贝）
+        Assert.assertNotSame(source.childList, result.childList);
+
+        // 列表元素是不同的引用
+        Assert.assertNotSame(source.childList.get(0), result.childList.get(0));
+        Assert.assertNotSame(source.childList.get(1), result.childList.get(1));
+
+        // 元素值相同
+        Assert.assertEquals("Child1", result.childList.get(0).userName);
+        Assert.assertEquals("Child2", result.childList.get(1).userName);
+
+        // 修改副本不影响原始
+        result.childList.get(0).setAge(999);
+        Assert.assertNotEquals(source.childList.get(0).getAge(), result.childList.get(0).getAge());
+    }
+
+    /**
+     * 深拷贝 Map<String,User> 测试：Map<String,User> 深拷贝
+     * <p>
+     * 注意：由于 IdentityHashMap 循环引用检测，
+     * 同一个对象在对象图中多处出现时，深拷贝后仍是同一引用
+     */
+    @Test
+    public void testDeepCopyBeanWithMapAndComplexValue() {
+        User user1 = new User();
+        user1.setAge(30);
+        user1.userName = "MapUser1";
+
+        User user2 = new User();
+        user2.setAge(40);
+        user2.userName = "MapUser2";
+
+        User source = new User();
+        source.setAge(25);
+        source.setMap(new HashMap<String, Object>() {{
+            put("key1", user1);
+            put("key2", user2);
+        }});
+
+        User result = BeanUtils.deepCopy(source);
+
+        // 副本值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertNotNull(result.getMap());
+
+        // map 是新的
+        Assert.assertNotSame(source.getMap(), result.getMap());
+
+        // 获取深拷贝后的 map - 它是 Map<String, Object>，包含深拷贝的 User
+        Map<String, Object> resultMap = result.getMap();
+        Object value1 = resultMap.get("key1");
+        Object value2 = resultMap.get("key2");
+
+        // 元素是不同的引用（深拷贝）
+        Assert.assertNotSame(user1, value1);
+        Assert.assertNotSame(user2, value2);
+
+        // 元素值相同（都是 User 类型）
+        Assert.assertTrue(value1 instanceof User);
+        Assert.assertTrue(value2 instanceof User);
+        Assert.assertEquals(user1.getAge(), ((User) value1).getAge());
+        Assert.assertEquals(user2.getAge(), ((User) value2).getAge());
+
+        // 修改副本不影响原始
+        ((User) value1).setAge(999);
+        Assert.assertNotEquals(user1.getAge(), ((User) resultMap.get("key1")).getAge());
+    }
+
+    /**
+     * 深拷贝混合嵌套容器测试：user+childList+map+otherNames 全部设置后深拷贝
+     * <p>
+     * 注意：由于 IdentityHashMap 循环引用检测，
+     * 同一个对象在对象图中多处出现时，深拷贝后仍是同一引用
+     */
+    @Test
+    public void testDeepCopyMixedNestedContainer() {
+        // 构造完整的混合嵌套对象
+        User innerUser = new User();
+        innerUser.setAge(30);
+        innerUser.userName = "InnerUser";
+
+        User child1 = new User();
+        child1.setAge(10);
+        child1.userName = "Child1";
+
+        User child2 = new User();
+        child2.setAge(20);
+        child2.userName = "Child2";
+
+        List<User> childList = new ArrayList<>();
+        childList.add(child1);
+        childList.add(child2);
+
+        String[] otherNames = {"Alice", "Bob"};
+
+        User source = new User();
+        source.setAge(25);
+        source.userName = "MixedSource";
+        source.user = innerUser;
+        source.childList = childList;
+        source.setMap(new HashMap<String, Object>() {{
+            put("childMapKey", innerUser);
+        }});
+        source.setOtherNames(otherNames);
+
+        User result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.userName, result.userName);
+
+        // user: 不同的引用
+        Assert.assertNotSame(source.user, result.user);
+        Assert.assertEquals(innerUser.getAge(), result.user.getAge());
+
+        // childList: 新的 List，元素也是新的
+        Assert.assertNotSame(source.childList, result.childList);
+        Assert.assertNotSame(source.childList.get(0), result.childList.get(0));
+        Assert.assertNotSame(source.childList.get(1), result.childList.get(1));
+        Assert.assertEquals("Child1", result.childList.get(0).userName);
+
+        // map: 新的 Map
+        Assert.assertNotSame(source.getMap(), result.getMap());
+        Map<String, Object> resultMapValue = result.getMap();
+        Object mapValue = resultMapValue.get("childMapKey");
+
+        // 注意：由于 innerUser 已在 user 属性中被拷贝，
+        // map 中的引用与 user 属性是同一对象（IdentityHashMap 缓存）
+        // 这是当前 deepCopy 实现的特性，非 bug
+        Assert.assertSame(result.user, mapValue);
+
+        // otherNames: 新的数组（数组创建了新对象）
+        Assert.assertNotSame(source.getOtherNames(), result.getOtherNames());
+        // 但 String 元素是不可变类型，deepCopy 返回相同引用（这是正确行为）
+        Assert.assertEquals(otherNames[0], result.getOtherNames()[0]);
+        Assert.assertSame(otherNames[0], result.getOtherNames()[0]);
+
+        // 修改副本所有层级均不影响原始
+        result.user.setAge(999);
+        result.childList.get(0).setAge(999);
+        result.getOtherNames()[0] = "Modified";
+
+        Assert.assertNotEquals(source.user.getAge(), result.user.getAge());
+        Assert.assertNotEquals(source.childList.get(0).getAge(), result.childList.get(0).getAge());
+        Assert.assertNotEquals(innerUser.getAge(), result.getUser().getAge());
+        Assert.assertNotEquals(otherNames[0], result.getOtherNames()[0]);
+    }
+
+    // ========== 辅助类（深拷贝测试用）==========
+
+    /**
+     * 用于测试循环引用的节点类
+     */
+    public static class Node {
+        public String name;
+        public Node target;
+
+        public Node() {
+        }
+
+        public Node(String name) {
+            this.name = name;
         }
     }
 }

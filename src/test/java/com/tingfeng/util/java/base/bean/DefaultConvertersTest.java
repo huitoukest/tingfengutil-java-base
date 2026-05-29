@@ -1,11 +1,13 @@
 package com.tingfeng.util.java.base.bean;
 
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
+import com.tingfeng.util.java.base.bean.converter.defaults.OptionalConverters;
 import org.junit.Test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.Assert.*;
 
@@ -154,5 +156,42 @@ public class DefaultConvertersTest {
         Integer defaultVal = 0;
         Integer result = ConverterUtils.convert("not a number", Integer.class, defaultVal);
         assertEquals(Integer.valueOf(0), result);
+    }
+
+    @Test
+    public void testOptionalConversion() {
+        // resetConverter 会清空所有转换器，需要重新注册
+        ConverterUtils.resetConverter();
+        // 注册所有默认转换器（包括 Optional）
+        ConverterUtils.registerDefaults();
+
+        // String -> Optional<String>（装箱）
+        Optional<String> optStr = ConverterUtils.convert("hello", Optional.class);
+        assertNotNull(optStr);
+        assertTrue(optStr.isPresent());
+        assertEquals("hello", optStr.get());
+
+        // 自定义类型装箱：User -> Optional<User>
+        User user = new User();
+        user.setName("testUser");
+        Optional<User> optUser = ConverterUtils.convert(user, Optional.class);
+        assertNotNull(optUser);
+        assertTrue(optUser.isPresent());
+        assertEquals("testUser", optUser.get().getName());
+    }
+
+    /**
+     * 用于 Optional 装箱测试的简单 POJO
+     */
+    private static class User {
+        private String name;
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }

@@ -198,6 +198,42 @@ public class DefaultConverterRegistry implements ConverterRegistry {
                 (List) (converterList != null ? converterList : Collections.emptyList()));
     }
 
+    /**
+     * 查找源类型层次中可用的转换器（用于源类型多态查找）
+     *
+     * @param sourceType 源类型
+     * @param target     目标类型
+     * @return 可用的 Converter，或 null
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private <S, T> Converter<S, T> findConverterInSourceHierarchy(Class<S> sourceType, Class<T> target) {
+        if (sourceType == null || target == null) {
+            return null;
+        }
+
+        // 遍历源类型的父类链（包含 Object）
+        Class<?> current = sourceType;
+        while (current != null) {
+            UnionKey key = new UnionKey(current, target);
+            List<Converter<?, ?>> list = converters.get(key);
+            if (list != null && !list.isEmpty()) {
+                return (Converter<S, T>) list.get(0);
+            }
+            current = current.getSuperclass();
+        }
+
+        // 遍历源类型实现的接口链
+        for (Class<?> iface : sourceType.getInterfaces()) {
+            UnionKey key = new UnionKey(iface, target);
+            List<Converter<?, ?>> list = converters.get(key);
+            if (list != null && !list.isEmpty()) {
+                return (Converter<S, T>) list.get(0);
+            }
+        }
+
+        return null;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public <S, T> T convert(S source, Class<T> target) {
@@ -354,7 +390,7 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     /**
      * 使用包装类型转换器转换
      * <p>
-     * 规则：目标为包装类型 或 来源为基础类型时，先找自身，找不到则找对应类型，找不到返回 null
+     * 规则：目标为包装类型 或 来源为基础类型时，先找自身，找不到则尝试源类型层次查找，找不到则找对应类型，找不到返回 null
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private <S, T> T convertToWrapper(S source, Class<S> sourceType, Class<T> target) {
@@ -364,7 +400,13 @@ public class DefaultConverterRegistry implements ConverterRegistry {
             return converter.convert(source);
         }
 
-        // 2. 找不到则找对应类型（wrapper↔primitive）
+        // 2. 尝试源类型层次查找（如 String -> Object 父类）
+        converter = findConverterInSourceHierarchy(sourceType, target);
+        if (converter != null) {
+            return converter.convert(source);
+        }
+
+        // 3. 找不到则找对应类型（wrapper↔primitive）
         Class<?> correspondingType = ClassUtils.isPrimitive(target)
                 ? ClassUtils.toWrapper(target)
                 : ClassUtils.toPrimitive(target);
@@ -381,7 +423,7 @@ public class DefaultConverterRegistry implements ConverterRegistry {
     /**
      * 来源为包装类型时的转换
      * <p>
-     * 规则：优先自身转换器，找不到且值不为null则尝试基础类型转换器，找不到返回 null
+     * 规则：优先自身转换器，找不到则尝试源类型层次查找，找不到且值不为null则尝试基础类型转换器，找不到返回 null
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private <T> T convertAuto(Object source, Class<?> sourceType, Class<T> target) {
@@ -391,7 +433,13 @@ public class DefaultConverterRegistry implements ConverterRegistry {
             return (T) converter.convert(source);
         }
 
-        // 2. 找不到且值不为null，尝试基础类型转换器
+        // 2. 尝试源类型层次查找（如 String -> Object 父类）
+        converter = (Converter<Object, T>) findConverterInSourceHierarchy((Class<Object>) sourceType, target);
+        if (converter != null) {
+            return (T) converter.convert(source);
+        }
+
+        // 3. 找不到且值不为null，尝试基础类型转换器
         if (source != null) {
             Class<?> primitiveTarget = ClassUtils.toPrimitive(target);
             if (primitiveTarget != null) {
