@@ -1318,6 +1318,185 @@ public class BeanUtilsTest {
         Assert.assertNotEquals(otherNames[0], result.getOtherNames()[0]);
     }
 
+    // ========== deepCopy 深度控制测试 ==========
+
+    /**
+     * deepCopy maxDepth 测试：maxDepth = 0 时，嵌套对象不递归（浅拷贝）
+     */
+    @Test
+    public void testDeepCopyMaxDepthZero() {
+        User innerUser = new User();
+        innerUser.setAge(30);
+        innerUser.userName = "InnerUser";
+
+        User source = new User();
+        source.setAge(25);
+        source.userName = "OuterUser";
+        source.user = innerUser;
+
+        User result = BeanUtils.deepCopy(source, 0);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.userName, result.userName);
+
+        // user 属性是同一引用（浅拷贝，未递归）
+        Assert.assertSame(source.user, result.user);
+
+        // 修改副本的 user 影响原始对象（证明是浅拷贝）
+        result.user.setAge(999);
+        Assert.assertEquals(source.user.getAge(), result.user.getAge());
+    }
+
+    /**
+     * deepCopy maxDepth 测试：maxDepth = 1 时，拷贝一层嵌套
+     */
+    @Test
+    public void testDeepCopyMaxDepthOne() {
+        User innerUser = new User();
+        innerUser.setAge(30);
+        innerUser.userName = "InnerUser";
+
+        User source = new User();
+        source.setAge(25);
+        source.userName = "OuterUser";
+        source.user = innerUser;
+
+        User result = BeanUtils.deepCopy(source, 1);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.userName, result.userName);
+
+        // user 属性是不同引用（深拷贝了一层）
+        Assert.assertNotSame(source.user, result.user);
+        Assert.assertEquals(innerUser.getAge(), result.user.getAge());
+        Assert.assertEquals(innerUser.userName, result.user.userName);
+    }
+
+    /**
+     * deepCopy maxDepth 测试：maxDepth = 0 时，数组元素不递归
+     */
+    @Test
+    public void testDeepCopyArrayMaxDepthZero() {
+        User[] sourceArray = new User[2];
+        sourceArray[0] = new User();
+        sourceArray[0].setAge(10);
+        sourceArray[0].userName = "User1";
+        sourceArray[1] = new User();
+        sourceArray[1].setAge(20);
+        sourceArray[1].userName = "User2";
+
+        User[] result = BeanUtils.deepCopy(sourceArray, 0);
+
+        // 数组本身是新对象
+        Assert.assertNotSame(sourceArray, result);
+
+        // 数组元素是同一引用（浅拷贝）
+        Assert.assertSame(sourceArray[0], result[0]);
+        Assert.assertSame(sourceArray[1], result[1]);
+    }
+
+    /**
+     * deepCopy maxDepth 测试：maxDepth = 0 时，Collection 元素不递归
+     */
+    @Test
+    public void testDeepCopyCollectionMaxDepthZero() {
+        User child1 = new User();
+        child1.setAge(10);
+        child1.userName = "Child1";
+
+        List<User> sourceList = new ArrayList<>();
+        sourceList.add(child1);
+
+        List<User> result = BeanUtils.deepCopy(sourceList, 0);
+
+        // List 本身是新对象
+        Assert.assertNotSame(sourceList, result);
+
+        // 元素是同一引用（浅拷贝）
+        Assert.assertSame(sourceList.get(0), result.get(0));
+    }
+
+    /**
+     * deepCopy maxDepth 测试：maxDepth = 0 时，Map key/value 不递归
+     */
+    @Test
+    public void testDeepCopyMapMaxDepthZero() {
+        User user1 = new User();
+        user1.setAge(30);
+        user1.userName = "MapUser1";
+
+        Map<String, User> sourceMap = new HashMap<>();
+        sourceMap.put("key1", user1);
+
+        Map<String, User> result = BeanUtils.deepCopy(sourceMap, 0);
+
+        // Map 本身是新对象
+        Assert.assertNotSame(sourceMap, result);
+
+        // key 是同一引用（String 是不可变类型）
+        Assert.assertSame(sourceMap.get("key1"), result.get("key1"));
+
+        // value 是同一引用（未递归）
+        Assert.assertSame(user1, result.get("key1"));
+    }
+
+    /**
+     * deepCopy maxDepth 测试：maxDepth < 0 时抛出 IllegalArgumentException
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeepCopyMaxDepthNegative() {
+        User source = new User();
+        source.setAge(25);
+
+        BeanUtils.deepCopy(source, -1);
+    }
+
+    /**
+     * deepCopy maxDepth 测试：验证深度递减行为
+     */
+    @Test
+    public void testDeepCopyMaxDepthTwoLevels() {
+        // 构造三层嵌套：level1 -> level2 -> level3
+        User level3 = new User();
+        level3.setAge(30);
+        level3.userName = "Level3";
+
+        User level2 = new User();
+        level2.setAge(20);
+        level2.userName = "Level2";
+        level2.user = level3;
+
+        User level1 = new User();
+        level1.setAge(10);
+        level1.userName = "Level1";
+        level1.user = level2;
+
+        // maxDepth = 1：拷贝 level1 和 level2（因为 level1 拷贝时 remainingDepth=1 > 0），
+        // level3 不递归（因为 level2 拷贝时 remainingDepth=0，不递归）
+        User result1 = BeanUtils.deepCopy(level1, 1);
+        Assert.assertNotSame(level1, result1);
+        Assert.assertNotSame(level1.user, result1.user); // result1.user 是 level2 的新副本
+        Assert.assertNotSame(level2, result1.user); // result1.user 是新对象，不是 level2
+        // level3 未递归，result1.user（即 level2 副本）的 user 属性应该仍是 level3 原引用
+        Assert.assertSame(level3, result1.user.user);
+
+        // maxDepth = 2：拷贝 level1、level2、level3
+        User result2 = BeanUtils.deepCopy(level1, 2);
+        Assert.assertNotSame(level1, result2);
+        Assert.assertNotSame(level1.user, result2.user);
+        Assert.assertNotSame(level2, result2.user);
+        Assert.assertNotSame(level3, result2.user.user);
+
+        // maxDepth = Integer.MAX_VALUE：无限制，等同于 deepCopy(source)
+        User resultMax = BeanUtils.deepCopy(level1, Integer.MAX_VALUE);
+        Assert.assertNotSame(level1, resultMax);
+        Assert.assertNotSame(level1.user, resultMax.user);
+        Assert.assertNotSame(level2, resultMax.user);
+        Assert.assertNotSame(level3, resultMax.user.user);
+    }
+
     // ========== 辅助类（深拷贝测试用）==========
 
     /**

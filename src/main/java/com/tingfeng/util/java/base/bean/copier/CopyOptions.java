@@ -37,6 +37,9 @@ public class CopyOptions {
     /** 转换器不匹配时是否忽略错误，默认为true */
     private boolean ignoreNoMatchConverterError = true;
 
+    /** 是否拷贝父类属性，默认为true */
+    private boolean copySuperclassProperties = true;
+
     /**
      * 私有构造器，禁止外部直接实例化
      */
@@ -144,6 +147,17 @@ public class CopyOptions {
     }
 
     /**
+     * 设置是否拷贝父类属性。
+     *
+     * @param copySuperclassProperties 是否拷贝父类属性
+     * @return this
+     */
+    public CopyOptions setCopySuperclassProperties(boolean copySuperclassProperties) {
+        this.copySuperclassProperties = copySuperclassProperties;
+        return this;
+    }
+
+    /**
      * 获取是否忽略null值。
      *
      * @return 是否忽略null
@@ -209,6 +223,15 @@ public class CopyOptions {
         return ignoreNoMatchConverterError;
     }
 
+    /**
+     * 获取是否拷贝父类属性。
+     *
+     * @return 是否拷贝父类属性
+     */
+    public boolean isCopySuperclassProperties() {
+        return copySuperclassProperties;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -223,6 +246,7 @@ public class CopyOptions {
                 && useConverter == that.useConverter
                 && ignoreCase == that.ignoreCase
                 && ignoreNoMatchConverterError == that.ignoreNoMatchConverterError
+                && copySuperclassProperties == that.copySuperclassProperties
                 && Objects.equals(ignoreProperties, that.ignoreProperties)
                 && Objects.equals(fieldMapping, that.fieldMapping);
     }
@@ -230,6 +254,6 @@ public class CopyOptions {
     @Override
     public int hashCode() {
         return Objects.hash(ignoreNull, ignoreProperties, fieldMapping, forceFieldAccess, useConverter,
-                ignoreCase, ignoreNoMatchConverterError);
+                ignoreCase, ignoreNoMatchConverterError, copySuperclassProperties);
     }
 }

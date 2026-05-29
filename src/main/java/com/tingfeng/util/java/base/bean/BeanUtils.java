@@ -11,6 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -88,10 +90,10 @@ public final class BeanUtils {
             return null;
         }
         try {
-            T target = targetClass.newInstance();
+            T target = targetClass.getDeclaredConstructor().newInstance();
             BeanCopier.copy(source, target, null);
             return target;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new BaseException(e);
         }
     }
@@ -115,10 +117,52 @@ public final class BeanUtils {
             return null;
         }
         try {
-            T target = targetClass.newInstance();
+            T target = targetClass.getDeclaredConstructor().newInstance();
             BeanCopier.copy(source, target, options);
             return target;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     * 将source对象转换为targetClass类型的实例，使用指定的构造器和参数。
+     * <p>
+     * 如果source为null，直接返回null，不抛异常。
+     *
+     * @param source      源对象
+     * @param constructor 目标类型的构造器（非null）
+     * @param args        构造器参数
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，source为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Object source, Constructor<T> constructor, Object... args) {
+        return toBean(source, constructor, null, args);
+    }
+
+    /**
+     * 将source对象转换为targetClass类型的实例，使用指定的构造器和参数，支持配置选项。
+     * <p>
+     * 如果source为null，直接返回null，不抛异常。
+     *
+     * @param source      源对象
+     * @param constructor 目标类型的构造器（非null）
+     * @param options     拷贝选项（可为null，使用默认选项）
+     * @param args        构造器参数
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，source为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Object source, Constructor<T> constructor, CopyOptions options, Object... args) {
+        if (source == null) {
+            return null;
+        }
+        try {
+            T target = constructor.newInstance(args);
+            BeanCopier.copy(source, target, options);
+            return target;
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new BaseException(e);
         }
     }
@@ -143,10 +187,10 @@ public final class BeanUtils {
             return null;
         }
         try {
-            T target = targetClass.newInstance();
+            T target = targetClass.getDeclaredConstructor().newInstance();
             BeanCopier.copyFromProvider(provider, target, null);
             return target;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new BaseException(e);
         }
     }
@@ -170,10 +214,10 @@ public final class BeanUtils {
             return null;
         }
         try {
-            T target = targetClass.newInstance();
+            T target = targetClass.getDeclaredConstructor().newInstance();
             BeanCopier.copyFromProvider(provider, target, options);
             return target;
-        } catch (InstantiationException | IllegalAccessException e) {
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new BaseException(e);
         }
     }
@@ -431,19 +475,45 @@ public final class BeanUtils {
      * @throws BaseException 如果拷贝过程中发生反射异常
      */
     public static <T> T deepCopy(T source) {
-        return deepCopy(source, new IdentityHashMap<>());
+        return deepCopy(source, Integer.MAX_VALUE, new IdentityHashMap<>());
+    }
+
+    /**
+     * 深拷贝对象，支持深度控制。
+     * <p>
+     * maxDepth 控制递归拷贝的深度：
+     * <ul>
+     *   <li>maxDepth = 0：只创建外层容器/实例，元素不递归（浅拷贝行为）</li>
+     *   <li>maxDepth = 1：拷贝一层嵌套</li>
+     *   <li>maxDepth = 2：拷贝两层嵌套</li>
+     *   <li>maxDepth = Integer.MAX_VALUE：无限制深度（等同于 deepCopy(T)）</li>
+     * </ul>
+     *
+     * @param source   源对象
+     * @param maxDepth 最大递归深度（必须 >= 0）
+     * @param <T>      对象类型
+     * @return 完全独立的副本，source 为 null 时返回 null
+     * @throws IllegalArgumentException 如果 maxDepth < 0
+     * @throws BaseException            如果拷贝过程中发生反射异常
+     */
+    public static <T> T deepCopy(T source, int maxDepth) {
+        if (maxDepth < 0) {
+            throw new IllegalArgumentException("maxDepth must be >= 0");
+        }
+        return deepCopy(source, maxDepth, new IdentityHashMap<>());
     }
 
     /**
      * 深拷贝对象（内部递归方法）。
      *
-     * @param source  源对象
-     * @param visited 已拷贝对象映射（用于循环引用检测）
-     * @param <T>     对象类型
+     * @param source         源对象
+     * @param remainingDepth 剩余递归深度
+     * @param visited        已拷贝对象映射（用于循环引用检测）
+     * @param <T>            对象类型
      * @return 完全独立的副本
      */
     @SuppressWarnings("unchecked")
-    private static <T> T deepCopy(T source, IdentityHashMap<Object, Object> visited) {
+    private static <T> T deepCopy(T source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
         if (source == null) {
             return null;
         }
@@ -462,21 +532,21 @@ public final class BeanUtils {
 
         // 3. 数组类型
         if (clazz.isArray()) {
-            return deepCopyArray(source, visited);
+            return deepCopyArray(source, remainingDepth, visited);
         }
 
         // 4. Collection 类型
         if (source instanceof Collection) {
-            return deepCopyCollection((Collection<?>) source, visited);
+            return deepCopyCollection((Collection<?>) source, remainingDepth, visited);
         }
 
         // 5. Map 类型
         if (source instanceof Map) {
-            return deepCopyMap((Map<?, ?>) source, visited);
+            return deepCopyMap((Map<?, ?>) source, remainingDepth, visited);
         }
 
         // 6. 普通 Java Bean — 递归反射拷贝
-        return deepCopyBean(source, visited);
+        return deepCopyBean(source, remainingDepth, visited);
     }
 
     /**
@@ -509,7 +579,7 @@ public final class BeanUtils {
      * 深拷贝数组。
      */
     @SuppressWarnings("unchecked")
-    private static <T> T deepCopyArray(T source, IdentityHashMap<Object, Object> visited) {
+    private static <T> T deepCopyArray(T source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
         Class<?> clazz = source.getClass();
         Class<?> componentType = clazz.getComponentType();
 
@@ -522,12 +592,21 @@ public final class BeanUtils {
             System.arraycopy(source, 0, destArray, 0, length);
             return (T) destArray;
         } else {
-            // 对象数组递归深拷贝每个元素
+            // 对象数组
             Object[] srcArray = (Object[]) source;
             Object[] destArray = (Object[]) java.lang.reflect.Array.newInstance(componentType, srcArray.length);
             visited.put(source, destArray);
-            for (int i = 0; i < srcArray.length; i++) {
-                destArray[i] = deepCopy(srcArray[i], visited);
+
+            if (remainingDepth <= 0) {
+                // remainingDepth <= 0：不递归，元素直接引用（浅拷贝）
+                for (int i = 0; i < srcArray.length; i++) {
+                    destArray[i] = srcArray[i];
+                }
+            } else {
+                // remainingDepth > 0：递归拷贝
+                for (int i = 0; i < srcArray.length; i++) {
+                    destArray[i] = deepCopy(srcArray[i], remainingDepth - 1, visited);
+                }
             }
             return (T) destArray;
         }
@@ -537,15 +616,31 @@ public final class BeanUtils {
      * 深拷贝 Collection。
      */
     @SuppressWarnings("unchecked")
-    private static <T> T deepCopyCollection(Collection<?> source, IdentityHashMap<Object, Object> visited) {
+    private static <T> T deepCopyCollection(Collection<?> source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
         // 记录当前映射关系，防止 Collection 内部元素循环引用
         visited.put(source, null);
 
-        Collection<Object> result = new ArrayList<>(source.size());
+        // 尝试实例化 source 的实际 Collection 类型
+        Collection<Object> result;
+        try {
+            @SuppressWarnings("unchecked")
+            Collection<Object> instance = source.getClass().getDeclaredConstructor().newInstance();
+            result = instance;
+        } catch (Exception e) {
+            result = new ArrayList<>(source.size());
+        }
         visited.put(source, result);
 
-        for (Object item : source) {
-            result.add(deepCopy(item, visited));
+        if (remainingDepth <= 0) {
+            // remainingDepth <= 0：不递归，元素直接引用（浅拷贝）
+            for (Object item : source) {
+                result.add(item);
+            }
+        } else {
+            // remainingDepth > 0：递归拷贝
+            for (Object item : source) {
+                result.add(deepCopy(item, remainingDepth - 1, visited));
+            }
         }
         return (T) result;
     }
@@ -554,17 +649,33 @@ public final class BeanUtils {
      * 深拷贝 Map。
      */
     @SuppressWarnings("unchecked")
-    private static <T> T deepCopyMap(Map<?, ?> source, IdentityHashMap<Object, Object> visited) {
+    private static <T> T deepCopyMap(Map<?, ?> source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
         // 记录当前映射关系，防止 Map 内部 key/value 循环引用
         visited.put(source, null);
 
-        Map<Object, Object> result = new java.util.HashMap<>(source.size());
+        // 尝试实例化 source 的实际 Map 类型
+        Map<Object, Object> result;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> instance = source.getClass().getDeclaredConstructor().newInstance();
+            result = instance;
+        } catch (Exception e) {
+            result = new java.util.HashMap<>(source.size());
+        }
         visited.put(source, result);
 
-        for (Map.Entry<?, ?> entry : source.entrySet()) {
-            Object keyCopy = deepCopy(entry.getKey(), visited);
-            Object valueCopy = deepCopy(entry.getValue(), visited);
-            result.put(keyCopy, valueCopy);
+        if (remainingDepth <= 0) {
+            // remainingDepth <= 0：不递归，key/value 直接引用（浅拷贝）
+            for (Map.Entry<?, ?> entry : source.entrySet()) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        } else {
+            // remainingDepth > 0：递归拷贝
+            for (Map.Entry<?, ?> entry : source.entrySet()) {
+                Object keyCopy = deepCopy(entry.getKey(), remainingDepth - 1, visited);
+                Object valueCopy = deepCopy(entry.getValue(), remainingDepth - 1, visited);
+                result.put(keyCopy, valueCopy);
+            }
         }
         return (T) result;
     }
@@ -573,14 +684,14 @@ public final class BeanUtils {
      * 深拷贝普通 Java Bean。
      */
     @SuppressWarnings("unchecked")
-    private static <T> T deepCopyBean(T source, IdentityHashMap<Object, Object> visited) {
+    private static <T> T deepCopyBean(T source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
         Class<?> clazz = source.getClass();
 
         // 创建新实例
         T target;
         try {
-            target = (T) clazz.newInstance();
-        } catch (InstantiationException | IllegalAccessException e) {
+            target = (T) clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
             throw new BaseException("Failed to deep copy: no default constructor for " + clazz.getName(), e);
         }
 
@@ -598,8 +709,15 @@ public final class BeanUtils {
                 continue;
             }
             Object value = propResult.getValue();
-            Object copiedValue = deepCopy(value, visited);
-            desc.setPropertyValue(target, propName, copiedValue);
+
+            if (remainingDepth <= 0) {
+                // remainingDepth <= 0：不递归，属性值直接浅拷贝
+                desc.setPropertyValue(target, propName, value);
+            } else {
+                // remainingDepth > 0：递归拷贝
+                Object copiedValue = deepCopy(value, remainingDepth - 1, visited);
+                desc.setPropertyValue(target, propName, copiedValue);
+            }
         }
         return target;
     }

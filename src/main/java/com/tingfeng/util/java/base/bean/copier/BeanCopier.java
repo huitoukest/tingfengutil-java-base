@@ -60,98 +60,20 @@ public class BeanCopier {
         if (options.isForceFieldAccess()) {
             // 仅使用 fieldMap：通过反射获取
             targetPropertyNames = getFieldMapKeySet(targetDesc);
-        } else {
+        } else if (options.isCopySuperclassProperties()) {
             // 使用所有属性名（pdMap ∪ fieldMap）
             targetPropertyNames = targetDesc.getPropertyNames();
+        } else {
+            // 仅使用当前类属性名（不含父类）
+            targetPropertyNames = targetDesc.getCurrentClassPropertyNames();
         }
 
-        // 获取配置
-        Set<String> ignoreProperties = options.getIgnoreProperties();
-        boolean ignoreNull = options.isIgnoreNull();
-        boolean useConverter = options.isUseConverter();
-        boolean ignoreNoMatchConverterError = options.isIgnoreNoMatchConverterError();
-        Map<String, String> fieldMapping = options.getFieldMapping();
+        // 创建 source 值提供者
+        ValueProvider<Object> sourceValueProvider = new SourceValueProvider(source, sourceDesc);
 
-        // 构建 source 小写名→原名映射（ignoreCase 时使用）
-        Map<String, String> sourceLowerNameMap = null;
-        if (options.isIgnoreCase()) {
-            sourceLowerNameMap = buildLowerCaseNameMap(sourceDesc.getPropertyNames());
-        }
-
-        // 遍历 target 属性
-        for (String propName : targetPropertyNames) {
-            // a. 忽略列表检查
-            if (ignoreProperties != null && ignoreProperties.contains(propName)) {
-                continue;
-            }
-
-            // b. 字段映射
-            String sourceFieldName = propName;
-            if (fieldMapping != null) {
-                sourceFieldName = fieldMapping.getOrDefault(propName, propName);
-            }
-
-            // c. resolveSourceFieldName：处理精确+大小写不敏感匹配
-            sourceFieldName = resolveSourceFieldName(sourceDesc, sourceFieldName, sourceLowerNameMap);
-            if (sourceFieldName == null) {
-                // 无匹配 → 跳过
-                continue;
-            }
-
-            // d. source 取值
-            PropertyResult<Object> result = sourceDesc.getPropertyValue(source, sourceFieldName);
-            if (!result.exists()) {
-                // sourceDesc 没有此属性 → 跳过
-                continue;
-            }
-            Object value = result.getValue();
-
-            // e. null 判断
-            if (value == null && ignoreNull) {
-                continue;
-            }
-
-            // f. 类型转换
-            if (value != null) {
-                Class<?> targetType = getTargetPropertyType(targetDesc, propName);
-                if (targetType != null && !value.getClass().equals(targetType) && useConverter) {
-                    try {
-                        @SuppressWarnings("unchecked")
-                        Object convertedValue = ConverterRegistry.getInstance()
-                                .convert(value, (Class<Object>) targetType, value);
-                        value = convertedValue;
-                    } catch (Exception e) {
-                        // 转换失败
-                        boolean hasConverter = !ConverterRegistry.getInstance()
-                                .findConverters(value.getClass(), targetType).isEmpty();
-                        if (hasConverter) {
-                            // 场景A：有Converter但转换失败 → 直接抛异常，不受 ignoreNoMatchConverterError 控制
-                            throw new BaseException(
-                                    "Property conversion failed: " + propName, e);
-                        }
-                        // 场景B：无Converter类型不匹配 → 受 ignoreNoMatchConverterError 控制
-                        if (!ignoreNoMatchConverterError) {
-                            throw new BaseException(
-                                    "Property conversion failed: " + propName, e);
-                        }
-                        // ignoreNoMatchConverterError=true → 跳过该属性
-                        if (log.isDebugEnabled()) {
-                            log.debug("Property conversion failed: " + propName + ", skipping", e);
-                        }
-                        continue;
-                    }
-                }
-            }
-
-            // g. 赋值
-            boolean setSuccess = targetDesc.setPropertyValue(target, propName, value);
-            if (!setSuccess) {
-                // 赋值失败 → 跳过该属性
-                if (log.isDebugEnabled()) {
-                    log.debug("Property setting failed: " + propName + ", skipping");
-                }
-            }
-        }
+        // 提取公共拷贝逻辑
+        copyProperties(sourceValueProvider, options, target, targetDesc, targetPropertyNames,
+                source.getClass(), sourceDesc);
     }
 
     /**
@@ -192,10 +114,40 @@ public class BeanCopier {
         if (options.isForceFieldAccess()) {
             // 仅使用 fieldMap：通过反射获取
             targetPropertyNames = getFieldMapKeySet(targetDesc);
-        } else {
+        } else if (options.isCopySuperclassProperties()) {
             // 使用所有属性名（pdMap ∪ fieldMap）
             targetPropertyNames = targetDesc.getPropertyNames();
+        } else {
+            // 仅使用当前类属性名（不含父类）
+            targetPropertyNames = targetDesc.getCurrentClassPropertyNames();
         }
+
+        // 提取公共拷贝逻辑
+        @SuppressWarnings("unchecked")
+        ValueProvider<Object> typedProvider = (ValueProvider<Object>) provider;
+        copyProperties(typedProvider, options, target, targetDesc, targetPropertyNames,
+                target.getClass(), null);
+    }
+
+    /**
+     * 公共属性拷贝逻辑，抽象了 copy() 和 copyFromProvider() 的内层循环
+     *
+     * @param valueProvider       取值函数接口
+     * @param options             拷贝选项
+     * @param target              目标对象
+     * @param targetDesc          目标 BeanDesc
+     * @param targetPropertyNames 目标属性名集合
+     * @param sourceType          源类型（用于预缓存查询）
+     * @param sourceDesc          源 BeanDesc（copyFromProvider 时为 null）
+     */
+    private static void copyProperties(
+            ValueProvider<Object> valueProvider,
+            CopyOptions options,
+            Object target,
+            BeanDesc targetDesc,
+            Set<String> targetPropertyNames,
+            Class<?> sourceType,
+            BeanDesc sourceDesc) {
 
         // 获取配置
         Set<String> ignoreProperties = options.getIgnoreProperties();
@@ -204,10 +156,11 @@ public class BeanCopier {
         boolean ignoreNoMatchConverterError = options.isIgnoreNoMatchConverterError();
         Map<String, String> fieldMapping = options.getFieldMapping();
 
-        // 构建 source 小写名→原名映射（ignoreCase 时使用，copyFromProvider 无 sourceDesc，用 null 传参）
+        // 构建 source 小写名→原名映射（ignoreCase 时使用，仅 copy() 有效）
         Map<String, String> sourceLowerNameMap = null;
-        // 注意：copyFromProvider 不需要 ignoreCase 因为它是通过 provider.containsKey() 检查的
-        // 这里只为保持方法签名一致性
+        if (sourceDesc != null && options.isIgnoreCase()) {
+            sourceLowerNameMap = buildLowerCaseNameMap(sourceDesc.getPropertyNames());
+        }
 
         // 遍历 target 属性
         for (String propName : targetPropertyNames) {
@@ -222,24 +175,37 @@ public class BeanCopier {
                 sourceFieldName = fieldMapping.getOrDefault(propName, propName);
             }
 
-            // c. 检查 provider 是否包含该 key（核心区别于 copy() 方法）
-            if (!provider.containsKey(sourceFieldName)) {
+            // c. 获取目标属性类型（用于同类型匹配）
+            Class<?> propertyType = getTargetPropertyType(targetDesc, propName);
+
+            // d. sourceDesc != null 时走 resolveSourceFieldName，sourceDesc == null 时直接用 sourceFieldName
+            if (sourceDesc != null) {
+                sourceFieldName = resolveSourceFieldName(sourceDesc, sourceFieldName, sourceLowerNameMap, propertyType);
+                if (sourceFieldName == null) {
+                    // 无匹配 → 跳过
+                    continue;
+                }
+            }
+            // e. source 取值检查（两条路径均生效）
+            if (!valueProvider.containsKey(sourceFieldName)) {
                 continue;
             }
 
-            // d. 从 provider 取值
-            Class<?> propertyType = getTargetPropertyType(targetDesc, propName);
-            Object value = provider.value(sourceFieldName, propertyType);
+            // f. 从 provider 取值
+            Object value = valueProvider.value(sourceFieldName, propertyType);
 
             // e. null 判断
             if (value == null && ignoreNull) {
                 continue;
             }
 
-            // f. 类型转换
+            // f. 类型转换（预缓存优化）
             if (value != null) {
                 Class<?> targetType = getTargetPropertyType(targetDesc, propName);
                 if (targetType != null && !value.getClass().equals(targetType) && useConverter) {
+                    // 预查询 Converter 是否存在，避免在 catch 块内重复查询
+                    boolean converterExists = !ConverterRegistry.getInstance()
+                            .findConverters(value.getClass(), targetType).isEmpty();
                     try {
                         @SuppressWarnings("unchecked")
                         Object convertedValue = ConverterRegistry.getInstance()
@@ -247,10 +213,8 @@ public class BeanCopier {
                         value = convertedValue;
                     } catch (Exception e) {
                         // 转换失败
-                        boolean hasConverter = !ConverterRegistry.getInstance()
-                                .findConverters(value.getClass(), targetType).isEmpty();
-                        if (hasConverter) {
-                            // 场景A：有Converter但转换失败 → 直接抛异常
+                        if (converterExists) {
+                            // 场景A：有Converter但转换失败 → 直接抛异常，不受 ignoreNoMatchConverterError 控制
                             throw new BaseException(
                                     "Property conversion failed: " + propName, e);
                         }
@@ -276,6 +240,31 @@ public class BeanCopier {
                     log.debug("Property setting failed: " + propName + ", skipping");
                 }
             }
+        }
+    }
+
+    /**
+     * ValueProvider 实现，用于从 source 对象获取属性值
+     */
+    private static class SourceValueProvider implements ValueProvider<Object> {
+        private final Object source;
+        private final BeanDesc sourceDesc;
+
+        SourceValueProvider(Object source, BeanDesc sourceDesc) {
+            this.source = source;
+            this.sourceDesc = sourceDesc;
+        }
+
+        @Override
+        public Object value(String key, Class<?> type) {
+            PropertyResult<Object> result = sourceDesc.getPropertyValue(source, key);
+            return result.exists() ? result.getValue() : null;
+        }
+
+        @Override
+        public boolean containsKey(String key) {
+            PropertyResult<Object> result = sourceDesc.getPropertyValue(source, key);
+            return result.exists();
         }
     }
 
@@ -322,6 +311,10 @@ public class BeanCopier {
      *   <li>属性值在 ignoreFields 中 → 跳过</li>
      *   <li>属性值为 null → 跳过</li>
      * </ul>
+     *
+     * <p>
+     * 注意：与 {@link #copy(Object, Object, CopyOptions)} 不同，
+     * toMap() 始终忽略 null 属性值，不受 CopyOptions.isIgnoreNull() 控制。
      *
      * @param bean         源对象
      * @param options      拷贝选项（可为 null，使用默认选项）
@@ -413,50 +406,94 @@ public class BeanCopier {
      * @param sourceDesc source 的 BeanDesc
      * @param sourceFieldName 要解析的属性名
      * @param sourceLowerNameMap 小写名→原名映射（ignoreCase 时非null）
+     * @param targetPropType 目标属性类型（用于同类型比较）
      * @return 解析后的属性名，若无匹配则返回 null
      */
-private static String resolveSourceFieldName(BeanDesc sourceDesc, String sourceFieldName,
-                                               Map<String, String> sourceLowerNameMap) {
-        Set<String> propertyNames = sourceDesc.getPropertyNames();
-
-        // 获取 source 属性类型（用于同类型判断）
-        Class<?> sourcePropType = sourceDesc.getPropertyType(sourceFieldName);
-
-// 优先级1: 精确匹配 + 同类型
-        if (propertyNames.contains(sourceFieldName)) {
-            // 检查类型是否一致
-            Class<?> srcType = sourceDesc.getPropertyType(sourceFieldName);
-            if (srcType != null && sourcePropType != null && srcType.equals(sourcePropType)) {
-                return sourceFieldName;
-            }
+    private static String resolveSourceFieldName(BeanDesc sourceDesc, String sourceFieldName,
+                                                 Map<String, String> sourceLowerNameMap,
+                                                 Class<?> targetPropType) {
+        // 优先级1: 精确匹配 + 同类型
+        String result = resolveByExactMatch(sourceDesc, sourceFieldName, targetPropType);
+        if (result != null) {
+            return result;
         }
 
         // 优先级2: 大小写不敏感匹配 + 同类型
-        if (sourceLowerNameMap != null) {
-            String lowerName = sourceFieldName.toLowerCase();
-            String matchedName = sourceLowerNameMap.get(lowerName);
-            if (matchedName != null) {
-                Class<?> srcType = sourceDesc.getPropertyType(matchedName);
-                if (srcType != null && sourcePropType != null && srcType.equals(sourcePropType)) {
-                    return matchedName;
-                }
-            }
+        result = resolveByIgnoreCaseMatch(sourceDesc, sourceFieldName, sourceLowerNameMap, targetPropType);
+        if (result != null) {
+            return result;
         }
 
         // 优先级3: 精确匹配 + 不同类型
+        Set<String> propertyNames = sourceDesc.getPropertyNames();
         if (propertyNames.contains(sourceFieldName)) {
             return sourceFieldName;
         }
 
         // 优先级4: 大小写不敏感匹配 + 不同类型
-        if (sourceLowerNameMap != null) {
-            String lowerName = sourceFieldName.toLowerCase();
-            String matchedName = sourceLowerNameMap.get(lowerName);
-            if (matchedName != null) {
+        return resolveByIgnoreCaseOnly(sourceFieldName, sourceLowerNameMap);
+    }
+
+    /**
+     * 优先级1: 精确匹配 + 同类型
+     *
+     * @param sourceDesc source 的 BeanDesc
+     * @param sourceFieldName 要解析的属性名
+     * @param targetPropType 目标属性类型
+     * @return 匹配的属性名，或 null
+     */
+    private static String resolveByExactMatch(BeanDesc sourceDesc, String sourceFieldName,
+                                              Class<?> targetPropType) {
+        Set<String> propertyNames = sourceDesc.getPropertyNames();
+        if (propertyNames.contains(sourceFieldName)) {
+            Class<?> sourcePropType = sourceDesc.getPropertyType(sourceFieldName);
+            if (targetPropType != null && sourcePropType != null && targetPropType.equals(sourcePropType)) {
+                return sourceFieldName;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 优先级2: 大小写不敏感匹配 + 同类型
+     *
+     * @param sourceDesc source 的 BeanDesc
+     * @param sourceFieldName 要解析的属性名
+     * @param sourceLowerNameMap 小写名→原名映射
+     * @param targetPropType 目标属性类型
+     * @return 匹配的属性名，或 null
+     */
+    private static String resolveByIgnoreCaseMatch(BeanDesc sourceDesc, String sourceFieldName,
+                                                    Map<String, String> sourceLowerNameMap,
+                                                    Class<?> targetPropType) {
+        if (sourceLowerNameMap == null) {
+            return null;
+        }
+        String lowerName = sourceFieldName.toLowerCase();
+        String matchedName = sourceLowerNameMap.get(lowerName);
+        if (matchedName != null) {
+            Class<?> sourcePropType = sourceDesc.getPropertyType(matchedName);
+            if (targetPropType != null && sourcePropType != null && targetPropType.equals(sourcePropType)) {
                 return matchedName;
             }
         }
-
         return null;
+    }
+
+    /**
+     * 优先级4: 大小写不敏感匹配 + 不同类型
+     *
+     * @param sourceFieldName 要解析的属性名
+     * @param sourceLowerNameMap 小写名→原名映射
+     * @return 匹配的属性名，或 null
+     */
+    private static String resolveByIgnoreCaseOnly(String sourceFieldName,
+                                                  Map<String, String> sourceLowerNameMap) {
+        if (sourceLowerNameMap == null) {
+            return null;
+        }
+        String lowerName = sourceFieldName.toLowerCase();
+        String matchedName = sourceLowerNameMap.get(lowerName);
+        return matchedName;
     }
 }

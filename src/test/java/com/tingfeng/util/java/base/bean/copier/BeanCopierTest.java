@@ -457,4 +457,128 @@ public class BeanCopierTest {
         // 空 provider 不影响已存在的值
         Assert.assertEquals(100, target.getAge());
     }
+
+    // ==================== 父类属性拷贝测试 ====================
+
+    /**
+     * 测试 copySuperclassProperties=true（默认）：拷贝包括父类属性在内的所有属性
+     */
+    @Test
+    public void testCopyWithSuperclassProperties() {
+        User source = new User();
+        source.setAge(25);
+        source.setC(100L);
+        source.userName = "TestUser";
+        // 通过反射设置父类属性（因为父类属性是private）
+        reflectSetField(source, "parentFiled", "ParentValue");
+
+        User target = new User();
+        target.setAge(50);
+        target.setC(200L);
+
+        CopyOptions options = CopyOptions.create().setCopySuperclassProperties(true);
+        BeanCopier.copy(source, target, options);
+
+        // 验证当前类属性
+        Assert.assertEquals(25, target.getAge());
+        Assert.assertEquals(Long.valueOf(100L), target.getC());
+        Assert.assertEquals("TestUser", target.userName);
+        // 验证父类属性被拷贝
+        Assert.assertEquals("ParentValue", reflectGetField(target, "parentFiled"));
+    }
+
+    /**
+     * 测试 copySuperclassProperties=false：仅拷贝当前类属性
+     */
+    @Test
+    public void testCopyWithoutSuperclassProperties() {
+        User source = new User();
+        source.setAge(25);
+        source.setC(100L);
+        source.userName = "TestUser";
+        // 通过反射设置父类属性
+        reflectSetField(source, "parentFiled", "ParentValue");
+
+        User target = new User();
+        target.setAge(50);
+        target.setC(200L);
+        // 设置父类属性原值
+        reflectSetField(target, "parentFiled", "OriginalParent");
+
+        CopyOptions options = CopyOptions.create().setCopySuperclassProperties(false);
+        BeanCopier.copy(source, target, options);
+
+        // 验证当前类属性被拷贝
+        Assert.assertEquals(25, target.getAge());
+        Assert.assertEquals(Long.valueOf(100L), target.getC());
+        Assert.assertEquals("TestUser", target.userName);
+        // 验证父类属性未被拷贝，保持原值
+        Assert.assertEquals("OriginalParent", reflectGetField(target, "parentFiled"));
+    }
+
+    /**
+     * 测试 copySuperclassProperties 默认值为 true
+     */
+    @Test
+    public void testCopySuperclassPropertiesDefaultTrue() {
+        User source = new User();
+        source.setAge(30);
+        reflectSetField(source, "parentFiled", "DefaultTestParent");
+
+        User target = new User();
+        reflectSetField(target, "parentFiled", "OriginalParent");
+
+        // 不设置 copySuperclassProperties，使用默认 true
+        CopyOptions options = CopyOptions.create();
+        BeanCopier.copy(source, target, options);
+
+        // 验证父类属性被拷贝
+        Assert.assertEquals("DefaultTestParent", reflectGetField(target, "parentFiled"));
+    }
+
+    /**
+     * 测试 copyFromProvider 也支持 copySuperclassProperties=false
+     */
+    @Test
+    public void testCopyFromProviderWithoutSuperclassProperties() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("age", 25);
+        map.put("userName", "TestUser");
+        map.put("parentFiled", "ShouldNotCopy");
+
+        MapValueProvider provider = new MapValueProvider(map);
+        User target = new User();
+        reflectSetField(target, "parentFiled", "OriginalParent");
+
+        CopyOptions options = CopyOptions.create().setCopySuperclassProperties(false);
+        BeanCopier.copyFromProvider(provider, target, options);
+
+        // 验证当前类属性被拷贝
+        Assert.assertEquals(25, target.getAge());
+        Assert.assertEquals("TestUser", target.userName);
+        // 验证父类属性未被拷贝
+        Assert.assertEquals("OriginalParent", reflectGetField(target, "parentFiled"));
+    }
+
+    // ==================== 辅助方法 ====================
+
+    private void reflectSetField(Object target, String fieldName, Object value) {
+        try {
+            java.lang.reflect.Field field = target.getClass().getSuperclass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            field.set(target, value);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String reflectGetField(Object target, String fieldName) {
+        try {
+            java.lang.reflect.Field field = target.getClass().getSuperclass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return (String) field.get(target);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

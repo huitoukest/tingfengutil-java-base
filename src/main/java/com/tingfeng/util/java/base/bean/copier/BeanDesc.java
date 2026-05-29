@@ -4,11 +4,16 @@ import com.tingfeng.util.java.base.cache.SimpleCacheHelper;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.lang.support.ReflectUtils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.reflect.Field;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,11 +31,22 @@ public class BeanDesc {
     private static final SimpleCacheHelper<Class<?>, BeanDesc> CACHE =
             new SimpleCacheHelper<>(512);
 
+    private static final Logger log = LoggerFactory.getLogger(BeanDesc.class);
+
     /** 有getter/setter的属性描述映射 */
     private final Map<String, PropertyDescriptor> pdMap;
 
     /** 所有属性映射（含父类私有，不含static/final） */
     private final Map<String, Field> fieldMap;
+
+    /** 缓存的所有属性名称集合（pdMap ∪ fieldMap） */
+    private final Set<String> allPropertyNames;
+
+    /** 缓存的所有Field属性名称集合（仅fieldMap） */
+    private final Set<String> allFieldNames;
+
+    /** 仅当前类属性名称集合（不含父类） */
+    private final Set<String> currentClassPropertyNames;
 
     /**
      * 获取指定Class的BeanDesc实例（带缓存）
@@ -57,6 +73,56 @@ public class BeanDesc {
         this.fieldMap = new ConcurrentHashMap<>();
 
         introspect(clazz);
+
+        Set<String> allNames = new HashSet<>(pdMap.keySet());
+        allNames.addAll(fieldMap.keySet());
+        this.allPropertyNames = Collections.unmodifiableSet(allNames);
+        this.allFieldNames = Collections.unmodifiableSet(fieldMap.keySet());
+        this.currentClassPropertyNames = Collections.unmodifiableSet(
+                collectCurrentClassPropertyNames(clazz));
+    }
+
+    /**
+     * 收集仅属于当前类的属性名
+     *
+     * @param clazz 当前类
+     * @return 仅当前类属性的名称集合
+     */
+    private Set<String> collectCurrentClassPropertyNames(Class<?> clazz) {
+        Set<String> currentNames = new HashSet<>();
+
+        // 从 pdMap 中筛选出声明类为当前类的属性
+        for (Map.Entry<String, PropertyDescriptor> entry : pdMap.entrySet()) {
+            PropertyDescriptor pd = entry.getValue();
+            Class<?> declaringClass = getDeclaringClass(pd);
+            if (declaringClass == clazz) {
+                currentNames.add(entry.getKey());
+            }
+        }
+
+        // 从 fieldMap 中筛选出声明类为当前类的字段
+        for (Map.Entry<String, Field> entry : fieldMap.entrySet()) {
+            if (entry.getValue().getDeclaringClass() == clazz) {
+                currentNames.add(entry.getKey());
+            }
+        }
+
+        return currentNames;
+    }
+
+    /**
+     * 获取 PropertyDescriptor 的声明类
+     * <p>
+     * 通过 readMethod 或 writeMethod 的 declaring class 来判断
+     */
+    private Class<?> getDeclaringClass(PropertyDescriptor pd) {
+        if (pd.getReadMethod() != null) {
+            return pd.getReadMethod().getDeclaringClass();
+        }
+        if (pd.getWriteMethod() != null) {
+            return pd.getWriteMethod().getDeclaringClass();
+        }
+        return null;
     }
 
     /**
@@ -92,11 +158,7 @@ public class BeanDesc {
      * @return 属性名称集合
      */
     public Set<String> getPropertyNames() {
-        // 合并两个map的key集合
-        Set<String> names = pdMap.keySet();
-        Set<String> allNames = new java.util.HashSet<>(names);
-        allNames.addAll(fieldMap.keySet());
-        return allNames;
+        return allPropertyNames;
     }
 
     /**
@@ -105,7 +167,18 @@ public class BeanDesc {
      * @return Field属性名称集合
      */
     public Set<String> getFieldNames() {
-        return new java.util.HashSet<>(fieldMap.keySet());
+        return allFieldNames;
+    }
+
+    /**
+     * 获取仅当前类声明的属性名称集合（不含父类属性）。
+     * <p>
+     * 用于在 copySuperclassProperties=false 时限制拷贝范围。
+     *
+     * @return 仅当前类属性名称集合
+     */
+    public Set<String> getCurrentClassPropertyNames() {
+        return currentClassPropertyNames;
     }
 
     /**
@@ -177,7 +250,7 @@ public class BeanDesc {
             try {
                 return PropertyResult.of(pd.getReadMethod().invoke(bean), PropertyAccessMode.GETTER_METHOD);
             } catch (Exception e) {
-                // 降级到field方式
+                log.debug("get property via method failed: {}, fallback to field", name, e);
             }
         }
 
@@ -209,7 +282,7 @@ public class BeanDesc {
                 pd.getWriteMethod().invoke(bean, value);
                 return true;
             } catch (Exception e) {
-                // 降级到field方式
+                log.debug("set property via method failed: {}, fallback to field", name, e);
             }
         }
 
