@@ -1560,54 +1560,6 @@ public class BeanUtilsTest {
     }
 
     /**
-     * deepCopy Collection 接口属性 null → ArrayList 测试
-     * <p>
-     * 当 Bean 的 Collection 属性值为 null 时，deepCopy 后应初始化为 ArrayList
-     */
-    @Test
-    public void testDeepCopyCollectionNullToArrayList() {
-        CollectionNullBean source = new CollectionNullBean();
-        source.setAge(25);
-        source.setName("Test");
-        // collectionProp 值为 null
-
-        CollectionNullBean result = BeanUtils.deepCopy(source);
-
-        // 基本属性值相同
-        Assert.assertEquals(source.getAge(), result.getAge());
-        Assert.assertEquals(source.getName(), result.getName());
-
-        // collectionProp 从 null 变为 ArrayList 实例
-        Assert.assertNotNull(result.getCollectionProp());
-        Assert.assertTrue(result.getCollectionProp() instanceof List);
-        Assert.assertTrue(result.getCollectionProp().isEmpty());
-    }
-
-    /**
-     * deepCopy Map 接口属性 null → HashMap 测试
-     * <p>
-     * 当 Bean 的 Map 属性值为 null 时，deepCopy 后应初始化为 HashMap
-     */
-    @Test
-    public void testDeepCopyMapNullToHashMap() {
-        MapNullBean source = new MapNullBean();
-        source.setAge(25);
-        source.setName("Test");
-        // mapProp 值为 null
-
-        MapNullBean result = BeanUtils.deepCopy(source);
-
-        // 基本属性值相同
-        Assert.assertEquals(source.getAge(), result.getAge());
-        Assert.assertEquals(source.getName(), result.getName());
-
-        // mapProp 从 null 变为 HashMap 实例
-        Assert.assertNotNull(result.getMapProp());
-        Assert.assertTrue(result.getMapProp() instanceof Map);
-        Assert.assertTrue(result.getMapProp().isEmpty());
-    }
-
-    /**
      * deepCopyCollection 不可变集合回退测试
      * <p>
      * 使用 Arrays.asList() 创建的不可变列表作为 source，
@@ -1681,6 +1633,56 @@ public class BeanUtilsTest {
 
         // charSeqProp 保持为 null（因为 CharSequence 未映射到具体实现类）
         Assert.assertNull(result.getCharSeqProp());
+    }
+
+    /**
+     * deepCopy Collection 属性为 null 时保持 null 测试
+     * <p>
+     * 当 Bean 的 Collection 类型属性为 null 时，
+     * deepCopy 后应保持为 null（不创建空集合）
+     */
+    @Test
+    public void testDeepCopyCollectionNullRemainsNull() {
+        CollectionNullBean source = new CollectionNullBean();
+        source.setAge(25);
+        source.setName("Test");
+        CollectionNullBean result = BeanUtils.deepCopy(source);
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+        Assert.assertNull(result.getCollectionProp());
+    }
+
+    /**
+     * deepCopy Map 属性为 null 时保持 null 测试
+     * <p>
+     * 当 Bean 的 Map 类型属性为 null 时，
+     * deepCopy 后应保持为 null（不创建空 Map）
+     */
+    @Test
+    public void testDeepCopyMapNullRemainsNull() {
+        MapNullBean source = new MapNullBean();
+        source.setAge(25);
+        source.setName("Test");
+        MapNullBean result = BeanUtils.deepCopy(source);
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+        Assert.assertNull(result.getMapProp());
+    }
+
+    /**
+     * deepCopy 指定 depth=0 时 Collection 属性为 null 仍保持 null 测试
+     * <p>
+     * 指定 depth=0 表示浅拷贝，但仍需验证 null 属性保持 null
+     */
+    @Test
+    public void testDeepCopyShallowNullRemainsNull() {
+        CollectionNullBean source = new CollectionNullBean();
+        source.setAge(25);
+        source.setName("Test");
+        CollectionNullBean result = BeanUtils.deepCopy(source, 0);
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+        Assert.assertNull(result.getCollectionProp());
     }
 
     // ========== 辅助类（深拷贝测试用）==========

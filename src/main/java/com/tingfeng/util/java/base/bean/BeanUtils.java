@@ -287,12 +287,11 @@ public final class BeanUtils {
      * @param ignoreProperties  要忽略的属性名（可变参数，可为null或空数组）
      * @return 属性名-属性值的Map
      * @deprecated 从 V5 开始废弃。推荐使用 {@link #toMap(Object)} 配合
-     *             {@link com.tingfeng.util.java.base.bean.copier.CopyOptions#setIgnoreProperties(Collection)} 的方式：
-     *             <pre>{@code
+     *             {@link com.tingfeng.util.java.base.bean.copier.CopyOptions#setIgnoreProperties(Collection)} 的方式。
+     *             示例代码：
      *             CopyOptions options = CopyOptions.create()
      *                 .setIgnoreProperties(Arrays.asList("field1", "field2"));
-     *             Map<String, Object> map = BeanCopier.toMap(bean, options);
-     *             }</pre>
+     *             Map&lt;String, Object&gt; map = BeanCopier.toMap(bean, options);
      *             或直接使用 {@link #toMap(Object)} 后手动过滤。
      */
     @Deprecated
@@ -535,9 +534,10 @@ public final class BeanUtils {
             return source;
         }
 
-        // 2. 循环引用检测
-        if (visited.containsKey(source)) {
-            return (T) visited.get(source);
+        // 2. 循环引用检测（使用单次 get 代替 containsKey + get，减少哈希查找）
+        Object existingCopy = visited.get(source);
+        if (existingCopy != null) {
+            return (T) existingCopy;
         }
 
         Class<?> clazz = source.getClass();
@@ -595,33 +595,32 @@ public final class BeanUtils {
         Class<?> clazz = source.getClass();
         Class<?> componentType = clazz.getComponentType();
 
-        visited.put(source, null);
-
         if (componentType.isPrimitive()) {
             // 基本类型数组：使用 Array.newInstance 创建新数组并拷贝元素
+            // 基本类型数组不存在循环引用问题，无需记录到 visited
             int length = java.lang.reflect.Array.getLength(source);
             Object destArray = java.lang.reflect.Array.newInstance(componentType, length);
             System.arraycopy(source, 0, destArray, 0, length);
             return (T) destArray;
-        } else {
-            // 对象数组
-            Object[] srcArray = (Object[]) source;
-            Object[] destArray = (Object[]) java.lang.reflect.Array.newInstance(componentType, srcArray.length);
-            visited.put(source, destArray);
-
-            if (remainingDepth <= 0) {
-                // remainingDepth <= 0：不递归，元素直接引用（浅拷贝）
-                for (int i = 0; i < srcArray.length; i++) {
-                    destArray[i] = srcArray[i];
-                }
-            } else {
-                // remainingDepth > 0：递归拷贝
-                for (int i = 0; i < srcArray.length; i++) {
-                    destArray[i] = deepCopy(srcArray[i], remainingDepth - 1, visited);
-                }
-            }
-            return (T) destArray;
         }
+
+        // 对象数组：记录到 visited（必须在创建副本后更新，避免循环引用检测失效）
+        Object[] srcArray = (Object[]) source;
+        Object[] destArray = (Object[]) java.lang.reflect.Array.newInstance(componentType, srcArray.length);
+        visited.put(source, destArray);
+
+        if (remainingDepth <= 0) {
+            // remainingDepth <= 0：不递归，元素直接引用（浅拷贝）
+            for (int i = 0; i < srcArray.length; i++) {
+                destArray[i] = srcArray[i];
+            }
+        } else {
+            // remainingDepth > 0：递归拷贝
+            for (int i = 0; i < srcArray.length; i++) {
+                destArray[i] = deepCopy(srcArray[i], remainingDepth - 1, visited);
+            }
+        }
+        return (T) destArray;
     }
 
     /**
@@ -752,42 +751,8 @@ public final class BeanUtils {
             }
             Object value = propResult.getValue();
 
-            if (remainingDepth <= 0) {
-                // remainingDepth <= 0：不递归，属性值直接浅拷贝
-                // 当 value 为 null 且属性类型为接口时，通过 CommonType 创建空实例
-                if (value == null) {
-                    Class<?> propType = desc.getPropertyType(propName);
-                    if (propType != null && propType.isInterface()) {
-                        Class<?> implClass = CommonType.resolveImplementation(propType);
-                        if (implClass != null) {
-                            try {
-                                value = implClass.getDeclaredConstructor().newInstance();
-                            } catch (Exception ex) {
-                                // 创建失败，保持 null
-                            }
-                        }
-                    }
-                }
-                desc.setPropertyValue(target, propName, value);
-            } else {
-                // remainingDepth > 0：递归拷贝
-                Object copiedValue = deepCopy(value, remainingDepth - 1, visited);
-                // 当 copiedValue 为 null 且属性类型为接口时，通过 CommonType 创建空实例
-                if (copiedValue == null) {
-                    Class<?> propType = desc.getPropertyType(propName);
-                    if (propType != null && propType.isInterface()) {
-                        Class<?> implClass = CommonType.resolveImplementation(propType);
-                        if (implClass != null) {
-                            try {
-                                copiedValue = implClass.getDeclaredConstructor().newInstance();
-                            } catch (Exception ex) {
-                                // 创建失败，保持 null
-                            }
-                        }
-                    }
-                }
-                desc.setPropertyValue(target, propName, copiedValue);
-            }
+            Object copiedValue = (remainingDepth <= 0) ? value : deepCopy(value, remainingDepth - 1, visited);
+            desc.setPropertyValue(target, propName, copiedValue);
         }
         return target;
     }
