@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.bean.copier;
 
 /**
  * 属性访问结果封装，包含属性值和访问模式信息。
- * <p>
+ *
  * 用于替代原有的异常抛出模式，以更柔和的方式处理属性不存在的情况。
  *
  * @param <T> 属性值类型
@@ -70,7 +70,7 @@ public final class PropertyResult<T> {
 
     /**
      * 获取属性值
-     * <p>
+     *
      * 注意：调用此方法前应先检查 exists()，避免在属性不存在时获取 null 值
      *
      * @return 属性值，若属性不存在则返回 null

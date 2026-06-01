@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Bean属性描述缓存，对传入的Class执行内省并建立属性读写映射。
- * <p>
+ *
  * 对同一个Class只内省一次，结果通过SimpleCacheHelper缓存（容量512）。
  *
  * @author huitoukest
@@ -112,7 +112,7 @@ public class BeanDesc {
 
     /**
      * 获取 PropertyDescriptor 的声明类
-     * <p>
+     *
      * 通过 readMethod 或 writeMethod 的 declaring class 来判断
      */
     private Class<?> getDeclaringClass(PropertyDescriptor pd) {
@@ -172,7 +172,7 @@ public class BeanDesc {
 
     /**
      * 获取仅当前类声明的属性名称集合（不含父类属性）。
-     * <p>
+     *
      * 用于在 copySuperclassProperties=false 时限制拷贝范围。
      *
      * @return 仅当前类属性名称集合
@@ -183,7 +183,7 @@ public class BeanDesc {
 
     /**
      * 根据属性名获取实际属性名（大小写不敏感匹配）。
-     * <p>
+     *
      * 先尝试精确匹配，若不存在则遍历所有属性名进行大小写不敏感比较。
      *
      * @param name 要查找的属性名
@@ -219,7 +219,7 @@ public class BeanDesc {
 
     /**
      * 获取指定属性名的类型。
-     * <p>
+     *
      * 先尝试从 PropertyDescriptor 获取，若无则从 Field 获取。
      *
      * @param propName 属性名

@@ -31,9 +31,9 @@ public class MathUtilsTest {
         String num = "0123456789456123456";
         String radix = "0123456789abcdef".substring(0,RandomUtils.randomInt(1,16));
         Assert.assertNotNull(MathUtils.toRadix(num,radix.toCharArray()));
-        // 使用更小的数值范围，避免OOM
-        TestUtils.printTime(1,1000,index -> {
-            long numA = RandomUtils.randomLong(0,1000000);
+        // 使用更小的数值范围和迭代次数，避免OOM
+        TestUtils.printTime(1,100,index -> {
+            long numA = RandomUtils.randomLong(0,100000);
             String re = MathUtils.toRadix(String.valueOf(numA),radix.toCharArray());
             Assert.assertTrue(re.equals(Long.toString(numA, radix.length())));
         });

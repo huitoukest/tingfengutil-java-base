@@ -936,10 +936,10 @@ public class BeanUtilsTest {
     /**
      * toBean 跨类型转换嵌套测试：验证 user 字段类型不匹配时的行为
      * <p>
-     * 注意：当尝试将 Map 赋值给 User 类型的 user 字段时会抛出 IllegalArgumentException，
-     * 这是因为类型不匹配无法设置字段值
+     * 注意：当 Map 赋值给 User 类型的 user 字段时，会触发嵌套转换（SubStory 05），
+     * 将 innerData (Map) 递归转换为嵌套 User 对象。这是正确的功能增强行为。
      */
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testToBeanCrossTypeWithNested() {
         Map<String, Object> innerData = new HashMap<>();
         innerData.put("age", 30);
@@ -949,8 +949,14 @@ public class BeanUtilsTest {
         map.put("age", 25);
         map.put("user", innerData);
 
-        // 尝试将 Map 赋值给 User 类型的 user 字段会抛出异常
-        BeanUtils.toBean(map, User.class);
+        // 嵌套转换成功：innerData (Map) → 嵌套 User 对象
+        User user = BeanUtils.toBean(map, User.class);
+        Assert.assertNotNull(user);
+        Assert.assertEquals(25, user.getAge());
+        // 嵌套的 user 字段正确转换
+        Assert.assertNotNull(user.getUser());
+        Assert.assertEquals(30, user.getUser().getAge());
+        Assert.assertEquals("InnerUser", user.getUser().userName);
     }
 
     // ========== toMap 新增测试（5个）==========

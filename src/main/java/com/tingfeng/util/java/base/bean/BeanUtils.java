@@ -286,7 +286,16 @@ public final class BeanUtils {
      * @param bean              源对象
      * @param ignoreProperties  要忽略的属性名（可变参数，可为null或空数组）
      * @return 属性名-属性值的Map
+     * @deprecated 从 V5 开始废弃。推荐使用 {@link #toMap(Object)} 配合
+     *             {@link com.tingfeng.util.java.base.bean.copier.CopyOptions#setIgnoreProperties(Collection)} 的方式：
+     *             <pre>{@code
+     *             CopyOptions options = CopyOptions.create()
+     *                 .setIgnoreProperties(Arrays.asList("field1", "field2"));
+     *             Map<String, Object> map = BeanCopier.toMap(bean, options);
+     *             }</pre>
+     *             或直接使用 {@link #toMap(Object)} 后手动过滤。
      */
+    @Deprecated
     public static Map<String, Object> toMap(Object bean, String... ignoreProperties) {
         CopyOptions options = null;
         if (ignoreProperties != null && ignoreProperties.length > 0) {

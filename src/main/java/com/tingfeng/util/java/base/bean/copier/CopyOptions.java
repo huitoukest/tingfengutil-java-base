@@ -1,15 +1,19 @@
 package com.tingfeng.util.java.base.bean.copier;
 
+import com.tingfeng.util.java.base.bean.converter.Converter;
+
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 /**
  * Bean拷贝配置选项，用于封装拷贝策略。
- * <p>
+ *
  * 提供链式API以灵活配置拷贝行为。
  *
  * @author huitoukest
@@ -39,6 +43,9 @@ public class CopyOptions {
 
     /** 是否拷贝父类属性，默认为true */
     private boolean copySuperclassProperties = true;
+
+    /** 临时转换器列表，优先级高于全局ConverterRegistry */
+    private List<Converter<?, ?>> customConverters = null;
 
     /**
      * 私有构造器，禁止外部直接实例化
@@ -158,6 +165,23 @@ public class CopyOptions {
     }
 
     /**
+     * 设置临时转换器列表（可变参数方式）。
+     *
+     * 如果 converters 为 null 或空则清空列表。
+     *
+     * @param converters 临时转换器数组
+     * @return this（支持链式调用）
+     */
+    public CopyOptions setCustomConverters(Converter<?, ?>... converters) {
+        if (converters == null || converters.length == 0) {
+            this.customConverters = null;
+        } else {
+            this.customConverters = Arrays.asList(converters);
+        }
+        return this;
+    }
+
+    /**
      * 获取是否忽略null值。
      *
      * @return 是否忽略null
@@ -232,6 +256,18 @@ public class CopyOptions {
         return copySuperclassProperties;
     }
 
+    /**
+     * 获取临时转换器列表（不可变副本或空列表）。
+     *
+     * @return 临时转换器列表，无临时转换器时返回空列表
+     */
+    public List<Converter<?, ?>> getCustomConverters() {
+        if (customConverters == null) {
+            return Collections.emptyList();
+        }
+        return Collections.unmodifiableList(customConverters);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -248,12 +284,13 @@ public class CopyOptions {
                 && ignoreNoMatchConverterError == that.ignoreNoMatchConverterError
                 && copySuperclassProperties == that.copySuperclassProperties
                 && Objects.equals(ignoreProperties, that.ignoreProperties)
-                && Objects.equals(fieldMapping, that.fieldMapping);
+                && Objects.equals(fieldMapping, that.fieldMapping)
+                && Objects.equals(customConverters, that.customConverters);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(ignoreNull, ignoreProperties, fieldMapping, forceFieldAccess, useConverter,
-                ignoreCase, ignoreNoMatchConverterError, copySuperclassProperties);
+                ignoreCase, ignoreNoMatchConverterError, copySuperclassProperties, customConverters);
     }
 }
