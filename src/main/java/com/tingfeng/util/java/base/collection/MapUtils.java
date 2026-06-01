@@ -9,9 +9,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * 封装和Map相关的处理工具
- *
- * @author huitoukest
+ * Map 操作工具类
  */
 public class MapUtils {
     /**
@@ -25,7 +23,9 @@ public class MapUtils {
      */
     public static <K, V> HashMap<K, V> newHashMap(List<K> keys, List<V> values) {
         int size = keys.size();
-        assert size == values.size();
+        if (size != values.size()) {
+            throw new IllegalArgumentException("keys size not equals values size");
+        }
         HashMap<K, V> map = new HashMap<>(size);
         for (int i = 0; i < size; i++) {
             map.put(keys.get(i), values.get(i));
@@ -232,6 +232,51 @@ public class MapUtils {
      */
     public static <K, V> Map<K, V> newHashMap(Object[] objs) {
         return newHashMap(null, null, objs);
+    }
+
+    /**
+     * 当key不存在时插入键值对
+     *
+     * @param map  目标map
+     * @param key  键
+     * @param value 值
+     * @param <K>
+     * @param <V>
+     * @return 如果key已存在返回原值，如果key不存在返回null
+     * @throws NullPointerException 如果map为null
+     */
+    public static <K, V> V putIfAbsent(Map<K, V> map, K key, V value) {
+        if (map == null) {
+            throw new NullPointerException("map cannot be null");
+        }
+        return map.putIfAbsent(key, value);
+    }
+
+    /**
+     * 如果key不存在则计算并插入，如果key已存在则返回原值不调用mappingFunction
+     *
+     * @param map  目标map
+     * @param key  键
+     * @param mappingFunction 计算值的函数，如果为null则抛NullPointerException
+     * @param <K>
+     * @param <V>
+     * @return 如果key已存在返回原值，如果key不存在返回计算后的值
+     * @throws NullPointerException 如果map为null或mappingFunction为null
+     */
+    public static <K, V> V computeIfAbsent(Map<K, V> map, K key, Function<? super K, ? extends V> mappingFunction) {
+        if (map == null) {
+            throw new NullPointerException("map cannot be null");
+        }
+        if (mappingFunction == null) {
+            throw new NullPointerException("mappingFunction cannot be null");
+        }
+        V existingValue = map.get(key);
+        if (existingValue != null) {
+            return existingValue;
+        }
+        V newValue = mappingFunction.apply(key);
+        map.put(key, newValue);
+        return newValue;
     }
 
 }

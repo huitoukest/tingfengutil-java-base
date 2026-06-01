@@ -3,9 +3,10 @@ package com.tingfeng.util.java.base.collection.base;
 import java.util.HashMap;
 
 /**
- * 一个快捷的Map
- * @param <K>
- * @param <V>
+ * 快捷 Map 实现
+ *
+ * @param <K> 键类型
+ * @param <V> 值类型
  */
 public class FastMap<K,V> extends HashMap<K,V> {
     private static final long serialVersionUID = -9160627831473020010L;

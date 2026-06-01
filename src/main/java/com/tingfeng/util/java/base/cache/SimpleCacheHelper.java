@@ -8,17 +8,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * 基于访问频率的简单缓存实现
- * <p>
+ *
  * 特性：
- * <ul>
- *   <li>读多写少场景下使用 ReadWriteLock，读读并发，写写/读写互斥</li>
- *   <li>使用 TreeMap + LinkedList 维护权重索引，快速获取 min/max 权重</li>
- *   <li>权重增量（actualWeight = globalBase + entry.weight），通过 globalOffset 防止溢出</li>
- * </ul>
+ * - 读多写少场景下使用 ReadWriteLock，读读并发，写写/读写互斥
+ * - 使用 TreeMap + LinkedList 维护权重索引，快速获取 min/max 权重
+ * - 权重增量（actualWeight = globalBase + entry.weight），通过 globalOffset 防止溢出
  *
  * @param <K> 键类型
  * @param <V> 值类型
- * @author huitoukest
  */
 public class SimpleCacheHelper<K, V> {
     /**
@@ -59,16 +56,21 @@ public class SimpleCacheHelper<K, V> {
 
     /**
      * 从缓存中取值，命中时权重 +1
-     * <p>
+     *
+     * 惰性删除：获取时发现已过期的 entry 会立即移除并返回 null
+     *
      * 读多写少场景优化：
      * 1. 读锁下快速获取数据（读读并发）
      * 2. 释放读锁后，判断是否需要更新权重（容量未满时跳过写锁）
      * 3. 需要时获取写锁进行权重更新（re-check 保证一致性）
      *
      * @param key 键
-     * @return 值，不存在则返回 null
+     * @return 值，不存在或已过期则返回 null
      */
     public V get(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cannot be null");
+        }
         // Phase 1: 读锁下获取数据
         readWriteLock.readLock().lock();
         SimpleCacheMember<V> member;
@@ -76,6 +78,13 @@ public class SimpleCacheHelper<K, V> {
         try {
             member = map.get(key);
             if (member == null) {
+                return null;
+            }
+            // 惰性删除：已过期则移除
+            if (member.isExpired()) {
+                map.remove(key);
+                currentSize--;
+                removeFromWeightIndex(member, getActualWeight(member));
                 return null;
             }
             value = member.getValue();
@@ -93,10 +102,10 @@ public class SimpleCacheHelper<K, V> {
         // 容量已满：获取写锁更新权重
         readWriteLock.writeLock().lock();
         try {
-            // re-check：entry 可能已被其他线程驱逐
+            // re-check：entry 可能已被其他线程驱逐或过期
             member = map.get(key);
-            if (member == null) {
-                return value;  // 已驱逐仍返回原值（权重更新丢失）
+            if (member == null || member.isExpired()) {
+                return value;  // 已驱逐或过期仍返回原值（权重更新丢失）
             }
             doUpdateWeight(member);
             return member.getValue();
@@ -116,12 +125,26 @@ public class SimpleCacheHelper<K, V> {
     }
 
     /**
-     * 设置缓存值
+     * 设置缓存值（永不过期）
      *
      * @param key   键
      * @param value 值
      */
     public void set(K key, V value) {
+        set(key, value, 0);
+    }
+
+    /**
+     * 设置缓存值并指定过期时间
+     *
+     * @param key             键
+     * @param value           值
+     * @param expireTimeMillis 过期时间戳（毫秒），0 表示不过期
+     */
+    public void set(K key, V value, long expireTimeMillis) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cannot be null");
+        }
         readWriteLock.writeLock().lock();
         try {
             SimpleCacheMember<V> member = map.get(key);
@@ -129,6 +152,7 @@ public class SimpleCacheHelper<K, V> {
                 // 已存在：更新值，权重 +1
                 doUpdateWeight(member);
                 member.setValue(value);
+                member.setExpireTime(expireTimeMillis);
             } else {
                 // 不存在：检查溢出 + 驱逐
                 int currentMaxWeight = getCurrentMaxWeight();
@@ -138,7 +162,7 @@ public class SimpleCacheHelper<K, V> {
 
                 // 新成员初始权重 = 当前最小权重 + 1，避免刚加入就被驱逐
                 int initialWeight = getCurrentMinWeight() + 1;
-                member = new SimpleCacheMember<>(initialWeight, value);
+                member = new SimpleCacheMember<>(initialWeight, value, expireTimeMillis);
                 map.put(key, member);
                 addToWeightIndex(member, initialWeight);
                 currentSize++;
@@ -154,9 +178,39 @@ public class SimpleCacheHelper<K, V> {
     }
 
     /**
+     * 主动清理所有已过期的 entry
+     *
+     * @return 清理的 entry 数量
+     */
+    public int cleanExpired() {
+        readWriteLock.writeLock().lock();
+        try {
+            int cleanedCount = 0;
+            long now = System.currentTimeMillis();
+            Iterator<Map.Entry<K, SimpleCacheMember<V>>> iterator = map.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<K, SimpleCacheMember<V>> entry = iterator.next();
+                SimpleCacheMember<V> member = entry.getValue();
+                if (member.getExpireTime() > 0 && now > member.getExpireTime()) {
+                    removeFromWeightIndex(member, getActualWeight(member));
+                    iterator.remove();
+                    currentSize--;
+                    cleanedCount++;
+                }
+            }
+            return cleanedCount;
+        } finally {
+            readWriteLock.writeLock().unlock();
+        }
+    }
+
+    /**
      * 是否包含键
      */
     public boolean containsKey(K key) {
+        if (key == null) {
+            throw new IllegalArgumentException("key cannot be null");
+        }
         readWriteLock.readLock().lock();
         try {
             return map.containsKey(key);
@@ -188,6 +242,47 @@ public class SimpleCacheHelper<K, V> {
 
     public int getMaxSize() {
         return maxSize;
+    }
+
+    /**
+     * 批量获取缓存值
+     *
+     * 边界条件：
+     * - keys 为 null/空：返回空 Map
+     * - 内部元素过期：自动过滤（不返回）
+     *
+     * @param keys 键集合
+     * @return 存在的键值对Map（不包含过期/不存在的键）
+     */
+    public Map<K, V> getAll(Collection<K> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<K, V> result = new HashMap<>();
+        for (K key : keys) {
+            V value = get(key);
+            if (value != null) {
+                result.put(key, value);
+            }
+        }
+        return result;
+    }
+
+    /**
+     * 批量插入缓存值（永不过期）
+     *
+     * 边界条件：
+     * - map 为 null/空：NOP
+     *
+     * @param map 键值对Map
+     */
+    public void putAll(Map<K, V> map) {
+        if (map == null || map.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            set(entry.getKey(), entry.getValue());
+        }
     }
 
     // ==================== 内部方法 ====================
@@ -252,7 +347,17 @@ public class SimpleCacheHelper<K, V> {
             // 从 map 中移除（需要遍历，因为 HashMap 不支持通过 value 反查 key）
             // 由于 currentSize 远大于平均每个 weight 的 entry 数，此处 O(n) 可接受
             // 如需 O(1)，需在 SimpleCacheMember 中保存 key引用
-            map.values().remove(toEvict);
+            // 使用引用比较（==）而非 equals，避免误删所有 equals 的成员
+            if (toEvict != null) {
+                Iterator<Map.Entry<K, SimpleCacheMember<V>>> iterator = map.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<K, SimpleCacheMember<V>> entry = iterator.next();
+                    if (entry.getValue() == toEvict) {
+                        iterator.remove();
+                        break; // 只删除第一个匹配的
+                    }
+                }
+            }
             currentSize--;
             // 桶中剩余元素需要放回（如果不为空）
             if (!minBucket.isEmpty()) {
@@ -263,10 +368,10 @@ public class SimpleCacheHelper<K, V> {
 
     /**
      * 全局偏移：所有实际权重减去当前最小权重
-     * <p>
+     *
      * 这使得 globalBase 增加，而各 entry.weight 减少
      * 相对权重关系不变，防止 entry.weight 无限递增溢出
-     * <p>
+     *
      * 此操作仅在权重即将溢出时触发，频率极低
      */
     private void globalOffset() {

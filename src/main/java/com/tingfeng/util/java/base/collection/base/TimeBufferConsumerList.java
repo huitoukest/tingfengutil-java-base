@@ -9,8 +9,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 /**
- * 线程安全，基于时间和缓冲区触发消费的List
- * @param <T>
+ * 线程安全，基于时间和缓冲区触发消费的 List
+ *
+ * @param <T> 元素类型
  */
 public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<T> {
 
