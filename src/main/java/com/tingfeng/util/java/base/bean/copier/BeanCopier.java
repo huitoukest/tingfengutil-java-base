@@ -176,11 +176,11 @@ public class BeanCopier {
             }
 
             // c. 获取目标属性类型（用于同类型匹配）
-            Class<?> propertyType = getTargetPropertyType(targetDesc, propName);
+            Class<?> targetPropertyType = getTargetPropertyType(targetDesc, propName);
 
             // d. sourceDesc != null 时走 resolveSourceFieldName，sourceDesc == null 时直接用 sourceFieldName
             if (sourceDesc != null) {
-                sourceFieldName = resolveSourceFieldName(sourceDesc, sourceFieldName, sourceLowerNameMap, propertyType);
+                sourceFieldName = resolveSourceFieldName(sourceDesc, sourceFieldName, sourceLowerNameMap, targetPropertyType);
                 if (sourceFieldName == null) {
                     // 无匹配 → 跳过
                     continue;
@@ -192,7 +192,7 @@ public class BeanCopier {
             }
 
             // f. 从 provider 取值
-            Object value = valueProvider.value(sourceFieldName, propertyType);
+            Object value = valueProvider.value(sourceFieldName, targetPropertyType);
 
             // e. null 判断
             if (value == null && ignoreNull) {
@@ -201,15 +201,14 @@ public class BeanCopier {
 
             // f. 类型转换（预缓存优化）
             if (value != null) {
-                Class<?> targetType = getTargetPropertyType(targetDesc, propName);
-                if (targetType != null && !value.getClass().equals(targetType) && useConverter) {
+                if (targetPropertyType != null && !value.getClass().equals(targetPropertyType) && useConverter) {
                     // 预查询 Converter 是否存在，避免在 catch 块内重复查询
                     boolean converterExists = !ConverterRegistry.getInstance()
-                            .findConverters(value.getClass(), targetType).isEmpty();
+                            .findConverters(value.getClass(), targetPropertyType).isEmpty();
                     try {
                         @SuppressWarnings("unchecked")
                         Object convertedValue = ConverterRegistry.getInstance()
-                                .convert(value, (Class<Object>) targetType, value);
+                                .convert(value, (Class<Object>) targetPropertyType, value);
                         value = convertedValue;
                     } catch (Exception e) {
                         // 转换失败

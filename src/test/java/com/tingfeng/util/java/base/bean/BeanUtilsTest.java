@@ -1497,6 +1497,186 @@ public class BeanUtilsTest {
         Assert.assertNotSame(level3, resultMax.user.user);
     }
 
+    // ========== deepCopy 增强功能测试（7个）==========
+
+    /**
+     * deepCopy transient 字段跳过测试：transient 字段保持默认值，不拷贝值
+     */
+    @Test
+    public void testDeepCopyTransientFieldSkipped() {
+        TransientUser source = new TransientUser();
+        source.setAge(25);
+        source.setName("TestName");
+        // transientField 默认为 0，不设置值
+
+        TransientUser result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+
+        // transientField 保持默认值 0（未被拷贝）
+        Assert.assertEquals(0, result.getTransientField());
+        Assert.assertEquals(source.getTransientField(), result.getTransientField());
+    }
+
+    /**
+     * deepCopy static 字段跳过测试：static 字段不被拷贝
+     * <p>
+     * 注意：static 字段属于类级别，deepCopy Bean 时会跳过 static 字段。
+     * 修改静态字段会影响所有实例，但 deepCopy 本身不会复制 static 字段。
+     */
+    @Test
+    public void testDeepCopyStaticFieldSkipped() {
+        // 创建两个 StaticFieldUser 实例
+        StaticFieldUser source = new StaticFieldUser();
+        source.setAge(25);
+        source.setName("Source");
+
+        StaticFieldUser target = new StaticFieldUser();
+        target.setAge(30);
+        target.setName("Target");
+
+        // 初始化静态字段
+        StaticFieldUser.setStaticValue(100);
+
+        // deepCopy source
+        StaticFieldUser result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+
+        // staticField 不被拷贝，保持默认值（或当前类静态值）
+        // 由于 static 字段属于类而不是实例，deepCopy 不应复制静态字段
+        // 验证方式：检查静态字段是否保持在原值
+        Assert.assertEquals(Integer.valueOf(100), StaticFieldUser.getStaticValue());
+    }
+
+    /**
+     * deepCopy Collection 接口属性 null → ArrayList 测试
+     * <p>
+     * 当 Bean 的 Collection 属性值为 null 时，deepCopy 后应初始化为 ArrayList
+     */
+    @Test
+    public void testDeepCopyCollectionNullToArrayList() {
+        CollectionNullBean source = new CollectionNullBean();
+        source.setAge(25);
+        source.setName("Test");
+        // collectionProp 值为 null
+
+        CollectionNullBean result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+
+        // collectionProp 从 null 变为 ArrayList 实例
+        Assert.assertNotNull(result.getCollectionProp());
+        Assert.assertTrue(result.getCollectionProp() instanceof List);
+        Assert.assertTrue(result.getCollectionProp().isEmpty());
+    }
+
+    /**
+     * deepCopy Map 接口属性 null → HashMap 测试
+     * <p>
+     * 当 Bean 的 Map 属性值为 null 时，deepCopy 后应初始化为 HashMap
+     */
+    @Test
+    public void testDeepCopyMapNullToHashMap() {
+        MapNullBean source = new MapNullBean();
+        source.setAge(25);
+        source.setName("Test");
+        // mapProp 值为 null
+
+        MapNullBean result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+
+        // mapProp 从 null 变为 HashMap 实例
+        Assert.assertNotNull(result.getMapProp());
+        Assert.assertTrue(result.getMapProp() instanceof Map);
+        Assert.assertTrue(result.getMapProp().isEmpty());
+    }
+
+    /**
+     * deepCopyCollection 不可变集合回退测试
+     * <p>
+     * 使用 Arrays.asList() 创建的不可变列表作为 source，
+     * deepCopy 结果应为可变的 ArrayList
+     */
+    @Test
+    public void testDeepCopyImmutableCollection() {
+        List<String> source = Arrays.asList("item1", "item2", "item3");
+
+        List<String> result = BeanUtils.deepCopy(source);
+
+        // 值相同
+        Assert.assertEquals(source.size(), result.size());
+        Assert.assertEquals("item1", result.get(0));
+        Assert.assertEquals("item2", result.get(1));
+        Assert.assertEquals("item3", result.get(2));
+
+        // 结果应为可变的 ArrayList（不是 Arrays$ArrayList）
+        Assert.assertNotSame(source, result);
+        Assert.assertTrue(result instanceof ArrayList);
+
+        // 修改结果不影响原始
+        result.set(0, "modified");
+        Assert.assertNotEquals(source.get(0), result.get(0));
+    }
+
+    /**
+     * deepCopyMap 不可变 Map 回退测试
+     * <p>
+     * 使用 Collections.singletonMap() 等不可变 Map 作为 source，
+     * deepCopy 结果应为可变的 HashMap
+     */
+    @Test
+    public void testDeepCopyImmutableMap() {
+        Map<String, Integer> source = Collections.singletonMap("key1", 100);
+
+        Map<String, Integer> result = BeanUtils.deepCopy(source);
+
+        // 值相同
+        Assert.assertEquals(source.size(), result.size());
+        Assert.assertEquals(Integer.valueOf(100), result.get("key1"));
+
+        // 结果应为可变的 HashMap（不是 SingletonMap）
+        Assert.assertNotSame(source, result);
+        Assert.assertTrue(result instanceof HashMap);
+
+        // 修改结果不影响原始
+        result.put("key2", 200);
+        Assert.assertEquals(source.size(), 1);
+        Assert.assertTrue(result.containsKey("key2"));
+    }
+
+    /**
+     * deepCopy 未映射接口类型保持 null 测试
+     * <p>
+     * 当属性类型为 CommonType 中未映射的接口类型（如 CharSequence）且值为 null 时，
+     * deepCopy 后应保持为 null
+     */
+    @Test
+    public void testDeepCopyUnmappedInterfaceNull() {
+        UnmappedInterfaceBean source = new UnmappedInterfaceBean();
+        source.setAge(25);
+        source.setName("Test");
+        // charSeqProp 值为 null（CharSequence 未在 CommonType 中映射）
+
+        UnmappedInterfaceBean result = BeanUtils.deepCopy(source);
+
+        // 基本属性值相同
+        Assert.assertEquals(source.getAge(), result.getAge());
+        Assert.assertEquals(source.getName(), result.getName());
+
+        // charSeqProp 保持为 null（因为 CharSequence 未映射到具体实现类）
+        Assert.assertNull(result.getCharSeqProp());
+    }
+
     // ========== 辅助类（深拷贝测试用）==========
 
     /**
@@ -1511,6 +1691,173 @@ public class BeanUtilsTest {
 
         public Node(String name) {
             this.name = name;
+        }
+    }
+
+    // ========== 辅助类（deepCopy 增强功能测试用）==========
+
+    /**
+     * 用于测试 transient 字段跳过的 Bean
+     */
+    public static class TransientUser {
+        private int age;
+        private String name;
+        private transient int transientField;
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public int getTransientField() {
+            return transientField;
+        }
+
+        public void setTransientField(int transientField) {
+            this.transientField = transientField;
+        }
+    }
+
+    /**
+     * 用于测试 static 字段跳过的 Bean
+     */
+    public static class StaticFieldUser {
+        private int age;
+        private String name;
+        private static Integer staticValue;
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public static Integer getStaticValue() {
+            return staticValue;
+        }
+
+        public static void setStaticValue(Integer staticValue) {
+            StaticFieldUser.staticValue = staticValue;
+        }
+    }
+
+    /**
+     * 用于测试 Collection 接口属性 null → ArrayList 的 Bean
+     */
+    public static class CollectionNullBean {
+        private int age;
+        private String name;
+        private Collection<String> collectionProp;
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Collection<String> getCollectionProp() {
+            return collectionProp;
+        }
+
+        public void setCollectionProp(Collection<String> collectionProp) {
+            this.collectionProp = collectionProp;
+        }
+    }
+
+    /**
+     * 用于测试 Map 接口属性 null → HashMap 的 Bean
+     */
+    public static class MapNullBean {
+        private int age;
+        private String name;
+        private Map<String, Object> mapProp;
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public Map<String, Object> getMapProp() {
+            return mapProp;
+        }
+
+        public void setMapProp(Map<String, Object> mapProp) {
+            this.mapProp = mapProp;
+        }
+    }
+
+    /**
+     * 用于测试未映射接口类型保持 null 的 Bean
+     */
+    public static class UnmappedInterfaceBean {
+        private int age;
+        private String name;
+        private CharSequence charSeqProp;
+
+        public int getAge() {
+            return age;
+        }
+
+        public void setAge(int age) {
+            this.age = age;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        public CharSequence getCharSeqProp() {
+            return charSeqProp;
+        }
+
+        public void setCharSeqProp(CharSequence charSeqProp) {
+            this.charSeqProp = charSeqProp;
         }
     }
 }

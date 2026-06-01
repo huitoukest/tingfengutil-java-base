@@ -268,6 +268,16 @@ public class BeanDesc {
     }
 
     /**
+     * 根据属性名获取对应的 Field。
+     *
+     * @param propName 属性名
+     * @return 对应的 Field，若不存在则返回 null
+     */
+    public Field getField(String propName) {
+        return fieldMap.get(propName);
+    }
+
+    /**
      * 设置属性值：先尝试PD.getWriteMethod.invoke，失败则降级使用field.set
      *
      * @param bean 要写入的bean实例

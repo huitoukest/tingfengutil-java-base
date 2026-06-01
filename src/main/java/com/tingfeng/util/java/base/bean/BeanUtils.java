@@ -1,5 +1,6 @@
 package com.tingfeng.util.java.base.bean;
 
+import com.tingfeng.util.java.base.bean.base.CommonType;
 import com.tingfeng.util.java.base.bean.copier.BeanCopier;
 import com.tingfeng.util.java.base.bean.copier.BeanDesc;
 import com.tingfeng.util.java.base.bean.copier.CopyOptions;
@@ -12,7 +13,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -627,7 +630,17 @@ public final class BeanUtils {
             Collection<Object> instance = source.getClass().getDeclaredConstructor().newInstance();
             result = instance;
         } catch (Exception e) {
-            result = new ArrayList<>(source.size());
+            // 回退路径：尝试通过 CommonType 解析接口对应的实现类
+            Class<?> implClass = CommonType.resolveImplementation(source.getClass());
+            if (implClass != null) {
+                try {
+                    result = (Collection<Object>) implClass.getDeclaredConstructor().newInstance();
+                } catch (Exception ex) {
+                    result = new ArrayList<>(source.size());
+                }
+            } else {
+                result = new ArrayList<>(source.size());
+            }
         }
         visited.put(source, result);
 
@@ -660,7 +673,17 @@ public final class BeanUtils {
             Map<Object, Object> instance = source.getClass().getDeclaredConstructor().newInstance();
             result = instance;
         } catch (Exception e) {
-            result = new java.util.HashMap<>(source.size());
+            // 回退路径：尝试通过 CommonType 解析接口对应的实现类
+            Class<?> implClass = CommonType.resolveImplementation(source.getClass());
+            if (implClass != null) {
+                try {
+                    result = (Map<Object, Object>) implClass.getDeclaredConstructor().newInstance();
+                } catch (Exception ex) {
+                    result = new java.util.HashMap<>(source.size());
+                }
+            } else {
+                result = new java.util.HashMap<>(source.size());
+            }
         }
         visited.put(source, result);
 
@@ -704,6 +727,16 @@ public final class BeanUtils {
             if ("class".equals(propName)) {
                 continue;
             }
+
+            // 跳过 transient 和 static 字段
+            Field field = desc.getField(propName);
+            if (field != null) {
+                int mod = field.getModifiers();
+                if (Modifier.isTransient(mod) || Modifier.isStatic(mod)) {
+                    continue;
+                }
+            }
+
             PropertyResult<Object> propResult = desc.getPropertyValue(source, propName);
             if (!propResult.exists()) {
                 continue;
@@ -712,10 +745,38 @@ public final class BeanUtils {
 
             if (remainingDepth <= 0) {
                 // remainingDepth <= 0：不递归，属性值直接浅拷贝
+                // 当 value 为 null 且属性类型为接口时，通过 CommonType 创建空实例
+                if (value == null) {
+                    Class<?> propType = desc.getPropertyType(propName);
+                    if (propType != null && propType.isInterface()) {
+                        Class<?> implClass = CommonType.resolveImplementation(propType);
+                        if (implClass != null) {
+                            try {
+                                value = implClass.getDeclaredConstructor().newInstance();
+                            } catch (Exception ex) {
+                                // 创建失败，保持 null
+                            }
+                        }
+                    }
+                }
                 desc.setPropertyValue(target, propName, value);
             } else {
                 // remainingDepth > 0：递归拷贝
                 Object copiedValue = deepCopy(value, remainingDepth - 1, visited);
+                // 当 copiedValue 为 null 且属性类型为接口时，通过 CommonType 创建空实例
+                if (copiedValue == null) {
+                    Class<?> propType = desc.getPropertyType(propName);
+                    if (propType != null && propType.isInterface()) {
+                        Class<?> implClass = CommonType.resolveImplementation(propType);
+                        if (implClass != null) {
+                            try {
+                                copiedValue = implClass.getDeclaredConstructor().newInstance();
+                            } catch (Exception ex) {
+                                // 创建失败，保持 null
+                            }
+                        }
+                    }
+                }
                 desc.setPropertyValue(target, propName, copiedValue);
             }
         }
