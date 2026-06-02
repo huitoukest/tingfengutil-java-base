@@ -7,9 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 线程工厂工具类
- * <p>
+ *
  * 提供 ThreadFactory 的便捷创建
- * </p>
  */
 public final class ThreadFactoryUtils {
 

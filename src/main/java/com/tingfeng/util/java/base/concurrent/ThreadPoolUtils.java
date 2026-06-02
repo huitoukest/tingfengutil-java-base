@@ -5,15 +5,17 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
  * 线程池工具类
- * <p>
+ *
  * 提供线程池的创建、监控、优雅关闭等操作
- * </p>
  */
 public final class ThreadPoolUtils {
+
+    public static final int DEFAULT_POOL_MAX_THREADS = 2048;
 
     private ThreadPoolUtils() {
     }
@@ -26,13 +28,15 @@ public final class ThreadPoolUtils {
      * @param nThreads   线程数量
      * @param namePrefix 线程名称前缀
      * @return ExecutorService 实例
+     * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
      */
     public static ExecutorService newFixedThreadPool(int nThreads, String namePrefix) {
-        return new java.util.concurrent.ThreadPoolExecutor(
+        return new ThreadPoolExecutor(
                 nThreads, nThreads,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<>(),
-                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false)
+                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
 
@@ -41,13 +45,29 @@ public final class ThreadPoolUtils {
      *
      * @param namePrefix 线程名称前缀
      * @return ExecutorService 实例
+     * @deprecated 请使用 {@link #newCachedThreadPool(String, int)} 并指定最大线程数
      */
+    @Deprecated
     public static ExecutorService newCachedThreadPool(String namePrefix) {
-        return new java.util.concurrent.ThreadPoolExecutor(
-                0, Integer.MAX_VALUE,
+        return newCachedThreadPool(namePrefix, DEFAULT_POOL_MAX_THREADS);
+    }
+
+    /**
+     * 创建缓存线程池，支持指定最大线程数
+     *
+     * @param namePrefix  线程名称前缀
+     * @param maxThreads  最大线程数，建议不超过 256
+     * @return ExecutorService 实例
+     * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
+     */
+    public static ExecutorService newCachedThreadPool(String namePrefix, int maxThreads) {
+        int effectiveMaxThreads = Math.min(maxThreads, DEFAULT_POOL_MAX_THREADS);
+        return new ThreadPoolExecutor(
+                0, effectiveMaxThreads,
                 60L, TimeUnit.SECONDS,
                 new SynchronousQueue<>(),
-                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false)
+                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
 
@@ -56,10 +76,15 @@ public final class ThreadPoolUtils {
      *
      * @param namePrefix 线程名称前缀
      * @return ExecutorService 实例
+     * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
      */
     public static ExecutorService newSingleThreadPool(String namePrefix) {
-        return java.util.concurrent.Executors.newSingleThreadExecutor(
-                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false)
+        return new ThreadPoolExecutor(
+                1, 1,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
 
@@ -75,15 +100,36 @@ public final class ThreadPoolUtils {
      * @param queueSize       队列容量，0 或负数使用 SynchronousQueue
      * @param namePrefix      线程名称前缀
      * @return ExecutorService 实例
+     * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
      */
     public static ExecutorService newFixedThreadPool(int corePoolSize, int maxPoolSize,
                                                      long keepAliveTime, TimeUnit unit,
                                                      int queueSize, String namePrefix) {
-        return new java.util.concurrent.ThreadPoolExecutor(
+        return new ThreadPoolExecutor(
                 corePoolSize, maxPoolSize,
                 keepAliveTime, unit,
                 queueSize <= 0 ? new SynchronousQueue<>() : new LinkedBlockingQueue<>(queueSize),
-                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false)
+                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()
+        );
+    }
+
+    /**
+     * 创建固定大小的命名线程池，必须指定队列容量
+     *
+     * @param nThreads   线程数量
+     * @param queueSize  队列容量，必须大于 0
+     * @param namePrefix 线程名称前缀
+     * @return ExecutorService 实例
+     * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
+     */
+    public static ExecutorService newFixedThreadPool(int nThreads, int queueSize, String namePrefix) {
+        return new ThreadPoolExecutor(
+                nThreads, nThreads,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(queueSize),
+                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
 
@@ -93,11 +139,15 @@ public final class ThreadPoolUtils {
      * @param corePoolSize 核心线程数
      * @param namePrefix   线程名称前缀
      * @return ExecutorService 实例
+     * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
      */
     public static ExecutorService newScheduledThreadPool(int corePoolSize, String namePrefix) {
-        return java.util.concurrent.Executors.newScheduledThreadPool(
-                corePoolSize,
-                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false)
+        return new ThreadPoolExecutor(
+                corePoolSize, corePoolSize,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<>(),
+                ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
+                new ThreadPoolExecutor.CallerRunsPolicy()
         );
     }
 
@@ -147,9 +197,8 @@ public final class ThreadPoolUtils {
 
     /**
      * 优雅关闭线程池
-     * <p>
+     *
      * 先停止接收新任务，再等待正在执行的任务完成
-     * </p>
      *
      * @param executor  线程池
      * @param timeout  等待超时时间

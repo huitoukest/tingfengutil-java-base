@@ -1,49 +1,48 @@
 package com.tingfeng.util.java.base.concurrent;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
- * 每秒的频率控制类
- * @author huitoukest
+ * 每秒的频率控制类，非阻塞设计
  */
 public abstract class BaseFrequencyHelper {
     /**
      * 每秒内的增量
      */
-    private  int incrementalCount = 0;
-    private  long lastSecond = System.currentTimeMillis() / 1000;
+    private final AtomicInteger incrementalCount = new AtomicInteger(0);
+    private final AtomicLong lastSecond = new AtomicLong(System.currentTimeMillis() / 1000);
+
     /**
      * 每秒的最大访问次数
      */
     private Integer secondMaxCount;
 
-    public BaseFrequencyHelper(){
+    public BaseFrequencyHelper() {
 
     }
 
-    public BaseFrequencyHelper(Integer secondMaxCount){
+    public BaseFrequencyHelper(Integer secondMaxCount) {
         this.secondMaxCount = secondMaxCount;
     }
 
     /**
-     * 检查频率并在超出频率后睡眠一段时间再继续
+     * 检查频率是否超出限制（非阻塞）
+     * @return true 表示超出频率限制，调用方应适当暂停；false 表示未超出，可继续执行
      */
-    public synchronized void checkAndLimitFrequency(){
-        if(incrementalCount++ >= secondMaxCount){
-            long currentSecond = System.currentTimeMillis() / 1000;
-            if (lastSecond != currentSecond) {
-                lastSecond = currentSecond;
-                incrementalCount = 0;
-            }else{
-                long sleepTime = getSleepTimeWhileOverMaxCount(incrementalCount,secondMaxCount);
-                if(sleepTime > 0 ) {
-                    try {
-                        Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-                checkAndLimitFrequency();
-            }
+    public boolean isRateLimited() {
+        long currentSecond = System.currentTimeMillis() / 1000;
+        long last = lastSecond.get();
+
+        if (currentSecond != last) {
+            // 时间戳变化，重置计数
+            lastSecond.set(currentSecond);
+            incrementalCount.set(0);
+            return false;
         }
+
+        int count = incrementalCount.incrementAndGet();
+        return count > secondMaxCount;
     }
 
     /**
@@ -52,5 +51,5 @@ public abstract class BaseFrequencyHelper {
      * @param secondMaxCount 每秒的最大访问次数
      * @return the sleepTime ,unit  millisecond 毫秒
      */
-    public abstract long getSleepTimeWhileOverMaxCount(int incrementalCount,int secondMaxCount);
+    public abstract long getSleepTimeWhileOverMaxCount(int incrementalCount, int secondMaxCount);
 }

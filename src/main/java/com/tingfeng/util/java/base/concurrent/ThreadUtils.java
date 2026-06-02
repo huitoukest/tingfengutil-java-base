@@ -2,10 +2,9 @@ package com.tingfeng.util.java.base.concurrent;
 
 /**
  * 线程操作工具类
- * <p>
+ *
  * 聚焦于线程级别的操作：sleep、join、interrupt
  * 内部统一处理 InterruptedException，不向上抛出
- * </p>
  */
 public final class ThreadUtils {
 
@@ -17,9 +16,13 @@ public final class ThreadUtils {
     /**
      * 睡眠指定毫秒数
      *
-     * @param mills 毫秒数，必须大于 0
+     * @param mills 毫秒数，必须大于等于 0
+     * @throws IllegalArgumentException mills 为负数时抛出
      */
     public static void sleep(long mills) {
+        if (mills < 0) {
+            throw new IllegalArgumentException("mills must not be negative");
+        }
         try {
             Thread.sleep(mills);
         } catch (InterruptedException e) {
@@ -31,10 +34,17 @@ public final class ThreadUtils {
     /**
      * 睡眠指定毫秒数和纳秒数
      *
-     * @param mills 毫秒数
+     * @param mills 毫秒数，必须大于等于 0
      * @param nanos 纳秒数 (0-999999)
+     * @throws IllegalArgumentException mills 为负数或 nanos 超出范围时抛出
      */
     public static void sleep(long mills, int nanos) {
+        if (mills < 0) {
+            throw new IllegalArgumentException("mills must not be negative");
+        }
+        if (nanos < 0 || nanos > 999999) {
+            throw new IllegalArgumentException("nanos must be between 0 and 999999");
+        }
         try {
             Thread.sleep(mills, nanos);
         } catch (InterruptedException e) {
