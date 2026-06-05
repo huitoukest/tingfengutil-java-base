@@ -48,17 +48,9 @@ public class NamedThreadFactory implements ThreadFactory {
     public Thread newThread(Runnable r) {
         final Thread t = new Thread(this.group, r, String.format("%s%s", prefix, threadNumber.getAndIncrement()));
         //设置守护线程
-        if (false == t.isDaemon()) {
-            if (isDaemon) {
-                t.setDaemon(true);
-            }
-        } else if (false == isDaemon) {
-            t.setDaemon(false);
-        }
+        t.setDaemon(isDaemon);
         //异常处理
-        if(null != this.handler) {
-            t.setUncaughtExceptionHandler(handler);
-        }
+        t.setUncaughtExceptionHandler(handler);
         //优先级
         t.setPriority(threadPriority);
         return t;

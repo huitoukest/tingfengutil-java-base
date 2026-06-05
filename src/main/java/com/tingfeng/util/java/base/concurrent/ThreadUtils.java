@@ -121,6 +121,17 @@ public final class ThreadUtils {
      * @return 包含线程名、状态、ID、优先级、栈信息的字符串
      */
     public static String getThreadInfo(Thread thread) {
+        return getThreadInfo(thread, 0);
+    }
+
+    /**
+     * 获取线程详细信息，支持栈深度限制
+     *
+     * @param thread 待检查的线程
+     * @param maxStackElements 最大栈元素数量，0 或负数表示不限制
+     * @return 包含线程名、状态、ID、优先级、栈信息的字符串
+     */
+    public static String getThreadInfo(Thread thread, int maxStackElements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Thread[name=").append(thread.getName());
         sb.append(", id=").append(thread.getId());
@@ -132,8 +143,13 @@ public final class ThreadUtils {
         StackTraceElement[] stackTrace = thread.getStackTrace();
         if (stackTrace.length > 0) {
             sb.append("\n  Stack:");
-            for (StackTraceElement element : stackTrace) {
-                sb.append("\n    at ").append(element);
+            int limit = (maxStackElements > 0 && stackTrace.length > maxStackElements)
+                    ? maxStackElements : stackTrace.length;
+            for (int i = 0; i < limit; i++) {
+                sb.append("\n    at ").append(stackTrace[i]);
+            }
+            if (maxStackElements > 0 && stackTrace.length > maxStackElements) {
+                sb.append("\n    ... and ").append(stackTrace.length - maxStackElements).append(" more");
             }
         }
         return sb.toString();
