@@ -27,10 +27,30 @@ public class LambdaUtils {
             // 利用jdk的SerializedLambda 解析方法引用
             java.lang.invoke.SerializedLambda serializedLambda = (SerializedLambda) method.invoke(func);
             String getter = serializedLambda.getImplMethodName();
-            return BeanUtils.getFieldNameByGetter(getter);
+            return extractFieldName(getter);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 从 getter 方法名推导属性名
+     * @param getter getter方法名，如 getAge, isOk, getUserName
+     * @return 属性名，如 age, isOk, userName
+     */
+    private static String extractFieldName(String getter) {
+        if (getter == null || getter.length() < 3) {
+            return null;
+        }
+        // 处理 isXxx 开头的情况（如 isOk -> isOk）
+        if (getter.startsWith("is") && Character.isUpperCase(getter.charAt(2))) {
+            return getter;
+        }
+        // 处理 getXxx 开头的情况（如 getAge -> age, getUserName -> userName）
+        if (getter.startsWith("get") && Character.isUpperCase(getter.charAt(3))) {
+            return Character.toLowerCase(getter.charAt(3)) + getter.substring(4);
+        }
+        return null;
     }
 
     /**

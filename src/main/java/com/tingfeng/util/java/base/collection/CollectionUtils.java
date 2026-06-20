@@ -16,7 +16,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * @author huitoukest
+ * 集合操作工具类
  */
 public class CollectionUtils {
 
@@ -149,6 +149,42 @@ public class CollectionUtils {
     }
 
     /**
+     * 将集合用指定分隔符拼接成字符串
+     *
+     * @param collection 数据源
+     * @param separator  分隔符，如果为 null 则使用空字符串
+     * @param distinct   是否去重
+     * @return 拼接后的字符串
+     */
+    public static String join(Collection collection, String separator, boolean distinct) {
+        if (collection == null || collection.size() < 1) {
+            return "";
+        }
+        String symbol = separator == null ? "" : separator;
+        Collection targetCollection = collection;
+        if (distinct) {
+            targetCollection = new ArrayList<>(new LinkedHashSet(collection));
+        }
+        Iterator i = targetCollection.iterator();
+        if (!i.hasNext()) {
+            return "";
+        }
+        boolean isAppend = symbol.length() > 0;
+        return StringUtils.doAppend(sb -> {
+            for (; ; ) {
+                Object e = i.next();
+                sb.append(e);
+                if (!i.hasNext()) {
+                    return sb.toString();
+                }
+                if (isAppend) {
+                    sb.append(symbol);
+                }
+            }
+        });
+    }
+
+    /**
      * obj是否在objects中
      *
      * @param objects
@@ -156,7 +192,7 @@ public class CollectionUtils {
      * @return
      */
     public static boolean isContain(Collection<?> objects, Object obj) {
-        return objects.contains(obj);
+        return objects != null && objects.contains(obj);
     }
 
     /**
@@ -170,6 +206,9 @@ public class CollectionUtils {
      * @return
      */
     public static <A, B, T> boolean isContainAny(Collection<A> objectsA, Collection<B> objectsB, Function<A, T> aToTarget, Function<B, T> bToTarget) {
+        if (objectsA == null || objectsB == null) {
+            return false;
+        }
         List<T> listA = objectsA.stream().map(aToTarget).collect(Collectors.toList());
         Set<T> setB = objectsB.stream().map(bToTarget).collect(Collectors.toSet());
         return null != listA.stream().filter(it -> setB.contains(it)).findFirst().orElse(null);
@@ -239,6 +278,9 @@ public class CollectionUtils {
      * @return
      */
     public static <T, E> boolean eq(List<T> listA, List<E> listB, BiFunction<T, E, Boolean> eqFunc) {
+        if (listA == null || listB == null) {
+            return listA == listB;
+        }
         int size = listA.size();
         if (size != listB.size()) {
             return false;
@@ -260,6 +302,9 @@ public class CollectionUtils {
      * @return
      */
     public static <T> boolean eq(Set<T> a, Set<T> b) {
+        if (a == null || b == null) {
+            return a == b;
+        }
         int size = a.size();
         if (size != b.size()) {
             return false;
@@ -288,6 +333,9 @@ public class CollectionUtils {
      * @return
      */
     public static <T> List<List<T>> split(List<T> list, int groupSize) {
+        if (list == null) {
+            return Collections.emptyList();
+        }
         List<List<T>> reList = new ArrayList<>();
         int listSize = list.size();
         int i = 0;
@@ -473,6 +521,9 @@ public class CollectionUtils {
      * @param <T> 容器中返回类型
      */
     public static <S,T> List<T> getList(Collection<S> collection,Function<S,T> mapper){
+        if (collection == null) {
+            return Collections.emptyList();
+        }
         return collection.stream()
                 .map(mapper)
                 .collect(Collectors.toList());
@@ -486,6 +537,9 @@ public class CollectionUtils {
      * @param <V> 返回的Map中value的类型
      */
     public static <K,V> Map<K,V> toMap(Collection<V> collection,Function<V,K> keyMapper){
+        if (collection == null) {
+            return Collections.emptyMap();
+        }
         return collection.stream().collect(Collectors.toMap(keyMapper, Function.identity(),(a,b) -> b));
     }
 
@@ -545,6 +599,9 @@ public class CollectionUtils {
      * @return 打乱顺序的新List
      */
     public static  <T> List<T> shuffle(List<T> list,int shuffleCount) {
+        if (list == null) {
+            return Collections.emptyList();
+        }
         int size = list.size();
         int[] newIndexes = new int[size];
         for (int i = 0; i < newIndexes.length; i++) {

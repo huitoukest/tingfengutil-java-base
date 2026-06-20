@@ -1,10 +1,13 @@
 package com.tingfeng.util.java.base.io;
 
+import com.tingfeng.util.java.base.bean.BeanUtils;
+import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
+import com.tingfeng.util.java.base.bean.copier.BeanCopier;
+import com.tingfeng.util.java.base.bean.copier.MapValueProvider;
 import com.tingfeng.util.java.base.io.base.CSVBatchReadParam;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.lang.base.ConvertI;
 import com.tingfeng.util.java.base.lang.inter.voidfunction.FunctionVOne;
-import com.tingfeng.util.java.base.bean.BeanUtils;
 import com.tingfeng.util.java.base.lang.ObjectUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 
@@ -206,14 +209,14 @@ public class CSVUtil {
                    headers[0][i] = trimQuote(headers[0][i], qc);
                }
            }
-           Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter();
-           if(beanConverter == null){
-               if(beanCls.isAssignableFrom(Map.class)){
-                   beanConverter = (Function<String[], T>) createMapConverter(headers[0]);
-               }else {
-                   beanConverter = BeanUtils.createBeanConverter(headers[0], beanCls, null);
-               }
-           }
+Function<String[], T> beanConverter = csvBatchReadParam.getBeanConverter();
+            if(beanConverter == null){
+                if(beanCls.isAssignableFrom(Map.class)){
+                    beanConverter = (Function<String[], T>) createMapConverter(headers[0]);
+                }else {
+                    beanConverter = createBeanConverter(headers[0], beanCls);
+                }
+            }
            int contentOffset = csvBatchReadParam.isFirstLineIsHeaders() ? 1 : 0;
            if(lineNumber > contentOffset){
                String[] contentStr = line.split(separator);
@@ -269,6 +272,24 @@ public class CSVUtil {
                         map.put(headers[index],contents[index]);
                     });
             return map;
+        };
+    }
+
+    /**
+     * 根据 headers 和 beanClass 创建字符串数组到 bean 的转换器
+     * @param headers CSV 列名数组
+     * @param beanCls 目标 bean 类型
+     * @param <T> bean 类型
+     * @return 转换器函数
+     */
+    private static <T> Function<String[], T> createBeanConverter(String[] headers, Class<T> beanCls) {
+        return contents -> {
+            // 确保转换器已注册
+            ConverterRegistry.getInstance().resetConverter();
+            Map<String, String> map = new HashMap<>();
+            IntStream.range(0, Math.min(headers.length, contents.length))
+                    .forEach(index -> map.put(headers[index], contents[index]));
+            return BeanUtils.toBean(map, beanCls);
         };
     }
 

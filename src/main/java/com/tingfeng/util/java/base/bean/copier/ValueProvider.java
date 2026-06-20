@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.bean.copier;
 
 /**
  * 值提供者接口，用于从源对象获取属性值。
- * <p>
+ *
  * 配合 BeanCopier 使用，提供统一的属性值读取抽象。
  *
  * @author huitoukest

@@ -6,6 +6,36 @@ import java.util.List;
  * 转换器注册中心接口
  * <p>
  * 核心管理器：注册、移除、查找、构建
+ * <p>
+ * 自定义转换器注册示例：
+ * <pre>
+ * public class StringToIntegerConverter implements Converter&lt;String, Integer&gt; {
+ *     {@literal @}Override
+ *     public Integer convert(String source) {
+ *         return Integer.parseInt(source);
+ *     }
+ *     {@literal @}Override
+ *     public Class&lt;String&gt; getSourceType() { return String.class; }
+ *     {@literal @}Override
+ *     public Class&lt;Integer&gt; getTargetType() { return Integer.class; }
+ * }
+ * // 注册后自动生效于 BeanCopier 跨类型拷贝
+ * ConverterRegistry.getInstance().register(new StringToIntegerConverter());
+ * </pre>
+ * <p>
+ * 方法使用场景说明：
+ * <ul>
+ *   <li>register：注册自定义 Converter，注册后自动可用于类型转换</li>
+ *   <li>unregister：注销指定 Converter，同时移除其冒泡副本</li>
+ *   <li>clear：清空所有已注册的转换器（包含默认转换器）</li>
+ *   <li>resetConverter：重置为默认转换器配置（先清空再注册默认转换器）</li>
+ * </ul>
+ * <p>
+ * 转换方法说明：
+ * <ul>
+ *   <li>convert(source, targetType)：转换失败时抛出 ConverterException</li>
+ *   <li>convert(source, targetType, defaultValue)：转换失败时返回默认值，source 为 null 时也返回默认值</li>
+ * </ul>
  */
 public interface ConverterRegistry {
 

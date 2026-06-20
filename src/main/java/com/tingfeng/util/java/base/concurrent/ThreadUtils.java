@@ -2,10 +2,9 @@ package com.tingfeng.util.java.base.concurrent;
 
 /**
  * 线程操作工具类
- * <p>
+ *
  * 聚焦于线程级别的操作：sleep、join、interrupt
  * 内部统一处理 InterruptedException，不向上抛出
- * </p>
  */
 public final class ThreadUtils {
 
@@ -17,9 +16,13 @@ public final class ThreadUtils {
     /**
      * 睡眠指定毫秒数
      *
-     * @param mills 毫秒数，必须大于 0
+     * @param mills 毫秒数，必须大于等于 0
+     * @throws IllegalArgumentException mills 为负数时抛出
      */
     public static void sleep(long mills) {
+        if (mills < 0) {
+            throw new IllegalArgumentException("mills must not be negative");
+        }
         try {
             Thread.sleep(mills);
         } catch (InterruptedException e) {
@@ -31,10 +34,17 @@ public final class ThreadUtils {
     /**
      * 睡眠指定毫秒数和纳秒数
      *
-     * @param mills 毫秒数
+     * @param mills 毫秒数，必须大于等于 0
      * @param nanos 纳秒数 (0-999999)
+     * @throws IllegalArgumentException mills 为负数或 nanos 超出范围时抛出
      */
     public static void sleep(long mills, int nanos) {
+        if (mills < 0) {
+            throw new IllegalArgumentException("mills must not be negative");
+        }
+        if (nanos < 0 || nanos > 999999) {
+            throw new IllegalArgumentException("nanos must be between 0 and 999999");
+        }
         try {
             Thread.sleep(mills, nanos);
         } catch (InterruptedException e) {
@@ -111,6 +121,17 @@ public final class ThreadUtils {
      * @return 包含线程名、状态、ID、优先级、栈信息的字符串
      */
     public static String getThreadInfo(Thread thread) {
+        return getThreadInfo(thread, 0);
+    }
+
+    /**
+     * 获取线程详细信息，支持栈深度限制
+     *
+     * @param thread 待检查的线程
+     * @param maxStackElements 最大栈元素数量，0 或负数表示不限制
+     * @return 包含线程名、状态、ID、优先级、栈信息的字符串
+     */
+    public static String getThreadInfo(Thread thread, int maxStackElements) {
         StringBuilder sb = new StringBuilder();
         sb.append("Thread[name=").append(thread.getName());
         sb.append(", id=").append(thread.getId());
@@ -122,8 +143,13 @@ public final class ThreadUtils {
         StackTraceElement[] stackTrace = thread.getStackTrace();
         if (stackTrace.length > 0) {
             sb.append("\n  Stack:");
-            for (StackTraceElement element : stackTrace) {
-                sb.append("\n    at ").append(element);
+            int limit = (maxStackElements > 0 && stackTrace.length > maxStackElements)
+                    ? maxStackElements : stackTrace.length;
+            for (int i = 0; i < limit; i++) {
+                sb.append("\n    at ").append(stackTrace[i]);
+            }
+            if (maxStackElements > 0 && stackTrace.length > maxStackElements) {
+                sb.append("\n    ... and ").append(stackTrace.length - maxStackElements).append(" more");
             }
         }
         return sb.toString();

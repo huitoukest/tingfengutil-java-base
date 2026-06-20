@@ -94,4 +94,8 @@ public class User extends BaseUser{
     public void setUserName(String userName) {
         this.userName = userName;
     }
+
+    public List<String> getHomeNames() {
+        return homeNames;
+    }
 }

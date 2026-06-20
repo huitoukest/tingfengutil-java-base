@@ -3,10 +3,11 @@ package com.tingfeng.util.java.base.common.collection;
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Predicate;
 
 /**
  * 高性能读写列表，使用 ReadWriteLock 实现读并发、写独占。
- * <p>
+ *
  * 适用于多读少写场景：读操作可并发提升性能，写操作保持独占。
  *
  * @param <E> 元素类型
@@ -183,6 +184,27 @@ public class ReadWriteArrayList<E> extends AbstractList<E> implements List<E> {
                 modCount++;
             }
             return result;
+        } finally {
+            rwLock.writeLock().unlock();
+        }
+    }
+
+    @Override
+    public boolean removeIf(Predicate<? super E> filter) {
+        Objects.requireNonNull(filter);
+        rwLock.writeLock().lock();
+        try {
+            boolean modified = false;
+            for (int i = list.size() - 1; i >= 0; i--) {
+                if (filter.test(list.get(i))) {
+                    list.remove(i);
+                    modified = true;
+                }
+            }
+            if (modified) {
+                modCount++;
+            }
+            return modified;
         } finally {
             rwLock.writeLock().unlock();
         }

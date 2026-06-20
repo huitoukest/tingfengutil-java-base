@@ -16,9 +16,8 @@ import java.util.stream.Collectors;
 
 /**
  * 树结构操作工具类
- * <p>
+ *
  * 提供无状态的树遍历、转换等操作。复杂操作建议使用 {@link TreeHelper}
- * </p>
  */
 public final class TreeUtils {
 

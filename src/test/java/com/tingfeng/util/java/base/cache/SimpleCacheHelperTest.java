@@ -47,7 +47,7 @@ public class SimpleCacheHelperTest {
     }
 
     /**
-     * 测试 get 未命中返回 null
+     * 测试 get 未命中返回 null，null key 抛出异常
      */
     @Test
     public void testGetMiss() {
@@ -55,7 +55,13 @@ public class SimpleCacheHelperTest {
 
         cache.set("a", "1");
         Assert.assertNull(cache.get("nonexistent"));
-        Assert.assertNull(cache.get(null));
+        // null key should throw IllegalArgumentException
+        try {
+            cache.get(null);
+            Assert.fail("Expected IllegalArgumentException for null key");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(true);
+        }
     }
 
     /**

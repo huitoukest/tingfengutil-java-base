@@ -2,6 +2,7 @@ package com.tingfeng.util.java.base.collection.base;
 
 import com.tingfeng.util.java.base.lang.inter.collection.BufferConsumerCollection;
 
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -9,7 +10,8 @@ import java.util.concurrent.TimeUnit;
 public abstract class BaseTimeBufferConsumerCollection<T> implements BufferConsumerCollection<T> {
 
     private int checkInterval = 1;
-    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(1,Integer.MAX_VALUE,10, TimeUnit.SECONDS,new SynchronousQueue<>());
+    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(2, 10, 10, TimeUnit.SECONDS,
+            new LinkedBlockingQueue<>(100), new ThreadPoolExecutor.CallerRunsPolicy());
     /**
      * 检查的间隔时间，单位毫秒
      * @param checkInterval

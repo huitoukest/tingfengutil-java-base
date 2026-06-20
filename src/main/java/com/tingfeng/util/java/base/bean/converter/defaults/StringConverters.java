@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.bean.converter.defaults;
 
 import com.tingfeng.util.java.base.array.ArrayUtils;
-import com.tingfeng.util.java.base.bean.converter.ConverterConstants;
+import com.tingfeng.util.java.base.bean.converter.ConverterException;
 import com.tingfeng.util.java.base.bean.converter.ConverterRegistry;
 import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
 import com.tingfeng.util.java.base.bean.converter.StringConditionConverter;
@@ -15,14 +15,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
-import static com.tingfeng.util.java.base.lang.StringUtils.encodeURL;
-import static com.tingfeng.util.java.base.lang.StringUtils.toDecodeStringUrl;
 
 /**
  * String 类型转换器注册
@@ -140,7 +135,7 @@ public final class StringConverters {
                     try {
                         return new java.net.URL(s.trim());
                     } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
+                        throw new ConverterException("Failed to parse URL: " + s.trim(), e);
                     }
                 }
         ));

@@ -282,10 +282,9 @@ public final class TreeHelper<T, ID> {
 
     /**
      * 对树的子节点进行排序（递归排序所有层级）
-     * <p>
+     *
      * 返回一个新的 TreeHelper，所有层级的子节点都按 comparator 排序。
      * 本实例不受影响，保持不可变性。
-     * </p>
      *
      * @param comparator 比较器
      * @return 排序后的新 TreeHelper
@@ -379,6 +378,7 @@ public final class TreeHelper<T, ID> {
      * @param childrenMapper 子节点列表转换函数 (List&lt;T&gt; → List&lt;T&gt;)
      * @return 新的 TreeHelper
      */
+    @Deprecated
     public TreeHelper<T, ID> map(Function<T, T> nodeMapper,
                                  Function<List<T>, List<T>> childrenMapper) {
         throw new UnsupportedOperationException("map operation requires ID remapping which is not yet implemented");
@@ -393,6 +393,7 @@ public final class TreeHelper<T, ID> {
      *   - 输出：处理后的子节点列表
      * @return 新的 TreeHelper
      */
+    @Deprecated
     public TreeHelper<T, ID> filter(Predicate<T> predicate,
                                     BiFunction<T, List<T>, List<T>> childHandler) {
         throw new UnsupportedOperationException("filter with custom childHandler requires ID remapping which is not yet implemented");
@@ -409,6 +410,7 @@ public final class TreeHelper<T, ID> {
      * @param conflictHandler 当同一 ID 但节点内容冲突时的处理
      * @return 新的 TreeHelper
      */
+    @Deprecated
     public TreeHelper<T, ID> merge(TreeHelper<T, ID> other,
                                    BiPredicate<T, T> isSameNode,
                                    BinaryOperator<T> mergeNode,
@@ -419,6 +421,7 @@ public final class TreeHelper<T, ID> {
     /**
      * Subtract - 树差集
      */
+    @Deprecated
     public TreeHelper<T, ID> subtract(TreeHelper<T, ID> other,
                                       BiPredicate<T, T> isSameNode) {
         throw new UnsupportedOperationException("subtract operation requires ID remapping which is not yet implemented");
@@ -427,6 +430,7 @@ public final class TreeHelper<T, ID> {
     /**
      * Add - 追加合并
      */
+    @Deprecated
     public TreeHelper<T, ID> add(TreeHelper<T, ID> other) {
         throw new UnsupportedOperationException("add operation requires ID remapping which is not yet implemented");
     }
@@ -434,6 +438,7 @@ public final class TreeHelper<T, ID> {
     /**
      * Intersect - 交集
      */
+    @Deprecated
     public TreeHelper<T, ID> intersect(TreeHelper<T, ID> other,
                                         BiPredicate<T, T> isSameNode,
                                         BinaryOperator<T> mergeNode) {

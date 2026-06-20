@@ -4,12 +4,10 @@ import java.lang.reflect.Field;
 
 /**
  * 线程组工具类
- * <p>
+ *
  * 提供系统线程组和根线程组的获取
- * </p>
- * <p>
+ *
  * 注意：ThreadGroup 是较过时的 API，现代 Java 应用中几乎不需要直接操作线程组
- * </p>
  */
 public final class ThreadGroupUtils {
 

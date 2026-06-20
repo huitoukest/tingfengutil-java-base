@@ -4,7 +4,9 @@ import java.util.List;
 
 /**
  * 树节点定义
- * @param <ID>
+ *
+ * @param <T> 节点类型
+ * @param <ID> ID 类型
  */
 public interface TreeNode<T extends TreeNode,ID> {
     ID getId();

@@ -4,7 +4,6 @@ import java.util.*;
 
 /**
  * 排列组合工具
- * @author huitoukest
  */
 public class CombinationUtils {
     /**

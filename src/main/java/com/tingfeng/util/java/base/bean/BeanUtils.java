@@ -1,635 +1,788 @@
 package com.tingfeng.util.java.base.bean;
 
+import com.tingfeng.util.java.base.bean.base.CommonType;
 import com.tingfeng.util.java.base.bean.copier.BeanCopier;
+import com.tingfeng.util.java.base.bean.copier.BeanDesc;
 import com.tingfeng.util.java.base.bean.copier.CopyOptions;
 import com.tingfeng.util.java.base.bean.copier.MapValueProvider;
-import com.tingfeng.util.java.base.bean.base.BeanCopyFun;
-import com.tingfeng.util.java.base.bean.converter.Converter;
-import com.tingfeng.util.java.base.bean.converter.ConverterUtils;
-import com.tingfeng.util.java.base.lang.base.UnionKey;
-import com.tingfeng.util.java.base.lang.base.Tuple2;
-import com.tingfeng.util.java.base.lang.ObjectUtils;
-import com.tingfeng.util.java.base.lang.LambdaUtils;
-import com.tingfeng.util.java.base.lang.StringUtils;
+import com.tingfeng.util.java.base.bean.copier.PropertyResult;
+import com.tingfeng.util.java.base.bean.copier.ValueProvider;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
-import com.tingfeng.util.java.base.cache.SimpleCacheHelper;
-import com.tingfeng.util.java.base.lang.inter.PropertyFunction;
-import com.tingfeng.util.java.base.lang.inter.consumer.ConsumerTwo;
-import com.tingfeng.util.java.base.lang.inter.returnfunction.Function2;
-import com.tingfeng.util.java.base.lang.support.ReflectUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import lombok.extern.slf4j.Slf4j;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
+ * Bean工具门面类，提供统一的属性拷贝与对象转换入口。
+ * <p>
+ * 核心方法：
+ * <ul>
+ *   <li>{@link #copyProperties(Object, Object)} - 对象间属性拷贝</li>
+ *   <li>{@link #toBean(Object, Class)} - 对象转换为目标类型实例</li>
+ *   <li>{@link #toBean(ValueProvider, Class)} - 从值提供者创建Bean实例</li>
+ * </ul>
+ *
  * @author huitoukest
- * 做一个方法，可以将一个JavaBean风格对象的属性值拷贝到另一个对象的同名属性中 (如果不存在同名属性的就不拷贝）
- * @version 20180917
- * @deprecated 请使用 {@link BeanUtil} 替代
- **/
-@Deprecated
-public class BeanUtils {
-    private static final Log logger = LogFactory.getLog(BeanUtils.class);
+ */
+@Slf4j
+public final class BeanUtils {
 
     /**
-     * 数量固定的属性资源缓存,K = 拷贝的目标类Class
-     * BEAN_COPY_METHOD_CACHE = Map[拷贝的来源类Class,Map[属性名称,[来源对象的此属性读取方法,目标对象的此属性赋值方法]]];
+     * 私有构造器，禁止外部实例化
      */
-    private static SimpleCacheHelper<Class, Map<Class,Map<String, Tuple2<Method, Method>>>> BEAN_COPY_METHOD_CACHE = new SimpleCacheHelper<>(512);
+    private BeanUtils() {
+    }
+
+    // ========== copyProperties ==========
 
     /**
-     * 数量固定的属性资源缓存,UnionKey = 拷贝的目标类Class,拷贝的来源类Class
-     * BEAN_COPY_FUN_CACHE = Map[属性名称,[来源对象的此属性读取函数,目标对象的此属性赋值函数]];
-     */
-    private static SimpleCacheHelper<UnionKey, Map<String, BeanCopyFun>> BEAN_COPY_FUN_CACHE = new SimpleCacheHelper<>(512);
-
-    /**
-     * 数量固定的属性资源缓存,UnionKey = 拷贝的目标类Class,拷贝的来源类Class
-     * BEAN_COPY_Field_CACHE = Map[属性名称,[来源对象的此属性,目标对象的此属]];
-     */
-    private static SimpleCacheHelper<UnionKey, Map<String, Tuple2<Field,Field>>> BEAN_COPY_Field_CACHE = new SimpleCacheHelper<>(512);
-
-    /**
-     * 注意：不copy类型是final或者static的属性
-     * 返回一个拷贝之后的新的数组,通过方法和属性赋值新建对象来达到赋值的目的,是浅复制;
-     * 深度拷贝基础属性，浅拷贝数组和集合，优先通过getter和setter读取属性，如果没有getter和setter则直接读取属性
+     * 将source对象的属性拷贝到target对象（浅拷贝）。
+     * <p>
+     * source或target为null时直接返回，不抛异常。
      *
-     * @param sourceList
-     * @param targetClass
-     * @param exceptFields 需要排除的字段
-     * @param <T>
-     * @return
-     * @deprecated 请使用 {@link BeanUtil#toList(List, Class, CopyOptions)} 替代
+     * @param source 源对象
+     * @param target 目标对象
      */
-    @Deprecated
-    public static <T> List<T> copyListProperties(List<? extends Object> sourceList, Class<T> targetClass, String... exceptFields) {
-        CopyOptions options = null;
-        if (exceptFields != null && exceptFields.length > 0) {
-            options = CopyOptions.create().setIgnoreProperties(Arrays.asList(exceptFields));
-        }
-        return BeanUtil.toList(sourceList, targetClass, options);
+    public static void copyProperties(Object source, Object target) {
+        BeanCopier.copy(source, target, null);
     }
 
     /**
-     * 注意：不copy类型是final或者static的属性
-     * 默认copy符合java bean标准的属性
+     * 将source对象的属性拷贝到target对象，支持配置选项（浅拷贝）。
+     * <p>
+     * source或target为null时直接返回，不抛异常。
      *
-     * @param target
-     * @param source
-     * @param exceptFields 对于来源对象中的某些属性不进行拷贝
-     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object, CopyOptions)} 替代
+     * @param source  源对象
+     * @param target  目标对象
+     * @param options 拷贝选项（可为null，使用默认选项）
      */
-    @Deprecated
-    public static void copyProperties(Object target, Object source, String... exceptFields) {
-        CopyOptions options = null;
-        if (exceptFields != null && exceptFields.length > 0) {
-            options = CopyOptions.create().setIgnoreProperties(Arrays.asList(exceptFields));
-        }
-        BeanUtil.copyProperties(source, target, options);
-    }
-
-    /**
-     * copy bean的属性
-     *
-     * @param target
-     * @param source
-     * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
-     *                           true = 仅仅 copy 符合bean标准的属性
-     * @param exceptFields
-     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object, CopyOptions)} 替代
-     */
-    @Deprecated
-    public static void copyProperties(Object target, Object source, boolean strictBeanCopyMode, String... exceptFields) {
-        List<String> list = null;
-        if (exceptFields != null) {
-            list = Arrays.asList(exceptFields);
-        }
-        copyProperties(target, source, strictBeanCopyMode, list);
-    }
-
-    /**
-     * copy bean的属性
-     *
-     * @param target
-     * @param source
-     * @param strictBeanCopyMode 是否采用严格的bean copy 模式,false = 会尝试copy 没有getter、setter的属性字段；
-     *                           true = 仅仅 copy 符合bean标准的属性
-     * @param exceptFields
-     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object, CopyOptions)} 替代
-     */
-    @Deprecated
-    public static void copyProperties(Object target, Object source, boolean strictBeanCopyMode, Collection<String> exceptFields) {
-        CopyOptions options = CopyOptions.create().setIgnoreProperties(exceptFields);
-        if (!strictBeanCopyMode) {
-            options.setForceFieldAccess(true);
-        }
-        BeanUtil.copyProperties(source, target, options);
-    }
-
-    /**
-     * 注意：
-     * 1. 不copy类型是final或者static的属性
-     * 2. 判断和过滤的优先级如下 exceptFields &gt; predicate &gt; mapper ;
-     * 注意： 通过反射机制 属性机制copy，效率约标准bean内省的50%性能，需要高性能请使用另一个通过 PropertyDescriptor实现的copyProperties方法
-     * 浅复制普通Bean对象,,通过方法和属性赋值新建对象来达到赋值的目的;如果对象中存在集合/数组那么会执行浅复制,其它非基础数据的对象,会执行深度复制,将会自动对它们也进行深度拷贝;
-     * 如果存在setter方法,将优先使用setter和getter方法,如果不存在,那么直接使用属性操作;
-     *
-     * @param target       目标对象
-     * @param source       源对象
-     * @param predicate    传入源对象的 Tuple2[字段,字段值] ; 返回是否进行拷贝true or false; null 时不生效
-     * @param mapper       传入源对象的 Tuple2[字段,字段值] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
-     * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
-     */
-    public static <T> void copyProperties(Object target, Object source, Predicate<Tuple2<Field, Object>> predicate, Function<Tuple2<Field, Object>, Object> mapper, String... exceptFields) {
-        Class<?> sourceClz = source.getClass();
-        Class<?> targetClz = target.getClass();
-        Map<String, Tuple2<Field, Field>> beanCopyFieldMap = getBeanCopyFieldMap(targetClz, sourceClz, true);
-        Map<String, BeanCopyFun> beanCopyFunMap = getBeanCopyFunMap(targetClz, sourceClz, true);
-        Set<String> exceptSet = null;
-        if (exceptFields != null) {
-            exceptSet = Arrays.asList(exceptFields).stream().collect(Collectors.toSet());
-        }
-        Set<Map.Entry<String, Tuple2<Field, Field>>> entries = beanCopyFieldMap.entrySet();
-        try {
-            for (Map.Entry<String, Tuple2<Field, Field>> entry : entries) {
-                if (exceptSet != null && exceptSet.contains(entry.getKey())) {
-                    continue;
-                }
-                BeanCopyFun beanCopyFun = beanCopyFunMap.get(entry.getKey());
-                Object value = beanCopyFun.read(source);
-                Tuple2 tuple2 = null;
-                if (predicate == null || predicate.test(tuple2 = new Tuple2(entry.getValue().get_1(), value))) {
-                    if (mapper != null) {
-                        value = mapper.apply(tuple2);
-                    }
-                    beanCopyFun.write(target, value);
-                }
-            }
-        }catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e){
-            throw new BaseException(e);
-        }
-    }
-
-        /**
-     * 返回拷贝属性时，可用户的 函数成对描述
-     * @param targetCls
-     * @param sourceCls
-     * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
-     * @return
-     * @deprecated 保留原实现，请使用 {@link BeanCopier} 替代
-     */
-    @Deprecated
-    public static Map<String, Tuple2<Field, Field>> getBeanCopyFieldMap(Class targetCls, Class sourceCls, boolean useCache) {
-        Map<String, Tuple2<Field, Field>> map = null;
-        UnionKey unionKey = new UnionKey(targetCls,sourceCls);
-        if (useCache) {
-            map = BEAN_COPY_Field_CACHE.get(unionKey);
-            if(map == null){
-                map = getBeanCopyFieldMap(targetCls,sourceCls,false);
-                BEAN_COPY_Field_CACHE.set(unionKey,map);
-            }
-        }else {
-            // 得到Class对象所表征的类的所有属性(包括私有属性)
-            List<Field> fieldsS = ReflectUtils.getFields(sourceCls, false, false, true, true);
-            List<Field> fieldsT = ReflectUtils.getFields(targetCls, false, false, true, true);
-            Map<String, Field> sourceFieldNameMap = fieldsS.stream()
-                    .peek(it -> it.setAccessible(true))
-                    .collect(Collectors.toMap(Field::getName, Function.identity(), (a, b) -> b));
-            return fieldsT.stream()
-                    .peek(targetField -> targetField.setAccessible(true))
-                    .filter(targetField -> sourceFieldNameMap.get(targetField.getName()) != null)
-                    .map(targetField -> new Tuple2<Field,Field>(sourceFieldNameMap.get(targetField.getName()), targetField))
-                    .collect(Collectors.toMap(it -> it.get_1().getName(),Function.identity()));
-        }
-        return map;
-    }
-
-    /**
-     * 返回拷贝属性时，可用户的 函数成对描述
-     * @param targetCls
-     * @param sourceCls
-     * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
-     * @return
-     * @deprecated 保留原实现，请使用 {@link BeanCopier} 替代
-     */
-    @Deprecated
-    public static Map<String, BeanCopyFun> getBeanCopyFunMap(Class targetCls, Class sourceCls, boolean useCache) {
-        Map<String, BeanCopyFun> map = null;
-        UnionKey unionKey = new UnionKey(targetCls,sourceCls);
-        if (useCache) {
-            map = BEAN_COPY_FUN_CACHE.get(unionKey);
-            if(map == null){
-                map = getBeanCopyFunMap(targetCls,sourceCls,false);
-                BEAN_COPY_FUN_CACHE.set(unionKey,map);
-            }
-        }else {
-            // 得到Class对象所表征的类的所有属性(包括私有属性)
-            List<Field> fieldsS = ReflectUtils.getFields(sourceCls, false, false, true, true);
-            List<Field> fieldsT = ReflectUtils.getFields(targetCls, false, false, true, true);
-
-            Map<String, Tuple2<Method, Method>> propertyDescriptorMap = getBeanCopyPropertyDescriptorMap(targetCls, sourceCls);
-            Map<String, Field> sourceFieldNameMap = fieldsS.stream()
-                    .peek(it -> it.setAccessible(true))
-                    .collect(Collectors.toMap(Field::getName, Function.identity(), (a, b) -> b));
-            return fieldsT.stream().map(targetField -> {
-                targetField.setAccessible(true);
-                String name = targetField.getName();
-                //优先使用getter与setter方法
-                Tuple2<Method, Method> methodTuple2 = propertyDescriptorMap.get(name);
-                if (methodTuple2 != null) {
-                    return new BeanCopyFun() {
-                        @Override
-                        public String getName() {
-                            return name;
-                        }
-
-                        @Override
-                        public Object read(Object srcObj)  throws IllegalAccessException, InvocationTargetException, IllegalArgumentException{
-                            return methodTuple2.get_1().invoke(srcObj);
-                        }
-
-                        @Override
-                        public Object write(Object targetObj, Object value)  throws IllegalAccessException, InvocationTargetException, IllegalArgumentException{
-                            return methodTuple2.get_2().invoke(targetObj, value);
-                        }
-                    };
-                } else {
-                    // 处理没有getter/setter方法的公共字段
-                    Field srcField = sourceFieldNameMap.get(name);
-                    if (srcField == null) {
-                        return null;
-                    }
-                    srcField.setAccessible(true);
-                    return new BeanCopyFun() {
-                        @Override
-                        public String getName() {
-                            return name;
-                        }
-
-                        @Override
-                        public Object read(Object srcObj) throws IllegalAccessException {
-                            return srcField.get(srcObj);
-                        }
-
-                        @Override
-                        public Object write(Object targetObj, Object value) throws IllegalAccessException {
-                            targetField.set(targetObj, value);
-                            return null;
-                        }
-                    };
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toMap(BeanCopyFun::getName, Function.identity()));
-        }
-        return map;
-    }
-
-    private static  Object getValue(Object src,Method method){
-        try {
-            return method.invoke(src);
-        }catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 注意：不copy类型是final或者static的属性
-     * 默认copy符合java bean标准的属性
-     *
-     * @param target
-     * @param source
-     * @deprecated 请使用 {@link BeanUtil#copyProperties(Object, Object)} 替代
-     */
-    @Deprecated
-    public static void copyProperties(Object target, Object source) {
-        BeanUtil.copyProperties(source, target);
-    }
-
-    /**
-     * 通过遍历Bean属性的方式来初始化map,适用于bean属性很少的情况;
-     * map中的key支持a.b.c的方式
-     * 注意:这种方式不支持自我调用的bean(即a中存在a的引用的情况)的自动赋值;
-     *
-     * @param cls 目标类型
-     * @param map map中保存的是当前对象的属性和值得键值对
-     * @deprecated 请使用 {@link BeanUtil#toBean(ValueProvider, Class)} 替代
-     */
-    @Deprecated
-    public static <T> T getBeanByMap(Class<T> cls, Map<String, ?> map) {
-        return BeanUtil.toBean(new MapValueProvider(map), cls);
-    }
-
-    /**
-     * 通过遍历Bean属性的方式来初始化map,适用于bean属性很少的情况;
-     * map中的key支持a.b.c的方式
-     * 注意:这种方式不支持自我调用的bean(即a中存在a的引用的情况)的自动赋值;
-     *
-     * @param t   目标对象
-     * @param map map中保存的是当前对象的属性和值得键值对
-     * @deprecated 请使用 {@link BeanCopier#copyFromProvider} 替代
-     */
-    @Deprecated
-    public static <T> T getBeanByMap(T t, Map<String, ?> map) {
-        BeanCopier.copyFromProvider(new MapValueProvider(map), t, null);
-        return t;
-    }
-
-    /**
-     * 封装系统的Introspector#getBeanInfo，默认带有缓存
-     *
-     * @param cls
-     * @param <T>
-     * @return
-     */
-    public static <T> BeanInfo getBeanInfo(Class<T> cls) {
-        return ObjectUtils.getValue(null, () -> Introspector.getBeanInfo(cls));
-    }
-
-    /**
-     * 通过Introspector机制来实现属性的拷贝，效率更高,但是要求符合Bean规范；走getter setter拷贝值;
-     * 浅复制普通Bean对象
-     *
-     * @param target       目标对象
-     * @param source       源对象
-     * @param predicate    传入源对象的 Tuple2[字段名称,字段值 ] ; 返回是否进行拷贝true or false; null 时不生效
-     * @param mapper       传入源对象的 Tuple2[字段名称,字段值 ] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
-     * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
-     */
-    public static void copyProperties(Object target, Object source, Predicate<Tuple2<String, Object>> predicate, Function<Tuple2<String, Object>, Object> mapper, Collection<String> exceptFields) {
-        Map<String, Tuple2<Method, Method>> map = getBeanCopyMethodMap(target.getClass(), source.getClass(), true);
-        try {
-            Set<String> exceptSet = null;
-            if (exceptFields != null && !(exceptFields instanceof Set)) {
-                exceptSet = exceptFields.stream().collect(Collectors.toSet());
-            }
-            Set<Map.Entry<String, Tuple2<Method, Method>>> entries = map.entrySet();
-            for (Map.Entry<String, Tuple2<Method, Method>> entry : entries) {
-                if (exceptSet != null && exceptSet.contains(entry.getKey())) {
-                    continue;
-                }
-                Method srcMethod = entry.getValue().get_1();
-                Object value = srcMethod.invoke(source, null);
-                Tuple2<String, Object> tuple2 = null;
-                if (predicate == null || predicate.test(tuple2 = new Tuple2<>(entry.getKey(), value))) {
-                    if (mapper != null) {
-                        value = mapper.apply(tuple2);
-                    }
-                    entry.getValue().get_2().invoke(target, value);
-                }
-            }
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            throw new BaseException(e);
-        }
-    }
-
-    /**
-     *
-     * 浅复制普通Bean对象, 优先使用标准getter与setter方法，若没有则尝试读写取属性赋值
-     * @param target       目标对象
-     * @param source       源对象
-     * @param predicate    传入源对象的 Tuple2[字段名称,字段值 ] ; 返回是否进行拷贝true or false; null 时不生效
-     * @param mapper       传入源对象的 Tuple2[字段名称,字段值 ] ; 返回转换后的值，将使用此值拷贝到目标对象对应的字段中; null 时不生效
-     * @param exceptFields 对于来源对象中的某些属性不进行拷贝； 优先级高于predicate
-     * @deprecated 请使用 {@link BeanCopier} 替代
-     */
-    @Deprecated
-    public static void copyPropertiesNotStrict(Object target, Object source, Predicate<Tuple2<String, Object>> predicate, Function<Tuple2<String, Object>, Object> mapper, Collection<String> exceptFields){
-        // 简化逻辑，委托到 BeanCopier
-        CopyOptions options = CopyOptions.create().setForceFieldAccess(true).setIgnoreProperties(exceptFields);
+    public static void copyProperties(Object source, Object target, CopyOptions options) {
         BeanCopier.copy(source, target, options);
     }
 
+    // ========== toBean ==========
+
     /**
-     * 返回拷贝属性时，可用户的PropertyDescriptor成对描述
-     * @param targetCls
-     * @param sourceCls
-     * @param useCache 是否使用缓存 (缓存了bean的读写方法等描述对象)
-     * @return
-     * @deprecated 保留原实现，请使用 {@link BeanCopier} 替代
+     * 将source对象转换为targetClass类型的实例。
+     * <p>
+     * 要求targetClass有无参构造器。
+     * <p>
+     * 如果source为null，直接返回null，不抛异常。
+     *
+     * @param source      源对象
+     * @param targetClass 目标类型
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，source为null时返回null
+     * @throws BaseException 如果目标类无法实例化
      */
-    @Deprecated
-    public static Map<String, Tuple2<Method, Method>> getBeanCopyMethodMap(Class targetCls, Class sourceCls, boolean useCache) {
-        Map<String, Tuple2<Method, Method>> map = null;
-        if (useCache) {
-            map = getWithBeanCopyByMultiKey(targetCls,sourceCls);
-            if (map == null) {
-                map = getBeanCopyPropertyDescriptorMap(targetCls,sourceCls);
-                putWithBeanCopyByMultiKey(targetCls,sourceCls, map);
-            }
-        } else {
-            map = getBeanCopyPropertyDescriptorMap(targetCls,sourceCls);
+    public static <T> T toBean(Object source, Class<T> targetClass) {
+        if (source == null) {
+            return null;
         }
-        return map;
+        try {
+            T target = targetClass.getDeclaredConstructor().newInstance();
+            BeanCopier.copy(source, target, null);
+            return target;
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
     }
 
-    private static Map<String, Tuple2<Method, Method>> getWithBeanCopyByMultiKey(Class targetClass,Class sourceClass){
-        Map<Class, Map<String, Tuple2<Method, Method>>> classMapMap = BEAN_COPY_METHOD_CACHE.get(targetClass);
-        if(classMapMap != null){
-            return classMapMap.get(sourceClass);
+    /**
+     * 将source对象转换为targetClass类型的实例，支持配置选项。
+     * <p>
+     * 要求targetClass有无参构造器。
+     * <p>
+     * 如果source为null，直接返回null，不抛异常。
+     *
+     * @param source      源对象
+     * @param targetClass 目标类型
+     * @param options     拷贝选项（可为null，使用默认选项）
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，source为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Object source, Class<T> targetClass, CopyOptions options) {
+        if (source == null) {
+            return null;
+        }
+        try {
+            T target = targetClass.getDeclaredConstructor().newInstance();
+            BeanCopier.copy(source, target, options);
+            return target;
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     * 将source对象转换为targetClass类型的实例，使用指定的构造器和参数。
+     * <p>
+     * 如果source为null，直接返回null，不抛异常。
+     *
+     * @param source      源对象
+     * @param constructor 目标类型的构造器（非null）
+     * @param args        构造器参数
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，source为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Object source, Constructor<T> constructor, Object... args) {
+        return toBean(source, constructor, null, args);
+    }
+
+    /**
+     * 将source对象转换为targetClass类型的实例，使用指定的构造器和参数，支持配置选项。
+     * <p>
+     * 如果source为null，直接返回null，不抛异常。
+     *
+     * @param source      源对象
+     * @param constructor 目标类型的构造器（非null）
+     * @param options     拷贝选项（可为null，使用默认选项）
+     * @param args        构造器参数
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，source为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Object source, Constructor<T> constructor, CopyOptions options, Object... args) {
+        if (source == null) {
+            return null;
+        }
+        try {
+            T target = constructor.newInstance(args);
+            BeanCopier.copy(source, target, options);
+            return target;
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    // ========== toBean from ValueProvider ==========
+
+    /**
+     * 从ValueProvider创建targetClass类型的实例。
+     * <p>
+     * 要求targetClass有无参构造器。
+     * <p>
+     * 如果provider或targetClass为null，直接返回null，不抛异常。
+     *
+     * @param provider    值提供者
+     * @param targetClass 目标类型
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，provider或targetClass为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(ValueProvider<?> provider, Class<T> targetClass) {
+        if (provider == null || targetClass == null) {
+            return null;
+        }
+        try {
+            T target = targetClass.getDeclaredConstructor().newInstance();
+            BeanCopier.copyFromProvider(provider, target, null);
+            return target;
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    /**
+     * 从ValueProvider创建targetClass类型的实例，支持配置选项。
+     * <p>
+     * 要求targetClass有无参构造器。
+     * <p>
+     * 如果provider或targetClass为null，直接返回null，不抛异常。
+     *
+     * @param provider    值提供者
+     * @param targetClass 目标类型
+     * @param options     拷贝选项（可为null，使用默认选项）
+     * @param <T>         目标类型泛型
+     * @return 目标类型实例，provider或targetClass为null时返回null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(ValueProvider<?> provider, Class<T> targetClass, CopyOptions options) {
+        if (provider == null || targetClass == null) {
+            return null;
+        }
+        try {
+            T target = targetClass.getDeclaredConstructor().newInstance();
+            BeanCopier.copyFromProvider(provider, target, options);
+            return target;
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new BaseException(e);
+        }
+    }
+
+    // ========== toBean from Map ==========
+
+    /**
+     * 从 Map 创建 Bean 实例（便捷方法，内部包装 MapValueProvider）。
+     * <p>
+     * 等价于 {@code toBean(new MapValueProvider(map), targetClass)}。
+     *
+     * @param map         Map 数据源
+     * @param targetClass 目标类型
+     * @param <T>        目标类型泛型
+     * @return 目标类型实例，map 或 targetClass 为 null 时返回 null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Map<String, ?> map, Class<T> targetClass) {
+        if (map == null || targetClass == null) {
+            return null;
+        }
+        return toBean(new MapValueProvider(map), targetClass);
+    }
+
+    /**
+     * 从 Map 创建 Bean 实例，支持配置选项。
+     *
+     * @param map         Map 数据源
+     * @param targetClass 目标类型
+     * @param options     拷贝选项
+     * @param <T>        目标类型泛型
+     * @return 目标类型实例，map 或 targetClass 为 null 时返回 null
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <T> T toBean(Map<String, ?> map, Class<T> targetClass, CopyOptions options) {
+        if (map == null || targetClass == null) {
+            return null;
+        }
+        return toBean(new MapValueProvider(map), targetClass, options);
+    }
+
+    // ========== toMap ==========
+
+    /**
+     * 将bean对象转换为Map（包含所有非null属性）。
+     * <p>
+     * 如果bean为null，返回空Map。
+     * <p>
+     * 等同于 {@code toMap(bean, (String[]) null)}。
+     *
+     * @param bean 源对象
+     * @return 属性名-属性值的Map
+     */
+    public static Map<String, Object> toMap(Object bean) {
+        return BeanCopier.toMap(bean, null);
+    }
+
+    /**
+     * 将bean对象转换为Map，可忽略指定属性。
+     * <p>
+     * 如果bean为null，返回空Map。
+     *
+     * @param bean              源对象
+     * @param ignoreProperties  要忽略的属性名（可变参数，可为null或空数组）
+     * @return 属性名-属性值的Map
+     * @deprecated 从 V5 开始废弃。推荐使用 {@link #toMap(Object)} 配合
+     *             {@link com.tingfeng.util.java.base.bean.copier.CopyOptions#setIgnoreProperties(Collection)} 的方式。
+     *             示例代码：
+     *             CopyOptions options = CopyOptions.create()
+     *                 .setIgnoreProperties(Arrays.asList("field1", "field2"));
+     *             Map&lt;String, Object&gt; map = BeanCopier.toMap(bean, options);
+     *             或直接使用 {@link #toMap(Object)} 后手动过滤。
+     */
+    @Deprecated
+    public static Map<String, Object> toMap(Object bean, String... ignoreProperties) {
+        CopyOptions options = null;
+        if (ignoreProperties != null && ignoreProperties.length > 0) {
+            options = CopyOptions.create().setIgnoreProperties(Arrays.asList(ignoreProperties));
+        }
+        return BeanCopier.toMap(bean, options);
+    }
+
+    // ========== toList ==========
+
+    /**
+     * 批量拷贝：将List中的元素转换为目标类型的List。
+     * <p>
+     * 要求targetClass有无参构造器。
+     * <p>
+     * 如果sources为null或空列表，返回空列表，不抛异常。
+     *
+     * @param sources     源列表
+     * @param targetClass 目标类型
+     * @param <S>        源类型泛型
+     * @param <T>        目标类型泛型
+     * @return 目标类型的List，sources为null或空时返回空List
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <S, T> List<T> toList(List<S> sources, Class<T> targetClass) {
+        if (sources == null || sources.isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (S source : sources) {
+            result.add(toBean(source, targetClass));
+        }
+        return result;
+    }
+
+    /**
+     * 批量拷贝：将List中的元素转换为目标类型的List，支持配置选项。
+     * <p>
+     * 要求targetClass有无参构造器。
+     * <p>
+     * 如果sources为null或空列表，返回空列表，不抛异常。
+     *
+     * @param sources     源列表
+     * @param targetClass 目标类型
+     * @param options     拷贝选项（可为null，使用默认选项）
+     * @param <S>        源类型泛型
+     * @param <T>        目标类型泛型
+     * @return 目标类型的List，sources为null或空时返回空List
+     * @throws BaseException 如果目标类无法实例化
+     */
+    public static <S, T> List<T> toList(List<S> sources, Class<T> targetClass, CopyOptions options) {
+        if (sources == null || sources.isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (S source : sources) {
+            result.add(toBean(source, targetClass, options));
+        }
+        return result;
+    }
+
+    /**
+     * 批量拷贝：将 List 中的元素转换为目标类型，支持泛型类型推断。
+     * <p>
+     * 通过 TypeReference 保留泛型信息，自动提取目标类型并执行批量拷贝。
+     * <p>
+     * 注意：TypeReference 的泛型参数 T 是目标元素类型，而非容器类型。
+     * 例如 {@code new TypeReference<User>() {}} 表示目标类型为 User。
+     *
+     * @param sources  源列表
+     * @param typeRef 泛型类型引用，如 {@code new TypeReference<User>() {}}
+     * @param <T>    目标元素类型
+     * @return 目标类型的 List，sources 为 null 或空时返回空 List
+     * @throws BaseException 如果目标类无法实例化
+     */
+    @SuppressWarnings("unchecked")
+    public static <T> List<T> toList(List<?> sources, TypeReference<T> typeRef) {
+        if (sources == null || sources.isEmpty()) {
+            return new ArrayList<>(0);
+        }
+        Type type = typeRef.getType();
+        Class<?> elementClass = resolveElementClass(type);
+        if (elementClass == null) {
+            throw new BaseException("Cannot resolve element class from TypeReference");
+        }
+        List<T> result = new ArrayList<>(sources.size());
+        for (Object source : sources) {
+            if (source == null) {
+                continue;
+            }
+            result.add((T) toBean(source, elementClass));
+        }
+        return result;
+    }
+
+    /**
+     * 从 TypeReference 中解析元素类型。
+     * <p>
+     * T 直接是目标元素类型，例如 User。
+     *
+     * @param type TypeReference.getType() 返回的 Type
+     * @return 元素类型
+     */
+    private static Class<?> resolveElementClass(Type type) {
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        }
+        // 对于简单泛型情况，如 TypeReference<User>，type 是 Class
+        // 对于容器泛型情况，如 TypeReference<List<User>>，type 是 ParameterizedType
+        if (type instanceof ParameterizedType) {
+            ParameterizedType pt = (ParameterizedType) type;
+            Type rawType = pt.getRawType();
+            if (rawType instanceof Class) {
+                Class<?> rawClass = (Class<?>) rawType;
+                // 如果是 List/Collection 类型，提取泛型参数作为元素类型
+                if (List.class.isAssignableFrom(rawClass) || Collection.class.isAssignableFrom(rawClass)) {
+                    Type[] typeArgs = pt.getActualTypeArguments();
+                    if (typeArgs != null && typeArgs.length > 0 && typeArgs[0] instanceof Class) {
+                        return (Class<?>) typeArgs[0];
+                    }
+                }
+                return rawClass;
+            }
         }
         return null;
     }
 
-    private static synchronized void putWithBeanCopyByMultiKey(Class targetClass,Class sourceClass,Map<String, Tuple2<Method, Method>> methodMap){
-        Map<Class, Map<String, Tuple2<Method, Method>>> classMapMap = BEAN_COPY_METHOD_CACHE.get(targetClass);
-        if(classMapMap == null){
-            classMapMap = new HashMap<>();
-            BEAN_COPY_METHOD_CACHE.set(targetClass,classMapMap);
-        }
-        classMapMap.put(sourceClass,methodMap);
-    }
+    // ========== isEmpty ==========
 
     /**
-     * 返回Bean copy 使用的 PropertyDescriptor
-     * @param targetCls
-     * @param sourceCls
-     * @return Map[属性名称,[来源对象的此属性读取方法,目标对象的此属性赋值方法]]
-     */
-    private static Map<String, Tuple2<Method, Method>> getBeanCopyPropertyDescriptorMap(Class targetCls, Class sourceCls){
-        try {
-            BeanInfo sourceBeanInfo = Introspector.getBeanInfo(sourceCls);
-            BeanInfo targetBeanInfo = Introspector.getBeanInfo(targetCls);
-            Map<String, Method> sMap = Arrays.asList(sourceBeanInfo.getPropertyDescriptors()).stream()
-                    .filter(it -> it.getReadMethod() != null)
-                    .peek(it -> it.getReadMethod().setAccessible(true))
-                    .collect(Collectors.toMap(it -> it.getName(), PropertyDescriptor::getReadMethod));
-            Map<String, Method> tMap = Arrays.asList(targetBeanInfo.getPropertyDescriptors()).stream()
-                    .filter(it -> it.getWriteMethod() != null)
-                    .peek(it -> it.getWriteMethod().setAccessible(true))
-                    .collect(Collectors.toMap(it -> it.getName(), it -> it.getWriteMethod()));
-            //source的读方法和target的写方法做一个映射，并缓存
-            Map<String, Tuple2<Method, Method>> sToTMap = sMap.keySet().stream()
-                    .filter(it -> tMap.containsKey(it))
-                    .collect(Collectors.toMap(it -> it, it -> new Tuple2(sMap.get(it), tMap.get(it))));
-            return sToTMap;
-        } catch (IntrospectionException e) {
-            throw new BaseException(e);
-        }
-    }
-
-    /**
-     * 将一个java bean Obj转为Map.
-     * null 属性会自动忽略.
-     * @param obj
-     * @param ignoreProperties 忽略的 对象Property 值, 例如 通过Lambda使用bean的get方法引用即可; 如  User::getId ; 如果不传则不使用
-     * @param <T>              必须是标准的java bean.
-     * @return
-     * @deprecated 请使用 {@link BeanUtil#toMap(Object, String...)} 替代
-     */
-    @Deprecated
-    public static <T> Map<String, Object> toMap(T obj, PropertyFunction<T, ?>... ignoreProperties) {
-        String[] ignoreFields = null;
-        if (ignoreProperties != null && ignoreProperties.length > 0) {
-            ignoreFields = new String[ignoreProperties.length];
-            for (int i = 0; i < ignoreProperties.length; i++) {
-                ignoreFields[i] = LambdaUtils.getFieldName(ignoreProperties[i]);
-            }
-        }
-        return BeanUtil.toMap(obj, ignoreFields);
-    }
-
-    /**
-     * 要求要符合javaBean规范
-     * 通过getter方法的名字 拿到对应的 属性名称
+     * 判断bean是否为空（所有属性都为null或无属性）。
+     * <p>
+     * bean为null时返回true。
+     * <p>
+     * 排除"class"属性后，任一属性值非null则返回false，全部为null或无属性则返回true。
      *
-     * @param getterName bean 标准的getter 方法的名称
-     * @return
+     * @param bean 待检查的对象
+     * @return 是否为空
      */
-    public static String getFieldNameByGetter(String getterName) {
-        if (getterName.startsWith("get")) {
-            getterName = getterName.substring(3);
-        } else if (getterName.startsWith("is")) {
-            getterName = getterName.substring(2);
+    public static boolean isEmpty(Object bean) {
+        if (bean == null) {
+            return true;
         }
-        // 小写第一个字母
-        return StringUtils.firstLetterToLower(getterName);
-    }
-
-    /**
-     * 获取一个转换器，将输入的字符串数组转为一个bean
-     * @param filedNames  需要转换的字段名称
-     * @param beanCls 需要转为的目标对象的class， 必须是标准的java bean, 带有标准的getter 与 setter 方法
-     * @param filedValueConverter  自定义的属性转换器：输入[当前字段名称，当前内容字符串], 返回转换后的对象; 传入 null 则不使用
-     * @param <T>
-     * @return
-     */
-    public static <T> Function<String[],T> createBeanConverter(String[] filedNames, Class<T> beanCls, Function2<Object,String,String> filedValueConverter){
-        PropertyDescriptor[] propertyDescriptors;
-        try {
-            propertyDescriptors = Introspector.getBeanInfo(beanCls).getPropertyDescriptors();
-        } catch (IntrospectionException e) {
-            throw new RuntimeException(e);
-        }
-        Map<String, PropertyDescriptor> beanFiledNameMap = Arrays.asList(propertyDescriptors)
-                .stream()
-                .collect(Collectors.toMap(PropertyDescriptor::getName, Function.identity()));
-        //Consumer[bean实例对象,属性值]
-        Map<String, Tuple2<Field, ConsumerTwo<Object, String>>> beanStringToFieldValueSetterMap = getBeanStringToFieldValueSetterMap(beanCls);
-        Map<Integer, PropertyDescriptor> filedIndexMap = IntStream.range(0, filedNames.length)
-                .mapToObj(index -> {
-                    PropertyDescriptor propertyDescriptor = beanFiledNameMap.get(filedNames[index]);
-                    if (propertyDescriptor == null || propertyDescriptor.getWriteMethod() == null) {
-                        return null;
-                    }
-                    return new Tuple2<>(index,propertyDescriptor);
-                })
-                .filter(Objects::nonNull)
-                .collect(Collectors.toMap(Tuple2::get_1, Tuple2::get_2));
-        return contents -> {
-            T bean;
-            try {
-                bean = beanCls.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException(e);
+        for (String name : BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyNames()) {
+            if ("class".equals(name)) {
+                continue;
             }
-            IntStream.range(0,contents.length)
-                    .forEach(index -> {
-                        PropertyDescriptor propertyDescriptor = filedIndexMap.get(index);
-                        String srcFiledValue = contents[index];
-                        Object filedValue = srcFiledValue;
-                        if(propertyDescriptor != null) {
-                            if (null != filedValueConverter) {
-                                filedValue = filedValueConverter.run(propertyDescriptor.getName(), contents[index]);
-                            }else {
-                                filedValue = ObjectUtils.getObject(propertyDescriptor.getPropertyType(), contents[index]);
-                            }
-                            Class<?>[] parameterTypes = propertyDescriptor.getWriteMethod().getParameterTypes();
-                            if (!parameterTypes[0].equals(String.class)) {
-                                Converter<String, ?> converter = ConverterUtils.getConverter(String.class, parameterTypes[0]);
-                                if (converter != null) {
-                                    filedValue = converter.convert(srcFiledValue);
-                                }
-                            }
-                            try {
-                                propertyDescriptor.getWriteMethod().invoke(bean, filedValue);
-                            } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
-                                throw new RuntimeException(e);
-                            }
-                        } else {
-                            String filedName = filedNames[index];
-                            Tuple2<Field, ConsumerTwo<Object, String>> fieldConsumer = beanStringToFieldValueSetterMap.get(filedName);
-                            Optional.ofNullable(fieldConsumer)
-                                    .map(Tuple2::get_2)
-                                    .ifPresent(tuple2Consumer -> tuple2Consumer.accept(bean, srcFiledValue));
-                        }
-                    });
-            return bean;
-        };
+            PropertyResult<Object> result = BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyValue(bean, name);
+            if (result.exists() && result.getValue() != null) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
-     * 获取bean属性设置的map
-     * @param beanCls
-     * @param <T>
-     * @return Map[属性名称,Tuple2[属性对象,Consumer2[对象实例,属性值]]]
+     * 判断bean是否非空。
+     * <p>
+     * 等同于 {@code !isEmpty(bean)}。
+     *
+     * @param bean 待检查的对象
+     * @return 是否非空
      */
-    private static <T> Map<String, Tuple2<Field,ConsumerTwo<Object,String>>> getBeanStringToFieldValueSetterMap(Class<T> beanCls) {
-        List<Field> fields = ReflectUtils.getFields(beanCls, false, false, true, true);
-        Map<String, Tuple2<Field,ConsumerTwo<Object,String>>> beanFieldSetterMap = fields.stream()
-                .collect(Collectors.toMap(Field::getName, field -> {
-                    String name = field.getName();
-                    Class<?> fieldClass = field.getType();
-                    Method targetMethod = ReflectUtils.getMethod(beanCls, ReflectUtils.getSetterName(name), fieldClass);
-                    if(targetMethod != null) {
-                        targetMethod.setAccessible(true);
-                    }
-                    ConsumerTwo<Object,String> consumer = (bean,paramObj) -> {
-                        try {
-                            Object targetValue = paramObj;
-                            if(!fieldClass.equals(String.class)){
-                                Converter<String, ?> converter = ConverterUtils.getConverter(String.class, fieldClass);
-                                if(converter != null){
-                                    targetValue = converter.convert(paramObj);
-                                }
-                            }
-                            if(targetMethod != null){
-                                targetMethod.invoke(bean, targetValue);
-                            }else {
-                                field.set(bean,targetValue);
-                            }
-                        } catch (IllegalAccessException | IllegalArgumentException e) {
-                            throw new RuntimeException(e);
-                        } catch (InvocationTargetException e) {
-                            throw new RuntimeException(e);
-                        }
-                    };
-                    return new Tuple2<>(field, consumer);
-                }));
-        return beanFieldSetterMap;
+    public static boolean isNotEmpty(Object bean) {
+        return !isEmpty(bean);
+    }
+
+    // ========== deepCopy ==========
+
+    /**
+     * 深拷贝对象，返回完全独立的副本。
+     * <p>
+     * 支持以下类型：
+     * <ul>
+     *   <li>基本类型及包装类型 — 直接返回</li>
+     *   <li>String、BigDecimal 等不可变类型 — 直接返回引用</li>
+     *   <li>数组 — 深拷贝元素</li>
+     *   <li>Collection — 深拷贝元素</li>
+     *   <li>Map — 深拷贝 key 和 value</li>
+     *   <li>普通 Java Bean — 递归反射拷贝属性</li>
+     * </ul>
+     * <p>
+     * 循环引用检测：通过 IdentityHashMap 记录已拷贝对象，
+     * 遇到重复引用时直接返回已创建的副本。
+     *
+     * @param source 源对象
+     * @param <T>    对象类型
+     * @return 完全独立的副本，source 为 null 时返回 null
+     * @throws BaseException 如果拷贝过程中发生反射异常
+     */
+    public static <T> T deepCopy(T source) {
+        return deepCopy(source, Integer.MAX_VALUE, new IdentityHashMap<>());
+    }
+
+    /**
+     * 深拷贝对象，支持深度控制。
+     * <p>
+     * maxDepth 控制递归拷贝的深度：
+     * <ul>
+     *   <li>maxDepth = 0：只创建外层容器/实例，元素不递归（浅拷贝行为）</li>
+     *   <li>maxDepth = 1：拷贝一层嵌套</li>
+     *   <li>maxDepth = 2：拷贝两层嵌套</li>
+     *   <li>maxDepth = Integer.MAX_VALUE：无限制深度（等同于 deepCopy(T)）</li>
+     * </ul>
+     *
+     * @param source   源对象
+     * @param maxDepth 最大递归深度（必须 >= 0）
+     * @param <T>      对象类型
+     * @return 完全独立的副本，source 为 null 时返回 null
+     * @throws IllegalArgumentException 如果 maxDepth < 0
+     * @throws BaseException            如果拷贝过程中发生反射异常
+     */
+    public static <T> T deepCopy(T source, int maxDepth) {
+        if (maxDepth < 0) {
+            throw new IllegalArgumentException("maxDepth must be >= 0");
+        }
+        return deepCopy(source, maxDepth, new IdentityHashMap<>());
+    }
+
+    /**
+     * 深拷贝对象（内部递归方法）。
+     *
+     * @param source         源对象
+     * @param remainingDepth 剩余递归深度
+     * @param visited        已拷贝对象映射（用于循环引用检测）
+     * @param <T>            对象类型
+     * @return 完全独立的副本
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopy(T source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
+        if (source == null) {
+            return null;
+        }
+
+        // 1. 不可变类型直接返回引用
+        if (isImmutableType(source)) {
+            return source;
+        }
+
+        // 2. 循环引用检测（使用单次 get 代替 containsKey + get，减少哈希查找）
+        Object existingCopy = visited.get(source);
+        if (existingCopy != null) {
+            return (T) existingCopy;
+        }
+
+        Class<?> clazz = source.getClass();
+
+        // 3. 数组类型
+        if (clazz.isArray()) {
+            return deepCopyArray(source, remainingDepth, visited);
+        }
+
+        // 4. Collection 类型
+        if (source instanceof Collection) {
+            return deepCopyCollection((Collection<?>) source, remainingDepth, visited);
+        }
+
+        // 5. Map 类型
+        if (source instanceof Map) {
+            return deepCopyMap((Map<?, ?>) source, remainingDepth, visited);
+        }
+
+        // 6. 普通 Java Bean — 递归反射拷贝
+        return deepCopyBean(source, remainingDepth, visited);
+    }
+
+    /**
+     * 判断是否为不可变类型（直接返回引用，不深拷贝）。
+     */
+    private static boolean isImmutableType(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        // 基本类型包装类、String、BigDecimal、BigInteger、Class、URI、URL、UUID、enum
+        return obj instanceof String
+                || obj instanceof Boolean
+                || obj instanceof Byte
+                || obj instanceof Short
+                || obj instanceof Integer
+                || obj instanceof Long
+                || obj instanceof Float
+                || obj instanceof Double
+                || obj instanceof Character
+                || obj instanceof BigDecimal
+                || obj instanceof BigInteger
+                || obj instanceof Class
+                || obj instanceof java.net.URI
+                || obj instanceof java.net.URL
+                || obj instanceof java.util.UUID
+                || obj instanceof Enum;
+    }
+
+    /**
+     * 深拷贝数组。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyArray(T source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
+        Class<?> clazz = source.getClass();
+        Class<?> componentType = clazz.getComponentType();
+
+        if (componentType.isPrimitive()) {
+            // 基本类型数组：使用 Array.newInstance 创建新数组并拷贝元素
+            // 基本类型数组不存在循环引用问题，无需记录到 visited
+            int length = java.lang.reflect.Array.getLength(source);
+            Object destArray = java.lang.reflect.Array.newInstance(componentType, length);
+            System.arraycopy(source, 0, destArray, 0, length);
+            return (T) destArray;
+        }
+
+        // 对象数组：记录到 visited（必须在创建副本后更新，避免循环引用检测失效）
+        Object[] srcArray = (Object[]) source;
+        Object[] destArray = (Object[]) java.lang.reflect.Array.newInstance(componentType, srcArray.length);
+        visited.put(source, destArray);
+
+        if (remainingDepth <= 0) {
+            // remainingDepth <= 0：不递归，元素直接引用（浅拷贝）
+            for (int i = 0; i < srcArray.length; i++) {
+                destArray[i] = srcArray[i];
+            }
+        } else {
+            // remainingDepth > 0：递归拷贝
+            for (int i = 0; i < srcArray.length; i++) {
+                destArray[i] = deepCopy(srcArray[i], remainingDepth - 1, visited);
+            }
+        }
+        return (T) destArray;
+    }
+
+    /**
+     * 深拷贝 Collection。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyCollection(Collection<?> source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
+        // 记录当前映射关系，防止 Collection 内部元素循环引用
+        visited.put(source, null);
+
+        // 尝试实例化 source 的实际 Collection 类型
+        Collection<Object> result;
+        try {
+            @SuppressWarnings("unchecked")
+            Collection<Object> instance = source.getClass().getDeclaredConstructor().newInstance();
+            result = instance;
+        } catch (Exception e) {
+            // 回退路径：尝试通过 CommonType 解析接口对应的实现类
+            Class<?> implClass = CommonType.resolveImplementation(source.getClass());
+            if (implClass != null) {
+                try {
+                    result = (Collection<Object>) implClass.getDeclaredConstructor().newInstance();
+                } catch (Exception ex) {
+                    result = new ArrayList<>(source.size());
+                }
+            } else {
+                result = new ArrayList<>(source.size());
+            }
+        }
+        visited.put(source, result);
+
+        if (remainingDepth <= 0) {
+            // remainingDepth <= 0：不递归，元素直接引用（浅拷贝）
+            for (Object item : source) {
+                result.add(item);
+            }
+        } else {
+            // remainingDepth > 0：递归拷贝
+            for (Object item : source) {
+                result.add(deepCopy(item, remainingDepth - 1, visited));
+            }
+        }
+        return (T) result;
+    }
+
+    /**
+     * 深拷贝 Map。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyMap(Map<?, ?> source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
+        // 记录当前映射关系，防止 Map 内部 key/value 循环引用
+        visited.put(source, null);
+
+        // 尝试实例化 source 的实际 Map 类型
+        Map<Object, Object> result;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<Object, Object> instance = source.getClass().getDeclaredConstructor().newInstance();
+            result = instance;
+        } catch (Exception e) {
+            // 回退路径：尝试通过 CommonType 解析接口对应的实现类
+            Class<?> implClass = CommonType.resolveImplementation(source.getClass());
+            if (implClass != null) {
+                try {
+                    result = (Map<Object, Object>) implClass.getDeclaredConstructor().newInstance();
+                } catch (Exception ex) {
+                    result = new java.util.HashMap<>(source.size());
+                }
+            } else {
+                result = new java.util.HashMap<>(source.size());
+            }
+        }
+        visited.put(source, result);
+
+        if (remainingDepth <= 0) {
+            // remainingDepth <= 0：不递归，key/value 直接引用（浅拷贝）
+            for (Map.Entry<?, ?> entry : source.entrySet()) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        } else {
+            // remainingDepth > 0：递归拷贝
+            for (Map.Entry<?, ?> entry : source.entrySet()) {
+                Object keyCopy = deepCopy(entry.getKey(), remainingDepth - 1, visited);
+                Object valueCopy = deepCopy(entry.getValue(), remainingDepth - 1, visited);
+                result.put(keyCopy, valueCopy);
+            }
+        }
+        return (T) result;
+    }
+
+    /**
+     * 深拷贝普通 Java Bean。
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T deepCopyBean(T source, int remainingDepth, IdentityHashMap<Object, Object> visited) {
+        Class<?> clazz = source.getClass();
+
+        // 创建新实例
+        T target;
+        try {
+            target = (T) clazz.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e) {
+            throw new BaseException("Failed to deep copy: no default constructor for " + clazz.getName(), e);
+        }
+
+        // 先放入 visited，防止循环引用
+        visited.put(source, target);
+
+        // 遍历所有属性
+        BeanDesc desc = BeanCopier.getOrCreateBeanDesc(clazz);
+        for (String propName : desc.getPropertyNames()) {
+            if ("class".equals(propName)) {
+                continue;
+            }
+
+            // 跳过 transient 和 static 字段
+            Field field = desc.getField(propName);
+            if (field != null) {
+                int mod = field.getModifiers();
+                if (Modifier.isTransient(mod) || Modifier.isStatic(mod)) {
+                    continue;
+                }
+            }
+
+            PropertyResult<Object> propResult = desc.getPropertyValue(source, propName);
+            if (!propResult.exists()) {
+                continue;
+            }
+            Object value = propResult.getValue();
+
+            Object copiedValue = (remainingDepth <= 0) ? value : deepCopy(value, remainingDepth - 1, visited);
+            desc.setPropertyValue(target, propName, copiedValue);
+        }
+        return target;
+    }
+
+    // ========== hasNullField ==========
+
+    /**
+     * 判断bean是否存在null属性。
+     * <p>
+     * bean为null时返回true。
+     *
+     * @param bean 待检查的对象
+     * @return 是否存在null属性
+     */
+    public static boolean hasNullField(Object bean) {
+        if (bean == null) {
+            return true;
+        }
+        for (String name : BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyNames()) {
+            if ("class".equals(name)) {
+                continue;
+            }
+            PropertyResult<Object> result = BeanCopier.getOrCreateBeanDesc(bean.getClass()).getPropertyValue(bean, name);
+            if (!result.exists()) {
+                return true;
+            }
+            if (result.getValue() == null) {
+                return true;
+            }
+        }
+        return false;
     }
 }
