@@ -1,8 +1,10 @@
 package com.tingfeng.util.java.base.concurrent;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -16,6 +18,167 @@ import java.util.concurrent.TimeUnit;
 public final class ThreadPoolUtils {
 
     private ThreadPoolUtils() {
+    }
+
+    /**
+     * 线程池配置 DTO
+     * <p>
+     * 封装线程池的完整配置参数，支持-builder 模式或直接构造
+     * </p>
+     */
+    public static class ThreadPoolConfig {
+        private int corePoolSize;
+        private int maxPoolSize;
+        private long keepAliveTime;
+        private TimeUnit unit;
+        private BlockingQueue<Runnable> workQueue;
+        private ThreadFactory threadFactory;
+        private RejectedExecutionHandler handler;
+
+        public ThreadPoolConfig() {
+        }
+
+        public ThreadPoolConfig(int corePoolSize, int maxPoolSize, long keepAliveTime, TimeUnit unit,
+                               BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory,
+                               RejectedExecutionHandler handler) {
+            this.corePoolSize = corePoolSize;
+            this.maxPoolSize = maxPoolSize;
+            this.keepAliveTime = keepAliveTime;
+            this.unit = unit;
+            this.workQueue = workQueue;
+            this.threadFactory = threadFactory;
+            this.handler = handler;
+        }
+
+        public int getCorePoolSize() {
+            return corePoolSize;
+        }
+
+        public void setCorePoolSize(int corePoolSize) {
+            this.corePoolSize = corePoolSize;
+        }
+
+        public int getMaxPoolSize() {
+            return maxPoolSize;
+        }
+
+        public void setMaxPoolSize(int maxPoolSize) {
+            this.maxPoolSize = maxPoolSize;
+        }
+
+        public long getKeepAliveTime() {
+            return keepAliveTime;
+        }
+
+        public void setKeepAliveTime(long keepAliveTime) {
+            this.keepAliveTime = keepAliveTime;
+        }
+
+        public TimeUnit getUnit() {
+            return unit;
+        }
+
+        public void setUnit(TimeUnit unit) {
+            this.unit = unit;
+        }
+
+        public BlockingQueue<Runnable> getWorkQueue() {
+            return workQueue;
+        }
+
+        public void setWorkQueue(BlockingQueue<Runnable> workQueue) {
+            this.workQueue = workQueue;
+        }
+
+        public ThreadFactory getThreadFactory() {
+            return threadFactory;
+        }
+
+        public void setThreadFactory(ThreadFactory threadFactory) {
+            this.threadFactory = threadFactory;
+        }
+
+        public RejectedExecutionHandler getHandler() {
+            return handler;
+        }
+
+        public void setHandler(RejectedExecutionHandler handler) {
+            this.handler = handler;
+        }
+
+        /**
+         * 创建默认配置的 ThreadPoolExecutor
+         *
+         * @return ExecutorService 实例
+         */
+        public ExecutorService toExecutorService() {
+            return new java.util.concurrent.ThreadPoolExecutor(
+                    corePoolSize, maxPoolSize,
+                    keepAliveTime, unit,
+                    workQueue != null ? workQueue : new LinkedBlockingQueue<>(),
+                    threadFactory != null ? threadFactory : ThreadFactoryUtils.newNamedThreadFactory("pool-", false),
+                    handler != null ? handler : new java.util.concurrent.ThreadPoolExecutor.AbortPolicy()
+            );
+        }
+
+        /**
+         * Builder 模式开始构建
+         *
+         * @return Builder 实例
+         */
+        public static Builder builder() {
+            return new Builder();
+        }
+
+        public static class Builder {
+            private int corePoolSize;
+            private int maxPoolSize;
+            private long keepAliveTime;
+            private TimeUnit unit;
+            private BlockingQueue<Runnable> workQueue;
+            private ThreadFactory threadFactory;
+            private RejectedExecutionHandler handler;
+
+            public Builder corePoolSize(int corePoolSize) {
+                this.corePoolSize = corePoolSize;
+                return this;
+            }
+
+            public Builder maxPoolSize(int maxPoolSize) {
+                this.maxPoolSize = maxPoolSize;
+                return this;
+            }
+
+            public Builder keepAliveTime(long keepAliveTime) {
+                this.keepAliveTime = keepAliveTime;
+                return this;
+            }
+
+            public Builder unit(TimeUnit unit) {
+                this.unit = unit;
+                return this;
+            }
+
+            public Builder workQueue(BlockingQueue<Runnable> workQueue) {
+                this.workQueue = workQueue;
+                return this;
+            }
+
+            public Builder threadFactory(ThreadFactory threadFactory) {
+                this.threadFactory = threadFactory;
+                return this;
+            }
+
+            public Builder handler(RejectedExecutionHandler handler) {
+                this.handler = handler;
+                return this;
+            }
+
+            public ThreadPoolConfig build() {
+                return new ThreadPoolConfig(corePoolSize, maxPoolSize, keepAliveTime, unit,
+                        workQueue, threadFactory, handler);
+            }
+        }
     }
 
     // ==================== 基础线程池创建 ====================

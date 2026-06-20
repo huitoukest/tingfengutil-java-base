@@ -206,7 +206,7 @@ public class WebServiceUtils {
             code = conn.getResponseCode(); // 用来获取服务器响应状态
             if (code == HttpURLConnection.HTTP_OK) {
             } else {
-                if (tryCount > 2) {
+                if (tryCount > 1) {
                     return postToWebService(host, wsdlUrl, namespace,
                             methodName, httpParams, tryCount - 1);
                 }

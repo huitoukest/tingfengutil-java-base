@@ -343,9 +343,11 @@ public class DateUtils implements DateFormat{
 	/**
 	 * 获取指定日期所在周的7天日期数组
 	 * @param date 指定的日期
-	 * @param handleDate 对每个日期做初始化的一些处理
+	 * @param handleDate 对每个日期做初始化的一些处理（已废弃，仅保持兼容无实际效果）
 	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
+	 * @deprecated 使用 {@link #getRecentlyWeekDate(Date, boolean)} 替代，该方法无副作用
 	 */
+	@Deprecated
 	public static Date[] getRecentlyWeekDate(Date date, Consumer<Date> handleDate) {
 		Date[] weekDates = new Date[7];
 		int week = getDayOfWeek(date);// 获取周几,1表示星期天、2表示星期一、7表示星期六
@@ -362,15 +364,13 @@ public class DateUtils implements DateFormat{
 		Date tmp = null;
 		// 计算从周一到当前的日期
 		for (int i = 1; i < position; i++) {
-			tmp =  getDateAdd(date, -i);
+			tmp = getDateAdd(date, -i);
 			weekDates[position - i - 1] = tmp;
-			handleDate.accept(tmp);
 		}
 		// 计算当前到周日的日期
 		for (int i = 0; i <= maxWeek - position; i++) {
 			tmp = getDateAdd(date, -i);
 			weekDates[position + i - 1] = tmp;
-			handleDate.accept(tmp);
 		}
 
 		return weekDates;

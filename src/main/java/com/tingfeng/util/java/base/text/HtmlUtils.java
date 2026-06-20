@@ -1,6 +1,8 @@
 package com.tingfeng.util.java.base.text;
 
+import com.tingfeng.util.java.base.LogUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
+import com.tingfeng.util.java.base.text.RegExpUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,8 @@ import java.util.regex.Pattern;
  * @author tw 2009-06-05
  */
 public class HtmlUtils {
+
+    private static final int MAX_ITERATIONS = 10;
 
     private HtmlUtils() {
         throw new UnsupportedOperationException("Utility class cannot be instantiated");
@@ -324,39 +328,42 @@ public class HtmlUtils {
         if (s.isEmpty() || prefix.isEmpty()) {
             return s;
         }
+        String h = s;
+        int iterations = 0;
         try {
-            String h = s;
-            Pattern pattern = RegExpUtils.getPattern(".*src=\\\\*\\\"(?!http://)([^\\\\][^\\s]+[^\\\\=])\\\\*\\\".*");
-            Matcher matcher = pattern.matcher(s);
-            boolean has = false;
-            while (matcher.find()) {
-                String tmp = matcher.group(1);
-                h = h.replace(tmp, prefix + tmp);
-                has = true;
-            }
+            while (iterations < MAX_ITERATIONS) {
+                String current = h;
+                Matcher matcher = RegExpUtils.getPattern(".*src=\\\\*\\\"(?!http://)([^\\\\][^\\s]+[^\\\\=])\\\\*\\\".*").matcher(current);
+                boolean has = false;
+                while (matcher.find()) {
+                    String tmp = matcher.group(1);
+                    current = current.replace(tmp, prefix + tmp);
+                    has = true;
+                }
 
-            pattern = RegExpUtils.getPattern(".*href=\\\\*\\\"(?!http://)([^\\\\][^\\s]+[^\\\\=])\\\\*\\\".*");
-            matcher = pattern.matcher(s);
-            while (matcher.find()) {
-                String tmp = matcher.group(1);
-                h = h.replace(tmp, prefix + tmp);
-                has = true;
-            }
+                matcher = RegExpUtils.getPattern(".*href=\\\\*\\\"(?!http://)([^\\\\][^\\s]+[^\\\\=])\\\\*\\\".*").matcher(current);
+                while (matcher.find()) {
+                    String tmp = matcher.group(1);
+                    current = current.replace(tmp, prefix + tmp);
+                    has = true;
+                }
 
-            pattern = RegExpUtils.getPattern(".*url=\\\\*\\\"(?!http://)([^\\\\][^\\s]+[^\\\\=])\\\\*\\\".*");
-            matcher = pattern.matcher(s);
-            while (matcher.find()) {
-                String tmp = matcher.group(1);
-                h = h.replace(tmp, prefix + tmp);
-                has = true;
+                matcher = RegExpUtils.getPattern(".*url=\\\\*\\\"(?!http://)([^\\\\][^\\s]+[^\\\\=])\\\\*\\\".*").matcher(current);
+                while (matcher.find()) {
+                    String tmp = matcher.group(1);
+                    current = current.replace(tmp, prefix + tmp);
+                    has = true;
+                }
+                if (!has) {
+                    return current;
+                }
+                h = current;
+                iterations++;
             }
-            if (!has) {
-                return h;
-            }
-            return transUrl(prefix, h);
+            return h;
 
         } catch (Exception e) {
-            System.out.println("HtmlUtils:url相对地址转换绝对地址失败!" + e.toString());
+            LogUtils.error("HtmlUtils:url相对地址转换绝对地址失败!" + e.toString());
             return s;
         }
     }

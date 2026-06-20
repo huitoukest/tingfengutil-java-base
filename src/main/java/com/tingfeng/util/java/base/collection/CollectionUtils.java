@@ -83,8 +83,8 @@ public class CollectionUtils {
         return getList(sourceString, regex, it -> Integer.parseInt(it));
     }
 
-    public static List<Integer> getIntegerList(String souceString) {
-        return getIntegerList(souceString, ",");
+    public static List<Integer> getIntegerList(String sourceString) {
+        return getIntegerList(sourceString, ",");
     }
 
     /**
@@ -513,15 +513,22 @@ public class CollectionUtils {
         if(null == objs){
             return;
         }
-        for (int i = 0; i < objs.length; i++) {
-            Object obj = objs[i];
+        ArrayDeque<Object> stack = new ArrayDeque<>();
+        for (int i = objs.length - 1; i >= 0; i--) {
+            stack.push(objs[i]);
+        }
+        while (!stack.isEmpty()) {
+            Object obj = stack.pop();
             if(obj instanceof Collection){
                 Collection<?> collection = (Collection<?>) obj;
-                collection.forEach(item -> mergeToCollection(targetCollection,distinct,item));
+                Object[] items = collection.toArray();
+                for (int i = items.length - 1; i >= 0; i--) {
+                    stack.push(items[i]);
+                }
             }else if(obj.getClass().isArray()){
-                Object[] objects = (Object[]) obj;
-                for (Object item : objects) {
-                    mergeToCollection(targetCollection,distinct,item);
+                int length = java.lang.reflect.Array.getLength(obj);
+                for (int i = length - 1; i >= 0; i--) {
+                    stack.push(java.lang.reflect.Array.get(obj, i));
                 }
             }else {
                 if(!distinct || !targetCollection.contains(obj)) {
