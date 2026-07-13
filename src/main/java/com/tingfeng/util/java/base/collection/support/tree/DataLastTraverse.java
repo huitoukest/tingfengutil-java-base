@@ -55,7 +55,7 @@ public class DataLastTraverse extends AbstractTraverse{
             }
         }
 
-        return true;
+        return isContinueTraverse;
     }
 
 

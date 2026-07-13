@@ -18,6 +18,7 @@ public class FastMap<K,V> extends HashMap<K,V> {
 
     public static <K,V> FastMap instance(K key, V value) {
         FastMap<K,V> fastMap = new FastMap<>();
+        fastMap.add(key, value);
         return fastMap;
     }
 

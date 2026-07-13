@@ -7,6 +7,7 @@ import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionRTwo;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import com.tingfeng.util.java.base.math.RandomUtils;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -573,9 +574,9 @@ public class CollectionUtils {
                 Collection<?> collection = (Collection<?>) obj;
                 collection.forEach(item -> mergeToCollection(targetCollection,distinct,item));
             }else if(obj.getClass().isArray()){
-                Object[] objects = (Object[]) obj;
-                for (Object item : objects) {
-                    mergeToCollection(targetCollection,distinct,item);
+                int length = Array.getLength(obj);
+                for (int j = 0; j < length; j++) {
+                    mergeToCollection(targetCollection, distinct, Array.get(obj, j));
                 }
             }else {
                 if(!distinct || !targetCollection.contains(obj)) {

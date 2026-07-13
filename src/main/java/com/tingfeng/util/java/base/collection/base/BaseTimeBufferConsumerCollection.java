@@ -1,45 +1,66 @@
 package com.tingfeng.util.java.base.collection.base;
 
+import com.tingfeng.util.java.base.LogUtils;
 import com.tingfeng.util.java.base.lang.inter.collection.BufferConsumerCollection;
 
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+public abstract class BaseTimeBufferConsumerCollection<T> implements BufferConsumerCollection<T>, AutoCloseable {
 
-public abstract class BaseTimeBufferConsumerCollection<T> implements BufferConsumerCollection<T> {
+    private final int checkInterval;
+    private final Thread consumerThread;
+    private volatile boolean running = true;
 
-    private int checkInterval = 1;
-    private static final ThreadPoolExecutor POOL_EXECUTOR = new ThreadPoolExecutor(2, 10, 10, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<>(100), new ThreadPoolExecutor.CallerRunsPolicy());
     /**
      * 检查的间隔时间，单位毫秒
-     * @param checkInterval
+     * @param checkInterval 检查间隔，必须大于0
      */
     public BaseTimeBufferConsumerCollection(int checkInterval) {
         if(checkInterval < 1){
                 throw new IllegalArgumentException("checkInterval must great than 0");
         }
         this.checkInterval = checkInterval;
-        initTask();
+        this.consumerThread = initThread();
     }
-    private void initTask(){
-        POOL_EXECUTOR.submit(() -> {
-                while (true) {
+
+    private Thread initThread() {
+        Thread thread = new Thread(() -> {
+            while (running) {
+                try {
+                    consumerIfMatch();
+                } catch (Exception e) {
+                    LogUtils.error("BaseTimeBufferConsumerCollection consumerIfMatch error", e);
+                }
+                if (running) {
                     try {
-                        consumerIfMatch();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        try {
-                            Thread.sleep(checkInterval);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                            Thread.currentThread().interrupt();
-                        }
+                        Thread.sleep(checkInterval);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
-            });
+            }
+        });
+        thread.setDaemon(true);
+        thread.setName("buffer-consumer-" + System.identityHashCode(this));
+        thread.start();
+        return thread;
+    }
+
+    /**
+     * 关闭此消费者，停止后台检查线程并清理资源
+     */
+    public void shutdown() {
+        running = false;
+        if (consumerThread != null) {
+            consumerThread.interrupt();
+        }
+    }
+
+    /**
+     * 实现 AutoCloseable，支持 try-with-resources 方式关闭
+     */
+    @Override
+    public void close() {
+        shutdown();
     }
 
     @Override

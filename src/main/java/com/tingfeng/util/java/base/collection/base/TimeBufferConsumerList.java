@@ -39,7 +39,7 @@ public class TimeBufferConsumerList<T> extends BaseTimeBufferConsumerCollection<
     public TimeBufferConsumerList(int checkInterval,int batchSize, int maxHoldMs, boolean consumerIfMatchWhenAdd,Consumer<List<T>> consumer) {
         super(checkInterval);
         if(checkInterval >= maxHoldMs){
-           throw new IllegalArgumentException("checkInterval must great than maxHoldMs");
+           throw new IllegalArgumentException("checkInterval must be less than maxHoldMs");
         }
         this.batchSize = batchSize;
         this.maxHoldMs = maxHoldMs;

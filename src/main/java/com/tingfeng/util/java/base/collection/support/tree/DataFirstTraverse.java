@@ -15,7 +15,7 @@ public class DataFirstTraverse extends AbstractTraverse{
 
     @Override
     public <T> void traverse(List<T> treeList, int level, T parent, Function<T, List<T>> childrenGetter, Predicate<TreeTraverseContext<T>> traverseF, DataNodeTraversePolicy dataNodeTraversePolicy) {
-        traverse(treeList,level,parent,childrenGetter,traverseF,null);
+        this.traverse(treeList, level, parent, childrenGetter, traverseF);
     }
 
     /**
@@ -99,7 +99,7 @@ public class DataFirstTraverse extends AbstractTraverse{
         boolean isContinueTraverse = true;
         T node = brothers.get(indexInBrother);
         List<T> children = childrenGetter.apply(node);
-        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent,  + 1, indexInBrother, children);
+        TreeTraverseContext<T> currentContext = new TreeTraverseContext<>(isReverse(), node, parent, level + 1, indexInBrother, children);
         isContinueTraverse = isContinueTraverse && traverseF.test(currentContext);
         if(!isContinueTraverse){
             return false;

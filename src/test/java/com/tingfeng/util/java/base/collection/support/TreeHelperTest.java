@@ -409,41 +409,4 @@ public class TreeHelperTest {
         Assert.assertEquals("1", rootIds.get(0));
     }
 
-    // ==================== UnsupportedOperationException 测试 ====================
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMapThrows() {
-        TreeHelper<DefaultTreeNode, String> helper = buildHelper();
-        helper.map(node -> node, children -> children);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testFilterThrows() {
-        TreeHelper<DefaultTreeNode, String> helper = buildHelper();
-        helper.filter(node -> true, (parent, children) -> children);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testMergeThrows() {
-        TreeHelper<DefaultTreeNode, String> helper = buildHelper();
-        helper.merge(helper, (a, b) -> true, (a, b) -> a, (a, b) -> a);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testSubtractThrows() {
-        TreeHelper<DefaultTreeNode, String> helper = buildHelper();
-        helper.subtract(helper, (a, b) -> true);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testAddThrows() {
-        TreeHelper<DefaultTreeNode, String> helper = buildHelper();
-        helper.add(helper);
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void testIntersectThrows() {
-        TreeHelper<DefaultTreeNode, String> helper = buildHelper();
-        helper.intersect(helper, (a, b) -> true, (a, b) -> a);
-    }
 }

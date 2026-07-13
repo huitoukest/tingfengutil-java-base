@@ -369,82 +369,6 @@ public final class TreeHelper<T, ID> {
         return idGetter.apply(node);
     }
 
-    // ==================== 变换操作 ====================
-
-    /**
-     * Map - 树结构/节点转换
-     *
-     * @param nodeMapper 节点转换函数 (T → T)
-     * @param childrenMapper 子节点列表转换函数 (List&lt;T&gt; → List&lt;T&gt;)
-     * @return 新的 TreeHelper
-     */
-    @Deprecated
-    public TreeHelper<T, ID> map(Function<T, T> nodeMapper,
-                                 Function<List<T>, List<T>> childrenMapper) {
-        throw new UnsupportedOperationException("map operation requires ID remapping which is not yet implemented");
-    }
-
-    /**
-     * Filter - 过滤节点
-     *
-     * @param predicate 过滤条件，返回 true 保留
-     * @param childHandler 当父节点被过滤时，子节点处理函数
-     *   - 输入：(被过滤的父节点, 子节点列表)
-     *   - 输出：处理后的子节点列表
-     * @return 新的 TreeHelper
-     */
-    @Deprecated
-    public TreeHelper<T, ID> filter(Predicate<T> predicate,
-                                    BiFunction<T, List<T>, List<T>> childHandler) {
-        throw new UnsupportedOperationException("filter with custom childHandler requires ID remapping which is not yet implemented");
-    }
-
-    // ==================== Tree 运算 ====================
-
-    /**
-     * Merge - 合并两个 Tree
-     *
-     * @param other 另一个 TreeHelper
-     * @param isSameNode 判断两个节点是否为"同一个"的函数
-     * @param mergeNode 当节点在两个树都存在时，如何合并
-     * @param conflictHandler 当同一 ID 但节点内容冲突时的处理
-     * @return 新的 TreeHelper
-     */
-    @Deprecated
-    public TreeHelper<T, ID> merge(TreeHelper<T, ID> other,
-                                   BiPredicate<T, T> isSameNode,
-                                   BinaryOperator<T> mergeNode,
-                                   BiFunction<T, T, T> conflictHandler) {
-        throw new UnsupportedOperationException("merge operation requires ID remapping which is not yet implemented");
-    }
-
-    /**
-     * Subtract - 树差集
-     */
-    @Deprecated
-    public TreeHelper<T, ID> subtract(TreeHelper<T, ID> other,
-                                      BiPredicate<T, T> isSameNode) {
-        throw new UnsupportedOperationException("subtract operation requires ID remapping which is not yet implemented");
-    }
-
-    /**
-     * Add - 追加合并
-     */
-    @Deprecated
-    public TreeHelper<T, ID> add(TreeHelper<T, ID> other) {
-        throw new UnsupportedOperationException("add operation requires ID remapping which is not yet implemented");
-    }
-
-    /**
-     * Intersect - 交集
-     */
-    @Deprecated
-    public TreeHelper<T, ID> intersect(TreeHelper<T, ID> other,
-                                        BiPredicate<T, T> isSameNode,
-                                        BinaryOperator<T> mergeNode) {
-        throw new UnsupportedOperationException("intersect operation requires ID remapping which is not yet implemented");
-    }
-
     // ==================== 转换操作 ====================
 
     /**
@@ -514,10 +438,13 @@ public final class TreeHelper<T, ID> {
             for (int i = 0; i < levelSize; i++) {
                 T node = queue.poll();
                 levelNodes.add(node);
-                result.add(node);
                 queue.addAll(getChildren(node));
             }
             // 对同一层节点排序（可选）
+            if (comparator != null) {
+                levelNodes.sort(comparator);
+            }
+            result.addAll(levelNodes);
         }
         return result;
     }
