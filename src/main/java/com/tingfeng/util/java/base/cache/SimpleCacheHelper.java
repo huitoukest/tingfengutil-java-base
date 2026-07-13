@@ -1,6 +1,6 @@
 package com.tingfeng.util.java.base.cache;
 
-import com.tingfeng.util.java.base.cache.base.SimpleCacheMember;
+import com.tingfeng.util.java.base.cache.base.WeightCacheItem;
 
 import java.util.*;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * 特性：
  * - 读多写少场景下使用 ReadWriteLock，读读并发，写写/读写互斥
  * - 使用 TreeMap + LinkedList 维护权重索引，快速获取 min/max 权重
- * - 权重增量（actualWeight = globalBase + entry.weight），通过 globalOffset 防止溢出
+ * - TreeMap key 直接使用 member.weight，通过 globalOffset 防止溢出
  *
  * @param <K> 键类型
  * @param <V> 值类型
@@ -20,7 +20,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class SimpleCacheHelper<K, V> {
     /**
      * 权重接近溢出阈值时，触发全局偏移
-     * actualWeight = globalBase + entry.weight，当 entry.weight > 此值时需要偏移
+     * member.weight > 此值时需要偏移
      */
     private static final long WEIGHT_OVERFLOW_THRESHOLD = Integer.MAX_VALUE >> 1;
 
@@ -30,21 +30,14 @@ public class SimpleCacheHelper<K, V> {
     /**
      * 主缓存 Map：key → 缓存成员
      */
-    private final Map<K, SimpleCacheMember<V>> map;
+    private final Map<K, WeightCacheItem<V>> map;
 
     /**
-     * 权重索引：actualWeight → 该权重下的所有成员列表
-     * actualWeight = globalBase + entry.weight
+     * 权重索引：member.getWeight() → 该权重下的所有成员列表
      * TreeMap 保证 firstKey() = minWeight, lastKey() = maxWeight
      */
-    private final TreeMap<Integer, LinkedList<SimpleCacheMember<V>>> weightIndex;
+    private final TreeMap<Integer, LinkedList<WeightCacheItem<V>>> weightIndex;
 
-    /**
-     * 全局基准偏移量
-     * 每次 globalOffset 时增加，所有成员的 actualWeight 减去 minWeight
-     * 这样可以防止 entry.weight 无限递增溢出
-     */
-    private long globalBase = 0;
 
     private final ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
 
@@ -73,7 +66,7 @@ public class SimpleCacheHelper<K, V> {
         }
         // Phase 1: 读锁下获取数据
         readWriteLock.readLock().lock();
-        SimpleCacheMember<V> member;
+        WeightCacheItem<V> member;
         V value;
         try {
             member = map.get(key);
@@ -117,7 +110,10 @@ public class SimpleCacheHelper<K, V> {
     /**
      * 内部权重更新操作（需要持有写锁）
      */
-    private void doUpdateWeight(SimpleCacheMember<V> member) {
+    private void doUpdateWeight(WeightCacheItem<V> member) {
+        if ((int) member.getWeight() > WEIGHT_OVERFLOW_THRESHOLD) {
+            globalOffset();
+        }
         int oldWeight = getActualWeight(member);
         removeFromWeightIndex(member, oldWeight);
         member.setWeight(member.getWeight() + 1);
@@ -147,22 +143,17 @@ public class SimpleCacheHelper<K, V> {
         }
         readWriteLock.writeLock().lock();
         try {
-            SimpleCacheMember<V> member = map.get(key);
+            WeightCacheItem<V> member = map.get(key);
             if (member != null) {
                 // 已存在：更新值，权重 +1
                 doUpdateWeight(member);
                 member.setValue(value);
                 member.setExpireTime(expireTimeMillis);
             } else {
-                // 不存在：检查溢出 + 驱逐
-                int currentMaxWeight = getCurrentMaxWeight();
-                if (currentMaxWeight > WEIGHT_OVERFLOW_THRESHOLD) {
-                    globalOffset();
-                }
-
+                // 不存在：驱逐（溢出检查由 doUpdateWeight 统一处理）
                 // 新成员初始权重 = 当前最小权重 + 1，避免刚加入就被驱逐
                 int initialWeight = getCurrentMinWeight() + 1;
-                member = new SimpleCacheMember<>(initialWeight, value, expireTimeMillis);
+                member = new WeightCacheItem<>(initialWeight, value, expireTimeMillis);
                 map.put(key, member);
                 addToWeightIndex(member, initialWeight);
                 currentSize++;
@@ -187,10 +178,10 @@ public class SimpleCacheHelper<K, V> {
         try {
             int cleanedCount = 0;
             long now = System.currentTimeMillis();
-            Iterator<Map.Entry<K, SimpleCacheMember<V>>> iterator = map.entrySet().iterator();
+            Iterator<Map.Entry<K, WeightCacheItem<V>>> iterator = map.entrySet().iterator();
             while (iterator.hasNext()) {
-                Map.Entry<K, SimpleCacheMember<V>> entry = iterator.next();
-                SimpleCacheMember<V> member = entry.getValue();
+                Map.Entry<K, WeightCacheItem<V>> entry = iterator.next();
+                WeightCacheItem<V> member = entry.getValue();
                 if (member.getExpireTime() > 0 && now > member.getExpireTime()) {
                     removeFromWeightIndex(member, getActualWeight(member));
                     iterator.remove();
@@ -288,17 +279,17 @@ public class SimpleCacheHelper<K, V> {
     // ==================== 内部方法 ====================
 
     /**
-     * 获取成员的实际权重（globalBase + entry.weight）
+     * 获取成员的权重（直接取 member.weight）
      */
-    private int getActualWeight(SimpleCacheMember<V> member) {
-        return (int) (globalBase + member.getWeight());
+    private int getActualWeight(WeightCacheItem<V> member) {
+        return (int) member.getWeight();
     }
 
     /**
      * 获取当前最小实际权重
      */
     private int getCurrentMinWeight() {
-        Map.Entry<Integer, LinkedList<SimpleCacheMember<V>>> first = weightIndex.firstEntry();
+        Map.Entry<Integer, LinkedList<WeightCacheItem<V>>> first = weightIndex.firstEntry();
         return first == null ? 0 : first.getKey();
     }
 
@@ -306,15 +297,15 @@ public class SimpleCacheHelper<K, V> {
      * 获取当前最大实际权重
      */
     private int getCurrentMaxWeight() {
-        Map.Entry<Integer, LinkedList<SimpleCacheMember<V>>> last = weightIndex.lastEntry();
+        Map.Entry<Integer, LinkedList<WeightCacheItem<V>>> last = weightIndex.lastEntry();
         return last == null ? 0 : last.getKey();
     }
 
     /**
      * 从权重索引中移除成员
      */
-    private void removeFromWeightIndex(SimpleCacheMember<V> member, int weight) {
-        LinkedList<SimpleCacheMember<V>> bucket = weightIndex.get(weight);
+    private void removeFromWeightIndex(WeightCacheItem<V> member, int weight) {
+        LinkedList<WeightCacheItem<V>> bucket = weightIndex.get(weight);
         if (bucket != null) {
             bucket.remove(member);
             if (bucket.isEmpty()) {
@@ -326,7 +317,7 @@ public class SimpleCacheHelper<K, V> {
     /**
      * 将成员加入权重索引
      */
-    private void addToWeightIndex(SimpleCacheMember<V> member, int weight) {
+    private void addToWeightIndex(WeightCacheItem<V> member, int weight) {
         weightIndex.computeIfAbsent(weight, k -> new LinkedList<>()).add(member);
     }
 
@@ -335,12 +326,12 @@ public class SimpleCacheHelper<K, V> {
      */
     private void evict() {
         while (currentSize > maxSize) {
-            Map.Entry<Integer, LinkedList<SimpleCacheMember<V>>> minEntry = weightIndex.pollFirstEntry();
+            Map.Entry<Integer, LinkedList<WeightCacheItem<V>>> minEntry = weightIndex.pollFirstEntry();
             if (minEntry == null) {
                 break;
             }
-            LinkedList<SimpleCacheMember<V>> minBucket = minEntry.getValue();
-            SimpleCacheMember<V> toEvict = minBucket.pollFirst();
+            LinkedList<WeightCacheItem<V>> minBucket = minEntry.getValue();
+            WeightCacheItem<V> toEvict = minBucket.pollFirst();
             if (toEvict == null) {
                 continue;
             }
@@ -349,9 +340,9 @@ public class SimpleCacheHelper<K, V> {
             // 如需 O(1)，需在 SimpleCacheMember 中保存 key引用
             // 使用引用比较（==）而非 equals，避免误删所有 equals 的成员
             if (toEvict != null) {
-                Iterator<Map.Entry<K, SimpleCacheMember<V>>> iterator = map.entrySet().iterator();
+                Iterator<Map.Entry<K, WeightCacheItem<V>>> iterator = map.entrySet().iterator();
                 while (iterator.hasNext()) {
-                    Map.Entry<K, SimpleCacheMember<V>> entry = iterator.next();
+                    Map.Entry<K, WeightCacheItem<V>> entry = iterator.next();
                     if (entry.getValue() == toEvict) {
                         iterator.remove();
                         break; // 只删除第一个匹配的
@@ -367,22 +358,19 @@ public class SimpleCacheHelper<K, V> {
     }
 
     /**
-     * 全局偏移：所有实际权重减去当前最小权重
+     * 全局偏移：所有成员权重减去当前最小权重
      *
-     * 这使得 globalBase 增加，而各 entry.weight 减少
-     * 相对权重关系不变，防止 entry.weight 无限递增溢出
-     *
+     * 相对权重关系不变，防止 member.weight 无限递增溢出
      * 此操作仅在权重即将溢出时触发，频率极低
      */
     private void globalOffset() {
         int minWeight = getCurrentMinWeight();
-        globalBase += minWeight;
         if (minWeight > 0) {
-            Map<Integer, LinkedList<SimpleCacheMember<V>>> newIndex = new TreeMap<>();
-            for (Map.Entry<Integer, LinkedList<SimpleCacheMember<V>>> entry : weightIndex.entrySet()) {
-                int newWeight = entry.getKey() - (int) minWeight;
-                LinkedList<SimpleCacheMember<V>> newBucket = newIndex.computeIfAbsent(newWeight, k -> new LinkedList<>());
-                for (SimpleCacheMember<V> member : entry.getValue()) {
+            Map<Integer, LinkedList<WeightCacheItem<V>>> newIndex = new TreeMap<>();
+            for (Map.Entry<Integer, LinkedList<WeightCacheItem<V>>> entry : weightIndex.entrySet()) {
+                int newWeight = entry.getKey() - minWeight;
+                LinkedList<WeightCacheItem<V>> newBucket = newIndex.computeIfAbsent(newWeight, k -> new LinkedList<>());
+                for (WeightCacheItem<V> member : entry.getValue()) {
                     member.setWeight(member.getWeight() - minWeight);
                     newBucket.add(member);
                 }

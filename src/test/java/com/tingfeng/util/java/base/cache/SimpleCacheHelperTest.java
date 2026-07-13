@@ -1,7 +1,6 @@
 package com.tingfeng.util.java.base.cache;
 
-import com.tingfeng.util.java.base.cache.SimpleCacheHelper;
-import com.tingfeng.util.java.base.cache.base.SimpleCacheMember;
+import com.tingfeng.util.java.base.cache.base.WeightCacheItem;
 import com.tingfeng.util.java.base.common.utils.TestUtils;
 import org.junit.Assert;
 import org.junit.Test;
@@ -375,7 +374,7 @@ public class SimpleCacheHelperTest {
      */
     @Test
     public void testSimpleCacheMember() {
-        SimpleCacheMember<String> member = new SimpleCacheMember<>("test");
+        WeightCacheItem<String> member = new WeightCacheItem<>("test");
 
         Assert.assertEquals(0, member.getWeight());
         Assert.assertEquals("test", member.getValue());
@@ -387,7 +386,7 @@ public class SimpleCacheHelperTest {
         Assert.assertEquals("updated", member.getValue());
 
         // 测试链式调用
-        SimpleCacheMember<String> result = member.setWeight(200).setValue("chained");
+        WeightCacheItem<String> result = member.setWeight(200).setValue("chained");
         Assert.assertSame(member, result);
     }
 
@@ -396,15 +395,15 @@ public class SimpleCacheHelperTest {
      */
     @Test
     public void testSimpleCacheMemberConstructors() {
-        SimpleCacheMember<String> m1 = new SimpleCacheMember<>();
+        WeightCacheItem<String> m1 = new WeightCacheItem<>();
         Assert.assertEquals(0, m1.getWeight());
         Assert.assertNull(m1.getValue());
 
-        SimpleCacheMember<String> m2 = new SimpleCacheMember<>("value");
+        WeightCacheItem<String> m2 = new WeightCacheItem<>("value");
         Assert.assertEquals(0, m2.getWeight());
         Assert.assertEquals("value", m2.getValue());
 
-        SimpleCacheMember<String> m3 = new SimpleCacheMember<>(50, "value50");
+        WeightCacheItem<String> m3 = new WeightCacheItem<>(50, "value50");
         Assert.assertEquals(50, m3.getWeight());
         Assert.assertEquals("value50", m3.getValue());
     }
