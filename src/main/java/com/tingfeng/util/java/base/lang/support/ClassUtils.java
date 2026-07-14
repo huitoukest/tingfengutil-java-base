@@ -1,4 +1,6 @@
-package com.tingfeng.util.java.base.common.constant;
+package com.tingfeng.util.java.base.lang.support;
+
+import com.tingfeng.util.java.base.common.constant.PrimitiveType;
 
 /**
  * Class 类型判断工具类

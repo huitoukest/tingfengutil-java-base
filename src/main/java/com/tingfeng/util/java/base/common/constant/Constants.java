@@ -31,9 +31,9 @@ public interface Constants {
 		String V_PARAM_JOIN_STRING_AND = "&";
 		String V_PARAM_JOIN_STRING_EQ = "=";
 		String KEY_CONTENT_TYPE_STREAM = "application/octet-stream;";
-		String KYE_CHARSET_EQ = "charset=";
-		String HEARDER_CONTENT_DISPOSITION = "Content-Disposition";
-		String HEARDER_CONTENT_LENGTH = "Content-Length";
+		String KEY_CHARSET_EQ = "charset=";
+		String HEADER_CONTENT_DISPOSITION = "Content-Disposition";
+		String HEADER_CONTENT_LENGTH = "Content-Length";
 		String KEY_ATTACHMENT = "attachment";
 		String KEY_FILENAME_EQ= "filename=";
 		String KEY_HTTP = "http://";
@@ -41,7 +41,7 @@ public interface Constants {
 	}
 	/*****************************************Http相关配置End*****************************************************/
 	/*****************************************Response关键字Start*****************************************************/
-	public interface ResPonse{
+	public interface Response{
 		String KEY_RESPCODE = "RespCode";
 		String KEY_RESPMSG = "RespDesc";
 	}

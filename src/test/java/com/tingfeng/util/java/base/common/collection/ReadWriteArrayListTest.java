@@ -411,7 +411,8 @@ public class ReadWriteArrayListTest {
     // ==================== 迭代器快照语义 ====================
 
     @Test
-    public void testIteratorSnapshotSemantics() {
+    public void testIteratorLazyBehavior() {
+        // Lazy iterator 是弱一致性的，遍历期间可以看到后续修改
         ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
         list.add("a");
         list.add("b");
@@ -421,14 +422,14 @@ public class ReadWriteArrayListTest {
         list.add("d");
         list.remove("a");
 
-        // iterator 应基于快照，不受后续修改影响
+        // Lazy iterator 读取当前列表状态（弱一致性）
         List<String> iterResult = new ArrayList<>();
         while (it.hasNext()) {
             iterResult.add(it.next());
         }
-        Assert.assertEquals(Arrays.asList("a", "b", "c"), iterResult);
+        Assert.assertEquals(Arrays.asList("b", "c", "d"), iterResult);
 
-        // 原列表已变更
+        // 原列表一致
         Assert.assertEquals(Arrays.asList("b", "c", "d"), list);
     }
 
@@ -454,6 +455,163 @@ public class ReadWriteArrayListTest {
             iterResult.add(lit.next());
         }
         Assert.assertEquals(Arrays.asList("a", "b"), iterResult);
+    }
+
+    @Test
+    public void testIteratorRemove() {
+        ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
+        list.add("a");
+        list.add("b");
+        list.add("c");
+
+        Iterator<String> it = list.iterator();
+        while (it.hasNext()) {
+            String s = it.next();
+            if ("b".equals(s)) {
+                it.remove();
+            }
+        }
+
+        // Verify element was removed from underlying list
+        Assert.assertEquals(2, list.size());
+        Assert.assertEquals(Arrays.asList("a", "c"), list);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testIteratorRemoveWithoutNext() {
+        ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
+        list.add("a");
+        Iterator<String> it = list.iterator();
+        it.remove();
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testIteratorRemoveTwice() {
+        ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
+        list.add("a");
+        list.add("b");
+        Iterator<String> it = list.iterator();
+        it.next();
+        it.remove();
+        it.remove();
+    }
+
+    @Test
+    public void testIteratorRemoveFirstAndLast() {
+        ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
+        list.add("a");
+        list.add("b");
+        list.add("c");
+
+        Iterator<String> it = list.iterator();
+        // Remove first
+        Assert.assertEquals("a", it.next());
+        it.remove();
+        Assert.assertEquals("b", it.next());
+        // Remove last
+        Assert.assertEquals("c", it.next());
+        it.remove();
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals(Arrays.asList("b"), list);
+    }
+
+    @Test
+    public void testSpliteratorCharacteristics() {
+        ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
+        list.add("a");
+        list.add("b");
+        list.add("c");
+
+        Spliterator<String> spliterator = list.spliterator();
+        int characteristics = spliterator.characteristics();
+
+        // Should have ORDERED
+        Assert.assertTrue("should have ORDERED",
+                (characteristics & Spliterator.ORDERED) != 0);
+        // Should NOT have SIZED (list is concurrently modifiable)
+        Assert.assertTrue("should NOT have SIZED",
+                (characteristics & Spliterator.SIZED) == 0);
+        // Should NOT have SUBSIZED
+        Assert.assertTrue("should NOT have SUBSIZED",
+                (characteristics & Spliterator.SUBSIZED) == 0);
+    }
+
+    @Test
+    public void testEqualsWithOtherList() {
+        ReadWriteArrayList<String> rwList = new ReadWriteArrayList<>();
+        rwList.add("a");
+        rwList.add("b");
+        rwList.add("c");
+
+        // Compare with ArrayList
+        ArrayList<String> arrayList = new ArrayList<>(Arrays.asList("a", "b", "c"));
+        Assert.assertEquals(rwList, arrayList);
+        Assert.assertEquals(arrayList, rwList);
+
+        // Compare with LinkedList
+        LinkedList<String> linkedList = new LinkedList<>(Arrays.asList("a", "b", "c"));
+        Assert.assertEquals(rwList, linkedList);
+        Assert.assertEquals(linkedList, rwList);
+
+        // Empty list comparison
+        ReadWriteArrayList<String> empty = new ReadWriteArrayList<>();
+        Assert.assertEquals(empty, new ArrayList<>());
+        Assert.assertEquals(empty, new LinkedList<>());
+
+        // Compare with non-List object
+        Assert.assertNotEquals(rwList, "not a list");
+        Assert.assertNotEquals(rwList, null);
+    }
+
+    @Test(timeout = 5000)
+    public void testLockBalance() {
+        ReadWriteArrayList<String> list = new ReadWriteArrayList<>();
+
+        // Read operations
+        list.size();
+        list.isEmpty();
+        list.contains("x");
+
+        // Write lock should be acquirable (no read lock leak)
+        list.add("a");
+
+        // Read operation that throws
+        try {
+            list.get(5);
+            Assert.fail("expected exception");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
+
+        // Write lock should still be acquirable after exception path
+        list.add("b");
+
+        // Iterator traversal
+        Iterator<String> it = list.iterator();
+        while (it.hasNext()) {
+            it.next();
+        }
+
+        // Iterator remove
+        it = list.iterator();
+        it.next();
+        it.remove();
+
+        // Write lock acquirable after iterator
+        list.add("c");
+
+        // Spliterator
+        list.spliterator();
+
+        // Equals and hashCode
+        list.equals(new ArrayList<>());
+        list.hashCode();
+
+        // Write lock acquirable after all read operations
+        list.remove("b");
+
+        // Verify list consistency (after remove("b") from ["b","c"])
+        Assert.assertEquals(Arrays.asList("c"), list);
     }
 
     // ==================== 并发读写 ====================

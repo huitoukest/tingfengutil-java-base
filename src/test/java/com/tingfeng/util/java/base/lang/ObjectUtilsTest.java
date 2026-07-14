@@ -18,27 +18,27 @@ public class ObjectUtilsTest {
 
     @Test
     public void getObjectTypeByClass() {
-        Assert.assertEquals(ObjectType.Boolean, ObjectUtils.getObjectType(Boolean.class));
-        Assert.assertEquals(ObjectType.Integer, ObjectUtils.getObjectType(Integer.class));
-        Assert.assertEquals(ObjectType.Long, ObjectUtils.getObjectType(Long.class));
-        Assert.assertEquals(ObjectType.Double, ObjectUtils.getObjectType(Double.class));
-        Assert.assertEquals(ObjectType.Float, ObjectUtils.getObjectType(Float.class));
-        Assert.assertEquals(ObjectType.String, ObjectUtils.getObjectType(String.class));
-        Assert.assertEquals(ObjectType.Short, ObjectUtils.getObjectType(Short.class));
-        Assert.assertEquals(ObjectType.Byte, ObjectUtils.getObjectType(Byte.class));
-        Assert.assertEquals(ObjectType.Date, ObjectUtils.getObjectType(Date.class));
-        Assert.assertEquals(ObjectType.Other, ObjectUtils.getObjectType(Object.class));
-        Assert.assertEquals(ObjectType.Other, ObjectUtils.getObjectType(List.class));
+        Assert.assertEquals(ObjectType.BOOLEAN, ObjectUtils.getObjectType(Boolean.class));
+        Assert.assertEquals(ObjectType.INTEGER, ObjectUtils.getObjectType(Integer.class));
+        Assert.assertEquals(ObjectType.LONG, ObjectUtils.getObjectType(Long.class));
+        Assert.assertEquals(ObjectType.DOUBLE, ObjectUtils.getObjectType(Double.class));
+        Assert.assertEquals(ObjectType.FLOAT, ObjectUtils.getObjectType(Float.class));
+        Assert.assertEquals(ObjectType.STRING, ObjectUtils.getObjectType(String.class));
+        Assert.assertEquals(ObjectType.SHORT, ObjectUtils.getObjectType(Short.class));
+        Assert.assertEquals(ObjectType.BYTE, ObjectUtils.getObjectType(Byte.class));
+        Assert.assertEquals(ObjectType.DATE, ObjectUtils.getObjectType(Date.class));
+        Assert.assertEquals(ObjectType.OTHER, ObjectUtils.getObjectType(Object.class));
+        Assert.assertEquals(ObjectType.OTHER, ObjectUtils.getObjectType(List.class));
     }
 
     @Test
     public void getObjectTypeByClassName() {
-        Assert.assertEquals(ObjectType.Boolean, ObjectUtils.getObjectType("java.lang.Boolean"));
-        Assert.assertEquals(ObjectType.Boolean, ObjectUtils.getObjectType("boolean"));
-        Assert.assertEquals(ObjectType.Integer, ObjectUtils.getObjectType("java.lang.Integer"));
-        Assert.assertEquals(ObjectType.Integer, ObjectUtils.getObjectType("int"));
-        Assert.assertEquals(ObjectType.String, ObjectUtils.getObjectType("java.lang.String"));
-        Assert.assertEquals(ObjectType.Other, ObjectUtils.getObjectType("java.util.HashMap"));
+        Assert.assertEquals(ObjectType.BOOLEAN, ObjectUtils.getObjectType("java.lang.Boolean"));
+        Assert.assertEquals(ObjectType.BOOLEAN, ObjectUtils.getObjectType("boolean"));
+        Assert.assertEquals(ObjectType.INTEGER, ObjectUtils.getObjectType("java.lang.Integer"));
+        Assert.assertEquals(ObjectType.INTEGER, ObjectUtils.getObjectType("int"));
+        Assert.assertEquals(ObjectType.STRING, ObjectUtils.getObjectType("java.lang.String"));
+        Assert.assertEquals(ObjectType.OTHER, ObjectUtils.getObjectType("java.util.HashMap"));
     }
 
     @Test
@@ -47,9 +47,9 @@ public class ObjectUtilsTest {
         Field stringField = User.class.getDeclaredField("userName");
         Field mapField = User.class.getDeclaredField("map");
 
-        Assert.assertEquals(ObjectType.Integer, ObjectUtils.getObjectType(intField));
-        Assert.assertEquals(ObjectType.String, ObjectUtils.getObjectType(stringField));
-        Assert.assertEquals(ObjectType.Other, ObjectUtils.getObjectType(mapField));
+        Assert.assertEquals(ObjectType.INTEGER, ObjectUtils.getObjectType(intField));
+        Assert.assertEquals(ObjectType.STRING, ObjectUtils.getObjectType(stringField));
+        Assert.assertEquals(ObjectType.OTHER, ObjectUtils.getObjectType(mapField));
     }
 
     // ==================== isBaseTypeObject 系列测试 ====================
@@ -104,18 +104,72 @@ public class ObjectUtilsTest {
         Assert.assertEquals(Float.valueOf(1.5f), ObjectUtils.getObject(Float.class, "1.5"));
         Assert.assertEquals(Byte.valueOf((byte) 1), ObjectUtils.getObject(Byte.class, "1"));
         Assert.assertEquals(Short.valueOf((short) 1), ObjectUtils.getObject(Short.class, "1"));
+        Assert.assertEquals(Boolean.TRUE, ObjectUtils.getObject(Boolean.class, "true"));
+
+        // Date
+        Date date = ObjectUtils.getObject(Date.class, "2024-01-15");
+        Assert.assertNotNull(date);
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        Assert.assertEquals(2024, cal.get(Calendar.YEAR));
+        Assert.assertEquals(Calendar.JANUARY, cal.get(Calendar.MONTH));
+        Assert.assertEquals(15, cal.get(Calendar.DAY_OF_MONTH));
+    }
+
+    @Test
+    public void getObjectWithPrimitiveTypes() {
+        // primitive types (int, boolean, long, double, float, byte, short)
+        Assert.assertEquals(Integer.valueOf(0), ObjectUtils.getObject(int.class, "abc"));
+        Assert.assertEquals(Integer.valueOf(42), ObjectUtils.getObject(int.class, "42"));
+        Assert.assertEquals(Boolean.FALSE, ObjectUtils.getObject(boolean.class, "notboolean"));
+        Assert.assertEquals(Boolean.TRUE, ObjectUtils.getObject(boolean.class, "true"));
+        Assert.assertEquals(Long.valueOf(0L), ObjectUtils.getObject(long.class, "invalid"));
+        Assert.assertEquals(Long.valueOf(99L), ObjectUtils.getObject(long.class, "99"));
+        Assert.assertEquals(Double.valueOf(0d), ObjectUtils.getObject(double.class, "bad"));
+        Assert.assertEquals(Double.valueOf(3.14), ObjectUtils.getObject(double.class, "3.14"));
+        Assert.assertEquals(Float.valueOf(0f), ObjectUtils.getObject(float.class, "bad"));
+        Assert.assertEquals(Float.valueOf(2.5f), ObjectUtils.getObject(float.class, "2.5"));
+        Assert.assertEquals(Byte.valueOf((byte) 0), ObjectUtils.getObject(byte.class, "999"));
+        Assert.assertEquals(Byte.valueOf((byte) 7), ObjectUtils.getObject(byte.class, "7"));
+        Assert.assertEquals(Short.valueOf((short) 0), ObjectUtils.getObject(short.class, "99999"));
+        Assert.assertEquals(Short.valueOf((short) 3), ObjectUtils.getObject(short.class, "3"));
+    }
+
+    @Test
+    public void getObjectWithWrapperTypes() {
+        // wrapper types with default fallback behavior (null on parse failure)
+        Assert.assertEquals(Boolean.TRUE, ObjectUtils.getObject(Boolean.class, "true"));
+        Assert.assertEquals(Boolean.FALSE, ObjectUtils.getObject(Boolean.class, "false"));
+        Assert.assertNull(ObjectUtils.getObject(Boolean.class, "notboolean"));
+
+        Assert.assertEquals(Integer.valueOf(42), ObjectUtils.getObject(Integer.class, "42"));
+        Assert.assertEquals(Long.valueOf(99L), ObjectUtils.getObject(Long.class, "99"));
+        Assert.assertEquals(Double.valueOf(3.14), ObjectUtils.getObject(Double.class, "3.14"));
+        Assert.assertEquals(Float.valueOf(2.5f), ObjectUtils.getObject(Float.class, "2.5"));
+        Assert.assertEquals(Byte.valueOf((byte) 7), ObjectUtils.getObject(Byte.class, "7"));
+        Assert.assertEquals(Short.valueOf((short) 3), ObjectUtils.getObject(Short.class, "3"));
     }
 
     @Test
     public void getObjectWithSameType() {
         Integer original = 100;
         Assert.assertSame(original, ObjectUtils.getObject(Integer.class, original));
+        String str = "test";
+        Assert.assertSame(str, ObjectUtils.getObject(String.class, str));
     }
 
     @Test
     public void getObjectWithNull() {
         Assert.assertNull(ObjectUtils.getObject(Integer.class, null));
         Assert.assertEquals("default", ObjectUtils.getObject(String.class, "default"));
+    }
+
+    @Test
+    public void getObjectWithUnknownType() {
+        // unknown types should return the original object unchanged
+        List<String> list = Arrays.asList("a", "b");
+        Assert.assertSame(list, ObjectUtils.getObject(List.class, list));
+        Assert.assertEquals("raw", ObjectUtils.getObject(Object.class, "raw"));
     }
 
     // ==================== getObjectByXml 测试 ====================

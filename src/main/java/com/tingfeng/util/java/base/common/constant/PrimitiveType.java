@@ -15,7 +15,8 @@ public enum PrimitiveType {
     FLOAT(float.class, Float.class, float[].class),
     CHAR(char.class, Character.class, char[].class),
     BYTE(byte.class, Byte.class, byte[].class),
-    SHORT(short.class, Short.class, short[].class);
+    SHORT(short.class, Short.class, short[].class),
+    VOID(void.class, Void.class, Void[].class);
 
     /**
      * 原始类型，如 int.class

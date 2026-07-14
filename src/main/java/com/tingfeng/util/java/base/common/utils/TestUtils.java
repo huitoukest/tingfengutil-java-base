@@ -12,7 +12,6 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 
@@ -44,7 +43,6 @@ public final class TestUtils {
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(thread);
         AtomicReference<Throwable> error = new AtomicReference<>();
-        AtomicInteger activeCount = new AtomicInteger(thread);
 
         for (int i = 0; i < thread; i++) {
             int threadNo = i;
@@ -58,7 +56,6 @@ public final class TestUtils {
                     error.compareAndSet(null, e);
                 } finally {
                     doneLatch.countDown();
-                    activeCount.decrementAndGet();
                 }
             }).start();
         }
@@ -82,7 +79,6 @@ public final class TestUtils {
         CountDownLatch startLatch = new CountDownLatch(1);
         CountDownLatch doneLatch = new CountDownLatch(thread);
         AtomicReference<Throwable> error = new AtomicReference<>();
-        AtomicInteger activeCount = new AtomicInteger(thread);
 
         for (int i = 0; i < thread; i++) {
             int threadNo = i;
@@ -102,7 +98,6 @@ public final class TestUtils {
                     error.compareAndSet(null, e);
                 } finally {
                     doneLatch.countDown();
-                    activeCount.decrementAndGet();
                 }
             }).start();
         }
@@ -217,14 +212,26 @@ public final class TestUtils {
 
     // ==================== 中断响应测试 ====================
 
+    /**
+     * 测试 worker 线程对中断信号的响应行为。
+     * <p>
+     * 用 AtomicBoolean 捕获 worker 线程是否观测到中断标志，
+     * 避免在主线程调用 Thread.interrupted() 导致检测不可靠。
+     *
+     * @param action  worker 线程执行的任务
+     * @param expected 预期的中断响应行为
+     * @throws TestInterruptedException join 过程中被中断
+     * @throws AssertionError          worker 未观测到中断信号或未按预期终止
+     */
     public static void testInterruptResponse(
             Runnable action,
             ExpectedInterruptBehavior expected) {
+        AtomicBoolean interruptWasObserved = new AtomicBoolean(false);
         Thread worker = new Thread(() -> {
             try {
                 action.run();
-            } catch (Throwable e) {
-                throw e;
+            } finally {
+                interruptWasObserved.set(Thread.currentThread().isInterrupted());
             }
         });
 
@@ -238,7 +245,7 @@ public final class TestUtils {
                 throw new TestInterruptedException("Join interrupted", e);
             }
             if (worker.isAlive()) {
-                worker.stop();
+                worker.interrupt();
             }
         } else {
             try {
@@ -247,9 +254,13 @@ public final class TestUtils {
                 throw new TestInterruptedException("Join interrupted", e);
             }
             if (worker.isAlive()) {
-                worker.stop();
+                worker.interrupt();
                 throw new AssertionError("Thread did not terminate");
             }
+        }
+
+        if (!interruptWasObserved.get()) {
+            throw new AssertionError("Worker thread did not observe the interrupt signal");
         }
     }
 
@@ -313,6 +324,7 @@ public final class TestUtils {
         }
 
         startLatch.countDown();
+        executor.shutdown();
         boolean completed;
         try {
             completed = executor.awaitTermination(timeoutMs, TimeUnit.MILLISECONDS);
@@ -356,6 +368,7 @@ public final class TestUtils {
         AtomicReference<W> sharedRef = new AtomicReference<>();
         AtomicBoolean writeCompleted = new AtomicBoolean(false);
         CountDownLatch latch = new CountDownLatch(2);
+        AtomicReference<Throwable> readerError = new AtomicReference<>();
 
         Thread writer = new Thread(() -> {
             try {
@@ -374,8 +387,8 @@ public final class TestUtils {
                 }
                 W value = sharedRef.get();
                 readerAction.accept(value);
-            } catch (Exception e) {
-                // ignore
+            } catch (Throwable e) {
+                readerError.set(e);
             } finally {
                 latch.countDown();
             }
@@ -387,6 +400,17 @@ public final class TestUtils {
         boolean completed = awaitLatch(latch, timeoutMs);
         if (!completed) {
             throw new TestTimeoutException("Happens-before test timeout", timeoutMs);
+        }
+
+        Throwable readerErr = readerError.get();
+        if (readerErr != null) {
+            if (readerErr instanceof RuntimeException) {
+                throw (RuntimeException) readerErr;
+            }
+            if (readerErr instanceof Error) {
+                throw (Error) readerErr;
+            }
+            throw new RuntimeException("Reader thread failed", readerErr);
         }
 
         W result = sharedRef.get();
@@ -427,6 +451,7 @@ public final class TestUtils {
                 completed = latch.await(timeoutPerLevel, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                executor.shutdownNow();
                 break;
             }
 
@@ -508,10 +533,9 @@ public final class TestUtils {
         }
 
         startLatch.countDown();
-        try {
-            doneLatch.await();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        boolean completed = awaitLatch(doneLatch, DEFAULT_TIMEOUT_MS);
+        if (!completed) {
+            throw new TestTimeoutException("runAndCollectAllErrors timeout after " + DEFAULT_TIMEOUT_MS + "ms", DEFAULT_TIMEOUT_MS);
         }
 
         return errors;

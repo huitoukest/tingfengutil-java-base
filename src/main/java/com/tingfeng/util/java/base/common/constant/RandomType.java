@@ -5,13 +5,13 @@ package com.tingfeng.util.java.base.common.constant;
  * @author huitoukest
  */
 public enum RandomType {
-    number("0123456789"),
-    upperChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
-    lowerChar("abcdefghijklmnopqrstuvwxyz"),
+    NUMBER("0123456789"),
+    UPPER_CHAR("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    LOWER_CHAR("abcdefghijklmnopqrstuvwxyz"),
     /**
      * 一些常见的符号
      */
-    symbol("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
+    SYMBOL("!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~");
     private char[] value;
     private String strValue;
     RandomType(String str){

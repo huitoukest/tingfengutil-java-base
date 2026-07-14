@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.bean.converter;
 
 import com.tingfeng.util.java.base.bean.converter.defaults.DefaultConverters;
 import com.tingfeng.util.java.base.common.collection.ReadWriteArrayList;
-import com.tingfeng.util.java.base.common.constant.ClassUtils;
+import com.tingfeng.util.java.base.lang.support.ClassUtils;
 import com.tingfeng.util.java.base.lang.base.UnionKey;
 
 import java.util.*;
@@ -613,8 +613,8 @@ public class DefaultConverterRegistry implements ConverterRegistry {
      * 移除指定原始 Converter 在目标 UnionKey 下的所有冒泡副本。
      * <p>
      * 注意：使用索引逆序遍历 + {@code remove(int)} 而非 {@code removeIf()}，
-     * 因为 {@link ReadWriteArrayList} 的 {@code iterator()} 返回快照副本，
-     * 继承自 {@link Collection#removeIf} 的默认实现无法正确修改底层列表。
+     * 此处索引方式效率更高；{@link ReadWriteArrayList} 的惰性迭代器
+     * 已支持 {@link Iterator#remove()} 正确修改底层列表。
      */
     private void removeBubbledCopies(Converter<?, ?> original, UnionKey key) {
         ReadWriteArrayList<Converter<?, ?>> cvList = converters.get(key);

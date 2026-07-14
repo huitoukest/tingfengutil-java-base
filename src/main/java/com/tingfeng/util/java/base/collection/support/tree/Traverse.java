@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.collection.support.tree;
 
 import com.tingfeng.util.java.base.collection.base.TreeTraverseContext;
-import com.tingfeng.util.java.base.common.constant.DataNodeTraversePolicy;
+import com.tingfeng.util.java.base.collection.support.tree.DataNodeTraversePolicy;
 
 import java.util.List;
 import java.util.function.Function;

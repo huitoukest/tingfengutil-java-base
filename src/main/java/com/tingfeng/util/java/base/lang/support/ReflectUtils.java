@@ -2,7 +2,7 @@ package com.tingfeng.util.java.base.lang.support;
 
 import com.tingfeng.util.java.base.cache.SimpleCacheHelper;
 import com.tingfeng.util.java.base.common.constant.Constants;
-import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
+import com.tingfeng.util.java.base.common.constant.PrimitiveType;
 import com.tingfeng.util.java.base.lang.ObjectUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
@@ -134,7 +134,9 @@ public class ReflectUtils {
         if (cls == null) {
             return false;
         }
-        return isJavaBaseDataClass(cls.getCanonicalName());
+        return PrimitiveType.isPrimitiveOrWrapper(cls)
+                || Date.class.equals(cls)
+                || String.class.equals(cls);
     }
 
     /**
@@ -142,44 +144,16 @@ public class ReflectUtils {
      * @return 如果此类是基础数据或者包装类型或者Date类型, 返回true;否则返回false; 如果cls为null,返回false;
      */
     public static boolean isJavaBaseDataClass(String clsName) {
-
-        switch (clsName) {
-            case ObjectTypeString.clsNameBoolean:
-                return true;
-            case ObjectTypeString.clsNameByte:
-                return true;
-            case ObjectTypeString.clsNameDate:
-                return true;
-            case ObjectTypeString.clsNameLong:
-                return true;
-            case ObjectTypeString.clsNameInteger:
-                return true;
-            case ObjectTypeString.clsNameFloat:
-                return true;
-            case ObjectTypeString.clsNameDouble:
-                return true;
-            case ObjectTypeString.clsNameShort:
-                return true;
-            case ObjectTypeString.clsNameString:
-                return true;
-            case ObjectTypeString.clsNameBaseBoolean:
-                return true;
-            case ObjectTypeString.clsNameBaseByte:
-                return true;
-            case ObjectTypeString.clsNameBaseDouble:
-                return true;
-            case ObjectTypeString.clsNameBaseFloat:
-                return true;
-            case ObjectTypeString.clsNameBaseInt:
-                return true;
-            case ObjectTypeString.clsNameBaseLong:
-                return true;
-            case ObjectTypeString.clsNameBaseShort:
-                return true;
-            default:
-                break;
+        if (clsName == null) {
+            return false;
         }
-        return false;
+        for (PrimitiveType pt : PrimitiveType.values()) {
+            if (pt.getPrimitiveType().getName().equals(clsName)
+                    || pt.getWrapperType().getName().equals(clsName)) {
+                return true;
+            }
+        }
+        return "java.util.Date".equals(clsName) || "java.lang.String".equals(clsName);
     }
 
     /**

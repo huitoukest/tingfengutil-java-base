@@ -42,7 +42,7 @@ public class RandomUtils {
      * @return 随机字符串
      */
     public static String randomString(int length) {
-        return randomString(length, RandomType.number, RandomType.lowerChar, RandomType.upperChar);
+        return randomString(length, RandomType.NUMBER, RandomType.LOWER_CHAR, RandomType.UPPER_CHAR);
     }
 
     /**
@@ -70,7 +70,7 @@ public class RandomUtils {
      * @return 随机字符串
      */
     public static String randomLetterString(int length) {
-        return randomString(length, RandomType.lowerChar, RandomType.upperChar);
+        return randomString(length, RandomType.LOWER_CHAR, RandomType.UPPER_CHAR);
     }
 
     /**
@@ -80,7 +80,7 @@ public class RandomUtils {
      * @return 随机字符串
      */
     public static String randomUpperString(int length) {
-        return randomString(length, RandomType.upperChar);
+        return randomString(length, RandomType.UPPER_CHAR);
     }
 
     /**
@@ -90,7 +90,7 @@ public class RandomUtils {
      * @return 随机字符串
      */
     public static String randomLowerString(int length) {
-        return randomString(length, RandomType.lowerChar);
+        return randomString(length, RandomType.LOWER_CHAR);
     }
 
     /**
@@ -100,7 +100,7 @@ public class RandomUtils {
      * @return 随机字符串
      */
     public static String randomNumberString(int length) {
-        return randomString(length, RandomType.number);
+        return randomString(length, RandomType.NUMBER);
     }
 
     /**

@@ -68,9 +68,60 @@ public class ReadWriteArrayList<E> extends AbstractList<E> implements List<E> {
 
     @Override
     public Iterator<E> iterator() {
+        return new Iterator<E>() {
+            private int cursor = 0;
+            private int lastReturned = -1;
+
+            @Override
+            public boolean hasNext() {
+                rwLock.readLock().lock();
+                try {
+                    return cursor < list.size();
+                } finally {
+                    rwLock.readLock().unlock();
+                }
+            }
+
+            @Override
+            public E next() {
+                rwLock.readLock().lock();
+                try {
+                    if (cursor >= list.size()) {
+                        throw new NoSuchElementException();
+                    }
+                    lastReturned = cursor;
+                    return list.get(cursor++);
+                } finally {
+                    rwLock.readLock().unlock();
+                }
+            }
+
+            @Override
+            public void remove() {
+                if (lastReturned < 0) {
+                    throw new IllegalStateException();
+                }
+                rwLock.writeLock().lock();
+                try {
+                    list.remove(lastReturned);
+                    cursor = lastReturned;
+                    lastReturned = -1;
+                    modCount++;
+                } finally {
+                    rwLock.writeLock().unlock();
+                }
+            }
+        };
+    }
+
+    @Override
+    public Spliterator<E> spliterator() {
         rwLock.readLock().lock();
         try {
-            return new ArrayList<>(list).iterator();
+            return Spliterators.spliteratorUnknownSize(
+                    new ArrayList<>(list).iterator(),
+                    Spliterator.ORDERED
+            );
         } finally {
             rwLock.readLock().unlock();
         }
@@ -298,6 +349,7 @@ public class ReadWriteArrayList<E> extends AbstractList<E> implements List<E> {
     public List<E> subList(int fromIndex, int toIndex) {
         rwLock.readLock().lock();
         try {
+            // 返回独立快照副本，对原列表的后续修改不影响 subList
             return new ArrayList<>(list.subList(fromIndex, toIndex));
         } finally {
             rwLock.readLock().unlock();
@@ -319,7 +371,7 @@ public class ReadWriteArrayList<E> extends AbstractList<E> implements List<E> {
     public int hashCode() {
         rwLock.readLock().lock();
         try {
-            return list.hashCode();
+            return new ArrayList<>(list).hashCode();
         } finally {
             rwLock.readLock().unlock();
         }
@@ -327,9 +379,15 @@ public class ReadWriteArrayList<E> extends AbstractList<E> implements List<E> {
 
     @Override
     public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+        if (!(o instanceof List)) {
+            return false;
+        }
         rwLock.readLock().lock();
         try {
-            return list.equals(o);
+            return new ArrayList<>(list).equals(o);
         } finally {
             rwLock.readLock().unlock();
         }

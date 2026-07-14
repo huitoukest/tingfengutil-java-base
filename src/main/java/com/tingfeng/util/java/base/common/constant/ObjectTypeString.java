@@ -2,8 +2,13 @@ package com.tingfeng.util.java.base.common.constant;
 
 /**
  * 常见的java Object的class的名称
+ *
+ * @deprecated 使用 {@link PrimitiveType} 替代，
+ * 通过 PrimitiveType.fromPrimitive()/fromWrapper() 获取对应类型信息。
+ * String 和 Date 类型请直接使用对应的 Class 字面量。
  * @author huitoukest
  */
+@Deprecated
 public class ObjectTypeString {
 	/**
 	 * 包装类型的类名,对应Type

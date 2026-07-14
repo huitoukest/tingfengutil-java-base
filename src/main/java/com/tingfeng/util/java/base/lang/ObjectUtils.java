@@ -1,7 +1,7 @@
 package com.tingfeng.util.java.base.lang;
 
 import com.tingfeng.util.java.base.common.constant.ObjectType;
-import com.tingfeng.util.java.base.common.constant.ObjectTypeString;
+import com.tingfeng.util.java.base.common.constant.PrimitiveType;
 import com.tingfeng.util.java.base.validate.JudgeEmptyHelper;
 import com.tingfeng.util.java.base.lang.base.ConvertI;
 import com.tingfeng.util.java.base.datetime.DateUtils;
@@ -25,22 +25,22 @@ public class ObjectUtils {
     private static final Map<String, ObjectType> OBJECT_TYPE_MAP = new HashMap<>(18);
 
     static {
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBoolean, ObjectType.Boolean);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseBoolean, ObjectType.Boolean);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameDate, ObjectType.Date);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameFloat, ObjectType.Float);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseFloat, ObjectType.Float);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameDouble, ObjectType.Double);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseDouble, ObjectType.Double);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameLong, ObjectType.Long);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseLong, ObjectType.Long);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameInteger, ObjectType.Integer);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseInt, ObjectType.Integer);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameString, ObjectType.String);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameShort, ObjectType.Short);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseShort, ObjectType.Short);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameByte, ObjectType.Byte);
-        OBJECT_TYPE_MAP.put(ObjectTypeString.clsNameBaseByte, ObjectType.Byte);
+        OBJECT_TYPE_MAP.put(java.lang.Boolean.class.getName(), ObjectType.BOOLEAN);
+        OBJECT_TYPE_MAP.put(boolean.class.getName(), ObjectType.BOOLEAN);
+        OBJECT_TYPE_MAP.put(java.util.Date.class.getName(), ObjectType.DATE);
+        OBJECT_TYPE_MAP.put(java.lang.Float.class.getName(), ObjectType.FLOAT);
+        OBJECT_TYPE_MAP.put(float.class.getName(), ObjectType.FLOAT);
+        OBJECT_TYPE_MAP.put(java.lang.Double.class.getName(), ObjectType.DOUBLE);
+        OBJECT_TYPE_MAP.put(double.class.getName(), ObjectType.DOUBLE);
+        OBJECT_TYPE_MAP.put(java.lang.Long.class.getName(), ObjectType.LONG);
+        OBJECT_TYPE_MAP.put(long.class.getName(), ObjectType.LONG);
+        OBJECT_TYPE_MAP.put(java.lang.Integer.class.getName(), ObjectType.INTEGER);
+        OBJECT_TYPE_MAP.put(int.class.getName(), ObjectType.INTEGER);
+        OBJECT_TYPE_MAP.put(java.lang.String.class.getName(), ObjectType.STRING);
+        OBJECT_TYPE_MAP.put(java.lang.Short.class.getName(), ObjectType.SHORT);
+        OBJECT_TYPE_MAP.put(short.class.getName(), ObjectType.SHORT);
+        OBJECT_TYPE_MAP.put(java.lang.Byte.class.getName(), ObjectType.BYTE);
+        OBJECT_TYPE_MAP.put(byte.class.getName(), ObjectType.BYTE);
     }
 
     /**
@@ -57,10 +57,10 @@ public class ObjectUtils {
      * 通过className获取对象的类型
      *
      * @param className 类的全限定名
-     * @return 对象类型枚举，未知类型返回ObjectType.Other
+     * @return 对象类型枚举，未知类型返回ObjectType.OTHER
      */
     public static ObjectType getObjectType(String className) {
-        return OBJECT_TYPE_MAP.getOrDefault(className, ObjectType.Other);
+        return OBJECT_TYPE_MAP.getOrDefault(className, ObjectType.OTHER);
     }
 
     /**
@@ -80,7 +80,7 @@ public class ObjectUtils {
      * @return 是否为基础数据类型
      */
     public static boolean isBaseTypeObject(String clsName) {
-        return getObjectType(clsName) != ObjectType.Other;
+        return getObjectType(clsName) != ObjectType.OTHER;
     }
 
     /**
@@ -154,41 +154,21 @@ public class ObjectUtils {
             return (T) obj;
         }
         String value = obj.toString();
-        switch (cls.getName()) {
-            case ObjectTypeString.clsNameBoolean:
-                return (T) StringUtils.getBoolean(value);
-            case ObjectTypeString.clsNameByte:
-                return (T) StringUtils.getByte(value);
-            case ObjectTypeString.clsNameDate:
-                return (T) DateUtils.getDate(value);
-            case ObjectTypeString.clsNameLong:
-                return (T) StringUtils.getLong(value);
-            case ObjectTypeString.clsNameInteger:
-                return (T) StringUtils.getInteger(value);
-            case ObjectTypeString.clsNameFloat:
-                return (T) StringUtils.getFloat(value);
-            case ObjectTypeString.clsNameDouble:
-                return (T) StringUtils.getDouble(value);
-            case ObjectTypeString.clsNameShort:
-                return (T) StringUtils.getShort(value);
-            case ObjectTypeString.clsNameString:
-                return (T) value;
-            case ObjectTypeString.clsNameBaseBoolean:
-                return (T) StringUtils.getBoolean(value, false);
-            case ObjectTypeString.clsNameBaseByte:
-                return (T) StringUtils.getByte(value, (byte) 0);
-            case ObjectTypeString.clsNameBaseDouble:
-                return (T) StringUtils.getDouble(value, 0d);
-            case ObjectTypeString.clsNameBaseFloat:
-                return (T) StringUtils.getFloat(value, 0f);
-            case ObjectTypeString.clsNameBaseInt:
-                return (T) StringUtils.getInteger(value, 0);
-            case ObjectTypeString.clsNameBaseLong:
-                return (T) StringUtils.getLong(value, 0L);
-            case ObjectTypeString.clsNameBaseShort:
-                return (T) StringUtils.getShort(value, (short) 0);
-            default:
-                break;
+        // Handle String and Date separately (not covered by PrimitiveType)
+        if (cls == java.lang.String.class) {
+            return (T) value;
+        }
+        if (cls == java.util.Date.class) {
+            return (T) DateUtils.getDate(value);
+        }
+        // Handle primitive types (int, boolean, etc.) and wrapper types (Integer, Boolean, etc.)
+        PrimitiveType pt = PrimitiveType.fromPrimitive(cls);
+        if (pt != null) {
+            return handlePrimitiveByType(pt, value);
+        }
+        pt = PrimitiveType.fromWrapper(cls);
+        if (pt != null) {
+            return handleWrapperByType(pt, value);
         }
         return (T) obj;
     }
@@ -632,6 +612,66 @@ public class ObjectUtils {
             return supplier.get();
         }catch (Exception e){
             return null;
+        }
+    }
+
+    /**
+     * 根据 PrimitiveType 处理原始类型的值转换
+     *
+     * @param pt    PrimitiveType 枚举
+     * @param value 字符串值
+     * @param <T>   目标类型
+     * @return 转换后的值
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T handlePrimitiveByType(PrimitiveType pt, String value) {
+        switch (pt) {
+            case BOOLEAN:
+                return (T) StringUtils.getBoolean(value, false);
+            case BYTE:
+                return (T) StringUtils.getByte(value, (byte) 0);
+            case DOUBLE:
+                return (T) StringUtils.getDouble(value, 0d);
+            case FLOAT:
+                return (T) StringUtils.getFloat(value, 0f);
+            case INT:
+                return (T) StringUtils.getInteger(value, 0);
+            case LONG:
+                return (T) StringUtils.getLong(value, 0L);
+            case SHORT:
+                return (T) StringUtils.getShort(value, (short) 0);
+            default:
+                return (T) value;
+        }
+    }
+
+    /**
+     * 根据 PrimitiveType 处理包装类型的值转换
+     *
+     * @param pt    PrimitiveType 枚举
+     * @param value 字符串值
+     * @param <T>   目标类型
+     * @return 转换后的值
+     */
+    @SuppressWarnings("unchecked")
+    private static <T> T handleWrapperByType(PrimitiveType pt, String value) {
+        switch (pt) {
+            case BOOLEAN:
+                return (T) StringUtils.getBoolean(value);
+            case BYTE:
+                return (T) StringUtils.getByte(value);
+            case DOUBLE:
+                return (T) StringUtils.getDouble(value);
+            case FLOAT:
+                return (T) StringUtils.getFloat(value);
+            case INT:
+                return (T) StringUtils.getInteger(value);
+            case LONG:
+                return (T) StringUtils.getLong(value);
+            case SHORT:
+                return (T) StringUtils.getShort(value);
+            default:
+                return (T) value;
         }
     }
 }
