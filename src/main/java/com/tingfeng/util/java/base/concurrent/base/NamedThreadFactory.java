@@ -1,11 +1,8 @@
 package com.tingfeng.util.java.base.concurrent.base;
 
-import lombok.AllArgsConstructor;
-
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@AllArgsConstructor
 public class NamedThreadFactory implements ThreadFactory {
 
     /**
@@ -44,6 +41,12 @@ public class NamedThreadFactory implements ThreadFactory {
         this(prefix, null, isDaemon);
     }
 
+    public NamedThreadFactory(String prefix, boolean isDaemon, int startIndex) {
+        this.prefix = prefix;
+        this.isDaemon = isDaemon;
+        this.threadNumber = new AtomicInteger(startIndex);
+    }
+
     @Override
     public Thread newThread(Runnable r) {
         final Thread t = new Thread(this.group, r, String.format("%s%s", prefix, threadNumber.getAndIncrement()));
@@ -54,5 +57,15 @@ public class NamedThreadFactory implements ThreadFactory {
         //优先级
         t.setPriority(threadPriority);
         return t;
+    }
+
+    public NamedThreadFactory setPriority(int threadPriority) {
+        this.threadPriority = threadPriority;
+        return this;
+    }
+
+    public NamedThreadFactory setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler handler) {
+        this.handler = handler;
+        return this;
     }
 }

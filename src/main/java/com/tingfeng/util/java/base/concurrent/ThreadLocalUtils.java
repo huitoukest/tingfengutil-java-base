@@ -1,7 +1,10 @@
 package com.tingfeng.util.java.base.concurrent;
 
+import com.tingfeng.util.java.base.LogUtils;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Member;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -14,6 +17,13 @@ public final class ThreadLocalUtils {
     private static final String REFLECT_FIELD_THREAD_LOCALS = "threadLocals";
     private static final String REFLECT_FIELD_TABLE = "table";
     private static final String THREAD_LOCAL_MAP_CLASS = "java.lang.ThreadLocal$ThreadLocalMap";
+
+    /**
+     * 注册表：用户显式注册的 ThreadLocal 实例
+     *
+     * 用于 fallback 清理时的遍历目标，避免依赖反射。
+     */
+    private static final ConcurrentHashMap<ThreadLocal<?>, Boolean> REGISTERED_LOCALS = new ConcurrentHashMap<>();
 
     private ThreadLocalUtils() {
     }
@@ -68,11 +78,11 @@ public final class ThreadLocalUtils {
      * 在某些安全 manager 下可能失效，此时会使用 fallback 机制。
      *
      * @param thread 目标线程
-     * @return 清理的 ThreadLocal 数量，返回 -1 表示反射失败已使用 fallback
+     * @return 清理的 ThreadLocal 数量，反射失败时使用 fallback 返回注册表中清理的数量
      * @throws SecurityException 如果无法访问线程的私有字段
      * @deprecated 此方法依赖反射访问内部结构，存在安全限制风险。
      *              推荐使用 {@link #remove(ThreadLocal)} 逐个清理。
-     *              Fallback 机制会遍历线程所有 ThreadLocal 调用 remove()。
+     *              Fallback 机制使用注册表，通过 {@link #register(ThreadLocal)} 注册后生效。
      */
     @Deprecated
     public static int clearAllThreadLocals(Thread thread) {
@@ -134,15 +144,49 @@ public final class ThreadLocalUtils {
         return count.get();
     }
 
+    // ==================== 注册表管理 ====================
+
     /**
-     * Fallback 机制：遍历线程所有 ThreadLocal 调用 remove()
+     * 注册 ThreadLocal 实例到 fallback 清理注册表
      *
-     * @return 清理的 ThreadLocal 数量
+     * 注册后的 ThreadLocal 会在 {@link #clearAllThreadLocalsByFallback()} 中被清理。
+     * 适用于通过 {@link #clearAllThreadLocals(Thread)} 反射清理失败时的保底场景。
+     *
+     * @param threadLocal 要注册的 ThreadLocal 实例，为 null 时忽略
+     */
+    public static void register(ThreadLocal<?> threadLocal) {
+        if (threadLocal != null) {
+            REGISTERED_LOCALS.put(threadLocal, Boolean.TRUE);
+        }
+    }
+
+    /**
+     * 从 fallback 清理注册表中移除 ThreadLocal 实例
+     *
+     * @param threadLocal 要移除的 ThreadLocal 实例，为 null 时忽略
+     */
+    public static void unregister(ThreadLocal<?> threadLocal) {
+        if (threadLocal != null) {
+            REGISTERED_LOCALS.remove(threadLocal);
+        }
+    }
+
+    /**
+     * Fallback 机制：遍历注册表中的 ThreadLocal 逐一调用 remove()
+     *
+     * 当反射清理失败时触发，仅清理通过 {@link #register(ThreadLocal)} 显式注册的
+     * ThreadLocal 实例。建议在线程池等 ThreadLocal 易泄露的场景中使用注册机制。
+     *
+     * @return 已清理的 ThreadLocal 数量，无注册时返回 0
      */
     private static int clearAllThreadLocalsByFallback() {
-        // Fallback 机制：当反射失败时使用此方法
-        // 注意：此方法无法精确获取线程所有 ThreadLocal，仅作为保底方案
-        return -1;
+        int count = 0;
+        for (ThreadLocal<?> tl : REGISTERED_LOCALS.keySet()) {
+            tl.remove();
+            count++;
+        }
+        LogUtils.warn("Fallback cleared %d ThreadLocals from registry. Register ThreadLocals via ThreadLocalUtils.register() for fallback support.", count);
+        return count;
     }
 
     // ==================== 信息获取 ====================
@@ -155,7 +199,7 @@ public final class ThreadLocalUtils {
      * @return ThreadLocal 数量
      * @throws RuntimeException 如果反射访问失败
      */
-    public static int threadLocalCount() throws NoSuchFieldException, ClassNotFoundException, IllegalAccessException {
+    public static int threadLocalCount() {
         checkSecurity();
         try {
             Field threadLocalsField = Thread.class.getDeclaredField(REFLECT_FIELD_THREAD_LOCALS);

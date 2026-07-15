@@ -3,7 +3,6 @@ package com.tingfeng.util.java.base.concurrent;
 import com.tingfeng.util.java.base.concurrent.base.NamedThreadFactory;
 
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 线程工厂工具类
@@ -37,17 +36,7 @@ public final class ThreadFactoryUtils {
      * @return ThreadFactory 实例
      */
     public static ThreadFactory newNamedThreadFactory(String namePrefix, boolean daemon, int startIndex) {
-        return new NamedThreadFactory(namePrefix, daemon) {
-            private final AtomicInteger index = new AtomicInteger(startIndex);
-
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = super.newThread(r);
-                // 替换线程名称为带序号的版本
-                thread.setName(namePrefix + index.getAndIncrement());
-                return thread;
-            }
-        };
+        return new NamedThreadFactory(namePrefix, daemon, startIndex);
     }
 
     /**

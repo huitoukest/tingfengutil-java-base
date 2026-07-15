@@ -3,10 +3,13 @@ package com.tingfeng.util.java.base.concurrent;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.SynchronousQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 /**
  * 线程池工具类
@@ -16,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 public final class ThreadPoolUtils {
 
     public static final int DEFAULT_POOL_MAX_THREADS = 2048;
+    public static final int MAX_RECOMMENDED_THREADS = DEFAULT_POOL_MAX_THREADS;
 
     private ThreadPoolUtils() {
     }
@@ -55,8 +59,12 @@ public final class ThreadPoolUtils {
     /**
      * 创建缓存线程池，支持指定最大线程数
      *
+     * 如果 maxThreads 超过 {@link #MAX_RECOMMENDED_THREADS}（2048），
+     * 实际最大线程数会被截断为 {@link #MAX_RECOMMENDED_THREADS}。
+     * 这是为了防止无限制创建线程导致资源耗尽。
+     *
      * @param namePrefix  线程名称前缀
-     * @param maxThreads  最大线程数，建议不超过 256
+     * @param maxThreads  最大线程数，建议不超过 256，上限受 {@link #MAX_RECOMMENDED_THREADS} 约束
      * @return ExecutorService 实例
      * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
      */
@@ -149,16 +157,17 @@ public final class ThreadPoolUtils {
     /**
      * 创建调度线程池
      *
+     * 内部使用 ScheduledThreadPoolExecutor，支持 schedule / scheduleAtFixedRate 等定时任务
+     *
      * @param corePoolSize 核心线程数
      * @param namePrefix   线程名称前缀
-     * @return ExecutorService 实例
+     * @return ScheduledExecutorService 实例
+     * @see ScheduledThreadPoolExecutor
      * @see ThreadPoolExecutor.CallerRunsPolicy 拒绝策略：任务由调用线程同步执行，确保无任务丢失
      */
-    public static ExecutorService newScheduledThreadPool(int corePoolSize, String namePrefix) {
-        return new ThreadPoolExecutor(
-                corePoolSize, corePoolSize,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(),
+    public static ScheduledExecutorService newScheduledThreadPool(int corePoolSize, String namePrefix) {
+        return new ScheduledThreadPoolExecutor(
+                corePoolSize,
                 ThreadFactoryUtils.newNamedThreadFactory(namePrefix + "-", false),
                 new ThreadPoolExecutor.CallerRunsPolicy()
         );
@@ -277,11 +286,43 @@ public final class ThreadPoolUtils {
     // ==================== 线程池监控 ====================
 
     /**
+     * 获取当前线程池大小
+     *
+     * @param executor 线程池
+     * @return 当前线程数，非 ThreadPoolExecutor 返回 -1
+     * @deprecated 使用 {@link #getPoolSizeOpt(ExecutorService)} 替代，返回 OptionalInt 避免 sentinel 值
+     */
+    @Deprecated
+    public static int getPoolSize(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return ((ThreadPoolExecutor) executor).getPoolSize();
+        }
+        return -1;
+    }
+
+    /**
+     * 获取当前线程池大小，返回 OptionalInt
+     *
+     * 空值表示无法获取（非 ThreadPoolExecutor 实例）
+     *
+     * @param executor 线程池
+     * @return OptionalInt，包含当前线程数；空表示无法获取
+     */
+    public static OptionalInt getPoolSizeOpt(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return OptionalInt.of(((ThreadPoolExecutor) executor).getPoolSize());
+        }
+        return OptionalInt.empty();
+    }
+
+    /**
      * 获取活跃线程数
      *
      * @param executor 线程池
      * @return 活跃线程数，非 ThreadPoolExecutor 返回 -1
+     * @deprecated 使用 {@link #getActiveCountOpt(ExecutorService)} 替代，返回 OptionalInt 避免 sentinel 值
      */
+    @Deprecated
     public static int getActiveCount(ExecutorService executor) {
         if (executor instanceof ThreadPoolExecutor) {
             return ((ThreadPoolExecutor) executor).getActiveCount();
@@ -290,16 +331,108 @@ public final class ThreadPoolUtils {
     }
 
     /**
+     * 获取活跃线程数，返回 OptionalInt
+     *
+     * 空值表示无法获取（非 ThreadPoolExecutor 实例）
+     *
+     * @param executor 线程池
+     * @return OptionalInt，包含活跃线程数；空表示无法获取
+     */
+    public static OptionalInt getActiveCountOpt(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return OptionalInt.of(((ThreadPoolExecutor) executor).getActiveCount());
+        }
+        return OptionalInt.empty();
+    }
+
+    /**
      * 获取队列长度
      *
      * @param executor 线程池
      * @return 队列长度，非 ThreadPoolExecutor 返回 -1
+     * @deprecated 使用 {@link #getQueueSizeOpt(ExecutorService)} 替代，返回 OptionalInt 避免 sentinel 值
      */
+    @Deprecated
     public static int getQueueSize(ExecutorService executor) {
         if (executor instanceof ThreadPoolExecutor) {
             return ((ThreadPoolExecutor) executor).getQueue().size();
         }
         return -1;
+    }
+
+    /**
+     * 获取队列长度，返回 OptionalInt
+     *
+     * 空值表示无法获取（非 ThreadPoolExecutor 实例）
+     *
+     * @param executor 线程池
+     * @return OptionalInt，包含队列长度；空表示无法获取
+     */
+    public static OptionalInt getQueueSizeOpt(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return OptionalInt.of(((ThreadPoolExecutor) executor).getQueue().size());
+        }
+        return OptionalInt.empty();
+    }
+
+    /**
+     * 获取已完成任务数
+     *
+     * @param executor 线程池
+     * @return 已完成任务数，非 ThreadPoolExecutor 返回 -1L
+     * @deprecated 使用 {@link #getCompletedTaskCountOpt(ExecutorService)} 替代，返回 OptionalLong 避免 sentinel 值
+     */
+    @Deprecated
+    public static long getCompletedTaskCount(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return ((ThreadPoolExecutor) executor).getCompletedTaskCount();
+        }
+        return -1L;
+    }
+
+    /**
+     * 获取已完成任务数，返回 OptionalLong
+     *
+     * 空值表示无法获取（非 ThreadPoolExecutor 实例）
+     *
+     * @param executor 线程池
+     * @return OptionalLong，包含已完成任务数；空表示无法获取
+     */
+    public static OptionalLong getCompletedTaskCountOpt(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return OptionalLong.of(((ThreadPoolExecutor) executor).getCompletedTaskCount());
+        }
+        return OptionalLong.empty();
+    }
+
+    /**
+     * 获取任务总数
+     *
+     * @param executor 线程池
+     * @return 任务总数，非 ThreadPoolExecutor 返回 -1L
+     * @deprecated 使用 {@link #getTaskCountOpt(ExecutorService)} 替代，返回 OptionalLong 避免 sentinel 值
+     */
+    @Deprecated
+    public static long getTaskCount(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return ((ThreadPoolExecutor) executor).getTaskCount();
+        }
+        return -1L;
+    }
+
+    /**
+     * 获取任务总数，返回 OptionalLong
+     *
+     * 空值表示无法获取（非 ThreadPoolExecutor 实例）
+     *
+     * @param executor 线程池
+     * @return OptionalLong，包含任务总数；空表示无法获取
+     */
+    public static OptionalLong getTaskCountOpt(ExecutorService executor) {
+        if (executor instanceof ThreadPoolExecutor) {
+            return OptionalLong.of(((ThreadPoolExecutor) executor).getTaskCount());
+        }
+        return OptionalLong.empty();
     }
 
     /**
@@ -326,18 +459,5 @@ public final class ThreadPoolUtils {
             return ((ThreadPoolExecutor) executor).getMaximumPoolSize();
         }
         return -1;
-    }
-
-    /**
-     * 获取已完成任务数
-     *
-     * @param executor 线程池
-     * @return 已完成任务数，非 ThreadPoolExecutor 返回 -1L
-     */
-    public static long getCompletedTaskCount(ExecutorService executor) {
-        if (executor instanceof ThreadPoolExecutor) {
-            return ((ThreadPoolExecutor) executor).getCompletedTaskCount();
-        }
-        return -1L;
     }
 }
