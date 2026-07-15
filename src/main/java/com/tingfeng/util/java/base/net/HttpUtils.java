@@ -51,7 +51,7 @@ public class HttpUtils {
         HttpResponseInfo responseInfo = new HttpResponseInfo();
 		String result = "";
 	    BufferedReader in = null;
-        URLConnection connection = null;
+        HttpURLConnection connection = null;
 	    try {
 	        String urlNameString = url ;
 	        if(StringUtils.isNotEmpty(param)) {
@@ -59,7 +59,7 @@ public class HttpUtils {
             }
 	        URL realUrl = new URL(urlNameString);
 	        // 打开和URL之间的连接
-            connection = realUrl.openConnection();
+            connection = (HttpURLConnection) realUrl.openConnection();
 	        // 设置通用的请求属性
 	        connection.setRequestProperty("accept", "*/*");
 	        connection.setRequestProperty("connection", "Keep-Alive");
@@ -108,7 +108,7 @@ public class HttpUtils {
 	    } catch (Exception e) {
 	        throw new BaseException(e);
 	    }
-	    // 使用finally块来关闭输入流
+	    // 使用finally块来关闭输入流和连接
 	    finally {
 	        try {
 	            if (in != null) {
@@ -116,6 +116,9 @@ public class HttpUtils {
 	            }
 	        } catch (Throwable e) {
 	            log.error("close stream error",e);
+	        }
+	        if (connection != null) {
+	            connection.disconnect();
 	        }
 	    }
 	    return responseInfo;
@@ -137,11 +140,12 @@ public class HttpUtils {
         OutputStreamWriter out = null;
        // OutputStreamWriter out=null;
         BufferedReader in = null;
+        HttpURLConnection conn = null;
         String result = "";
         try {
             URL realUrl = new URL(url);
             // 打开和URL之间的连接
-            HttpURLConnection conn = (HttpURLConnection)realUrl.openConnection();
+            conn = (HttpURLConnection)realUrl.openConnection();
             // 设置通用的请求属性
             if(null != reqCharset) {
                 conn.setRequestProperty("Charset", "charset=" + reqCharset);
@@ -171,10 +175,9 @@ public class HttpUtils {
                 result += line;
             }
         } catch (Exception e) {
-            System.out.println("发送 POST 请求出现异常！"+e);
-            e.printStackTrace();
+            log.error("发送 POST 请求出现异常！" + e);
         }
-        //使用finally块来关闭输出流、输入流
+        //使用finally块来关闭输出流、输入流和连接
         finally{
             try{
                 if(out!=null){
@@ -185,7 +188,10 @@ public class HttpUtils {
                 }
             }
             catch(IOException ex){
-                ex.printStackTrace();
+                log.error("close stream error", ex);
+            }
+            if (conn != null) {
+                conn.disconnect();
             }
         }
         return result;

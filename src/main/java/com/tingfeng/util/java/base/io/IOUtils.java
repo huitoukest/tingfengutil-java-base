@@ -1,8 +1,12 @@
 package com.tingfeng.util.java.base.io;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -25,6 +29,11 @@ import java.util.function.*;
 public class IOUtils {
 
     private static final int BUFFER_SIZE = 4096;
+
+    /**
+     * 背压许可单位：1KB（每permit代表1024字节）
+     */
+    private static final int PERMIT_UNIT = 1024;
 
     /**
      * 默认背压缓冲区大小：8MB
@@ -64,6 +73,96 @@ public class IOUtils {
         return new ByteArrayInputStream(bytes);
     }
 
+    /**
+     * CharSequence转换为输入流（支持StringBuilder、StringBuffer等）
+     * @param charSequence 字符序列
+     * @return InputStream
+     */
+    public static InputStream toInputStream(CharSequence charSequence) {
+        return toInputStream(charSequence, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * CharSequence转换为输入流（指定编码）
+     * @param charSequence 字符序列
+     * @param charset 字符编码
+     * @return InputStream
+     */
+    public static InputStream toInputStream(CharSequence charSequence, Charset charset) {
+        if (charSequence == null) {
+            return new ByteArrayInputStream(new byte[0]);
+        }
+        return new ByteArrayInputStream(charSequence.toString().getBytes(charset));
+    }
+
+    /**
+     * File转换为输入流
+     * @param file 文件
+     * @return InputStream
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果读取失败
+     */
+    public static InputStream toInputStream(File file) {
+        if (file == null) {
+            throw new IllegalArgumentException("file must not be null");
+        }
+        try {
+            return new BufferedInputStream(new FileInputStream(file));
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to open file: " + file.getPath(), e);
+        }
+    }
+
+    /**
+     * Path转换为输入流
+     * @param path 文件路径
+     * @return InputStream
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果读取失败
+     */
+    public static InputStream toInputStream(Path path) {
+        if (path == null) {
+            throw new IllegalArgumentException("path must not be null");
+        }
+        try {
+            return new BufferedInputStream(Files.newInputStream(path));
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to open path: " + path, e);
+        }
+    }
+
+    /**
+     * URL转换为输入流
+     * @param url URL资源
+     * @return InputStream
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果打开连接失败
+     */
+    public static InputStream toInputStream(URL url) {
+        if (url == null) {
+            throw new IllegalArgumentException("url must not be null");
+        }
+        try {
+            return new BufferedInputStream(url.openStream());
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to open URL: " + url, e);
+        }
+    }
+
+    /**
+     * URI转换为输入流
+     * @param uri URI资源
+     * @return InputStream
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果打开连接失败
+     */
+    public static InputStream toInputStream(URI uri) {
+        if (uri == null) {
+            throw new IllegalArgumentException("uri must not be null");
+        }
+        try {
+            return new BufferedInputStream(uri.toURL().openStream());
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to open URI: " + uri, e);
+        }
+    }
+
     // ==================== 流创建（输出） ====================
 
     /**
@@ -72,6 +171,204 @@ public class IOUtils {
      */
     public static ByteArrayOutputStream createByteArrayOutputStream() {
         return new ByteArrayOutputStream();
+    }
+
+    // ==================== 流写入文件 ====================
+
+    /**
+     * 将输入流写入文件
+     * @param input 输入流
+     * @param file 目标文件
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(InputStream input, File file) {
+        if (input == null || file == null) {
+            throw new IllegalArgumentException("input and file must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
+            copy(output, input);
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to file: " + file.getPath(), e);
+        }
+    }
+
+    /**
+     * 将输入流写入文件
+     * @param input 输入流
+     * @param path 目标路径
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(InputStream input, Path path) {
+        if (input == null || path == null) {
+            throw new IllegalArgumentException("input and path must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(path))) {
+            copy(output, input);
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to path: " + path, e);
+        }
+    }
+
+    /**
+     * 将字节数组写入文件
+     * @param data 字节数据
+     * @param file 目标文件
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(byte[] data, File file) {
+        if (data == null || file == null) {
+            throw new IllegalArgumentException("data and file must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
+            output.write(data);
+            output.flush();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to file: " + file.getPath(), e);
+        }
+    }
+
+    /**
+     * 将字节数组写入文件
+     * @param data 字节数据
+     * @param path 目标路径
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(byte[] data, Path path) {
+        if (data == null || path == null) {
+            throw new IllegalArgumentException("data and path must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(path))) {
+            output.write(data);
+            output.flush();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to path: " + path, e);
+        }
+    }
+
+    /**
+     * 将字符串写入文件
+     * @param content 字符串内容
+     * @param file 目标文件
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(String content, File file) {
+        writeToFile(content, file, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 将字符串写入文件
+     * @param content 字符串内容
+     * @param file 目标文件
+     * @param charset 字符编码
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(String content, File file, Charset charset) {
+        if (content == null || file == null) {
+            throw new IllegalArgumentException("content and file must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
+            output.write(content.getBytes(charset));
+            output.flush();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to file: " + file.getPath(), e);
+        }
+    }
+
+    /**
+     * 将字符串写入文件
+     * @param content 字符串内容
+     * @param path 目标路径
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(String content, Path path) {
+        writeToFile(content, path, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 将字符串写入文件
+     * @param content 字符串内容
+     * @param path 目标路径
+     * @param charset 字符编码
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(String content, Path path, Charset charset) {
+        if (content == null || path == null) {
+            throw new IllegalArgumentException("content and path must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(path))) {
+            output.write(content.getBytes(charset));
+            output.flush();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to path: " + path, e);
+        }
+    }
+
+    /**
+     * 将字符串列表写入文件（按行）
+     * @param lines 字符串列表
+     * @param file 目标文件
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(List<String> lines, File file) {
+        writeToFile(lines, file, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 将字符串列表写入文件（按行）
+     * @param lines 字符串列表
+     * @param file 目标文件
+     * @param charset 字符编码
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(List<String> lines, File file, Charset charset) {
+        if (lines == null || file == null) {
+            throw new IllegalArgumentException("lines and file must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
+            for (int i = 0; i < lines.size(); i++) {
+                output.write(lines.get(i).getBytes(charset));
+                if (i < lines.size() - 1) {
+                    output.write(System.lineSeparator().getBytes(charset));
+                }
+            }
+            output.flush();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to file: " + file.getPath(), e);
+        }
+    }
+
+    /**
+     * 将字符串列表写入文件（按行）
+     * @param lines 字符串列表
+     * @param path 目标路径
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(List<String> lines, Path path) {
+        writeToFile(lines, path, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 将字符串列表写入文件（按行）
+     * @param lines 字符串列表
+     * @param path 目标路径
+     * @param charset 字符编码
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(List<String> lines, Path path, Charset charset) {
+        if (lines == null || path == null) {
+            throw new IllegalArgumentException("lines and path must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(path))) {
+            for (int i = 0; i < lines.size(); i++) {
+                output.write(lines.get(i).getBytes(charset));
+                if (i < lines.size() - 1) {
+                    output.write(System.lineSeparator().getBytes(charset));
+                }
+            }
+            output.flush();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to path: " + path, e);
+        }
     }
 
     // ==================== 流转换 ====================
@@ -138,6 +435,42 @@ public class IOUtils {
      */
     public static Writer toWriter(OutputStream outputStream) {
         return new BufferedWriter(new OutputStreamWriter(outputStream));
+    }
+
+    /**
+     * Reader 转换为字符串
+     * @param reader Reader
+     * @return 字符串
+     */
+    public static String toString(Reader reader) {
+        if (reader == null) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder();
+        char[] buffer = new char[BUFFER_SIZE];
+        int len;
+        try {
+            while ((len = reader.read(buffer)) != -1) {
+                sb.append(buffer, 0, len);
+            }
+            return sb.toString();
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException(e);
+        }
+    }
+
+    /**
+     * Reader 转换为字节数组
+     * @param reader Reader
+     * @param charset 字符编码
+     * @return 字节数组
+     */
+    public static byte[] toByteArray(Reader reader, Charset charset) {
+        if (reader == null) {
+            return new byte[0];
+        }
+        String str = toString(reader);
+        return str.getBytes(charset);
     }
 
     // ==================== 缓冲包装 ====================
@@ -339,6 +672,59 @@ public class IOUtils {
         }
     }
 
+    /**
+     * 按行读取流并返回列表
+     * @param input 输入流
+     * @return 行列表
+     */
+    public static List<String> readLinesToList(InputStream input) {
+        return readLinesToList(input, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 按行读取流并返回列表
+     * @param input 输入流
+     * @param charset 字符编码
+     * @return 行列表
+     */
+    public static List<String> readLinesToList(InputStream input, Charset charset) {
+        if (input == null) {
+            return new ArrayList<>();
+        }
+        List<String> lines = new ArrayList<>();
+        readLines(input, charset, lines::add);
+        return lines;
+    }
+
+    /**
+     * 字符串列表合并为输入流（按行）
+     * @param lines 字符串列表
+     * @return InputStream
+     */
+    public static InputStream toInputStream(List<String> lines) {
+        return toInputStream(lines, StandardCharsets.UTF_8);
+    }
+
+    /**
+     * 字符串列表合并为输入流（按行）
+     * @param lines 字符串列表
+     * @param charset 字符编码
+     * @return InputStream
+     */
+    public static InputStream toInputStream(List<String> lines, Charset charset) {
+        if (lines == null || lines.isEmpty()) {
+            return new ByteArrayInputStream(new byte[0]);
+        }
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < lines.size(); i++) {
+            sb.append(lines.get(i));
+            if (i < lines.size() - 1) {
+                sb.append(System.lineSeparator());
+            }
+        }
+        return new ByteArrayInputStream(sb.toString().getBytes(charset));
+    }
+
     // ==================== 资源关闭 ====================
 
     /**
@@ -439,7 +825,7 @@ public class IOUtils {
                                                     int backPressureLimit,
                                                     CancellationToken token) {
         return CompletableFuture.supplyAsync(() -> {
-            Semaphore semaphore = new Semaphore(backPressureLimit / BUFFER_SIZE);
+            Semaphore semaphore = new Semaphore(backPressureLimit / PERMIT_UNIT);
             byte[] buffer = new byte[BUFFER_SIZE];
             long total = 0;
             int len;
@@ -451,12 +837,12 @@ public class IOUtils {
                         break;
                     }
 
-                    // 背压控制
-                    semaphore.acquire();
+                    // 背压控制：按实际读取字节数获取许可（向上取整）
+                    semaphore.acquire((len + PERMIT_UNIT - 1) / PERMIT_UNIT);
 
                     output.write(buffer, 0, len);
                     total += len;
-                    semaphore.release();
+                    semaphore.release((len + PERMIT_UNIT - 1) / PERMIT_UNIT);
 
                     // 进度回调，返回false时暂停
                     if (progressCallback != null) {

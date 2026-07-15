@@ -1,12 +1,20 @@
 package com.tingfeng.util.java.base.gis;
 
+import com.tingfeng.util.java.base.gis.model.Coordinate;
+import com.tingfeng.util.java.base.gis.model.EarthModel;
+import com.tingfeng.util.java.base.gis.model.Wgs84EarthModel;
+
 /**
  * 地理相关工具
- * 
+ *
  * 坐标系说明：
  * - WGS84：国际标准坐标系，GPS设备获取的原始坐标，适用于Google地图（国外）、OSM、ArcGIS等
  * - GCJ02：国测局坐标系（火星坐标系），中国国测局制定的加密坐标系，适用于高德地图、腾讯地图、Google地图（国内）
  * - BD09：百度坐标系，在GCJ02基础上进行二次加密，仅适用于百度地图
+ *
+ * 地球模型说明：
+ * - WGS84EarthModel：使用 WGS84 椭球体参数，精度最高，适用于高精度需求
+ * - SphericalEarthModel：使用固定半径 6371000 米的球体模型，计算更快但精度略低
  */
 public class GisUtils {
     /**
@@ -92,6 +100,35 @@ public class GisUtils {
         // 确保cosValue在[-1, 1]范围内，避免Math.acos返回NaN
         cosValue = Math.max(-1, Math.min(1, cosValue));
         return r * Math.acos(cosValue);
+    }
+
+    /**
+     * 使用 WGS84 地球模型计算两点之间的距离
+     *
+     * @param pointA 起点坐标
+     * @param pointB 终点坐标
+     * @return 两点之间的距离（米）
+     */
+    public static double getDistance(Coordinate pointA, Coordinate pointB) {
+        return Wgs84EarthModel.getInstance().getDistance(pointA, pointB);
+    }
+
+    /**
+     * 使用指定地球模型计算两点之间的距离
+     *
+     * @param pointA    起点坐标
+     * @param pointB    终点坐标
+     * @param earthModel 地球模型
+     * @return 两点之间的距离（米）
+     */
+    public static double getDistance(Coordinate pointA, Coordinate pointB, EarthModel earthModel) {
+        if (pointA == null || pointB == null) {
+            throw new IllegalArgumentException("坐标不能为 null");
+        }
+        if (earthModel == null) {
+            throw new IllegalArgumentException("地球模型不能为 null");
+        }
+        return earthModel.getDistance(pointA, pointB);
     }
 
     /**

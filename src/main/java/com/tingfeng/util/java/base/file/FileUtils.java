@@ -14,6 +14,11 @@ import java.util.Set;
 import java.util.concurrent.*;
 import java.util.function.*;
 
+import com.tingfeng.util.java.base.file.strategy.FileCopyStrategy;
+import com.tingfeng.util.java.base.file.strategy.ProgressCallback;
+import com.tingfeng.util.java.base.file.strategy.StreamCopyStrategy;
+import com.tingfeng.util.java.base.file.strategy.ChannelCopyStrategy;
+import com.tingfeng.util.java.base.file.strategy.AsyncCopyStrategy;
 import com.tingfeng.util.java.base.lang.exception.BaseException;
 import com.tingfeng.util.java.base.lang.exception.StreamCloseException;
 import com.tingfeng.util.java.base.lang.base.Base64ConvertToStringI;
@@ -712,13 +717,70 @@ public class FileUtils {
 
 	/**
 	 * 带进度的文件拷贝
-	 * 
+	 *
 	 * @param source 源路径
 	 * @param target 目标路径
 	 * @param fileCopyActionCallBack 当fileCopyActionCallBack为null的时候,将不会更新进度;
 	 */
 	public static void copyFileByFileChannel(String source, String target, RateCallBackI fileCopyActionCallBack){
 		copyFileByFileChannel(new File(source), new File(target), fileCopyActionCallBack);
+	}
+
+	/**
+	 * 使用策略模式拷贝文件（无进度回调）
+	 *
+	 * @param srcPath 源路径
+	 * @param destPath 目标路径
+	 * @param strategy 文件拷贝策略（StreamCopyStrategy/ChannelCopyStrategy/AsyncCopyStrategy）
+	 *
+	 * 设计原则：
+	 * 1. 策略接口统一抽象，支持多种拷贝实现
+	 * 2. 默认使用 ChannelCopyStrategy 高效拷贝
+	 */
+	public static void copyFile(String srcPath, String destPath, FileCopyStrategy strategy) {
+		copyFile(new File(srcPath), new File(destPath), strategy);
+	}
+
+	/**
+	 * 使用策略模式拷贝文件（无进度回调）
+	 *
+	 * @param src 源文件
+	 * @param dest 目标文件
+	 * @param strategy 文件拷贝策略（StreamCopyStrategy/ChannelCopyStrategy/AsyncCopyStrategy）
+	 */
+	public static void copyFile(File src, File dest, FileCopyStrategy strategy) {
+		if (strategy == null) {
+			// 默认使用 ChannelCopyStrategy
+			strategy = new ChannelCopyStrategy();
+		}
+		strategy.copyFile(src, dest);
+	}
+
+	/**
+	 * 使用策略模式拷贝文件（带进度回调）
+	 *
+	 * @param srcPath 源路径
+	 * @param destPath 目标路径
+	 * @param strategy 文件拷贝策略
+	 * @param callback 进度回调
+	 */
+	public static void copyFile(String srcPath, String destPath, FileCopyStrategy strategy, ProgressCallback callback) {
+		copyFile(new File(srcPath), new File(destPath), strategy, callback);
+	}
+
+	/**
+	 * 使用策略模式拷贝文件（带进度回调）
+	 *
+	 * @param src 源文件
+	 * @param dest 目标文件
+	 * @param strategy 文件拷贝策略
+	 * @param callback 进度回调
+	 */
+	public static void copyFile(File src, File dest, FileCopyStrategy strategy, ProgressCallback callback) {
+		if (strategy == null) {
+			strategy = new ChannelCopyStrategy();
+		}
+		strategy.copyFile(src, dest, callback);
 	}
 
 	/**

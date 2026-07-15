@@ -4,7 +4,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.*;
+import java.net.URI;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -413,5 +417,296 @@ public class IOUtilsTest {
     @Test(expected = IllegalArgumentException.class)
     public void testToExecutorServiceWithInvalidType() {
         IOUtils.toExecutorService("invalid");
+    }
+
+    // ==================== 新增类型扩展测试 ====================
+
+    @Test
+    public void testToInputStreamFromCharSequence() {
+        StringBuilder sb = new StringBuilder(TEST_CONTENT);
+        InputStream is = IOUtils.toInputStream(sb);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(is));
+    }
+
+    @Test
+    public void testToInputStreamFromCharSequenceWithCharset() {
+        StringBuffer sb = new StringBuffer(TEST_CONTENT);
+        InputStream is = IOUtils.toInputStream(sb, StandardCharsets.UTF_8);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(is, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testToInputStreamFromCharSequenceNull() {
+        StringBuilder sb = null;
+        InputStream is = IOUtils.toInputStream(sb, StandardCharsets.UTF_8);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(0, IOUtils.toByteArray(is).length);
+    }
+
+    @Test
+    public void testToInputStreamFromFile() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+        IOUtils.writeToFile(TEST_CONTENT, tempFile);
+
+        InputStream is = IOUtils.toInputStream(tempFile);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(is));
+        IOUtils.closeQuietly(is);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testToInputStreamFromNullFile() {
+        IOUtils.toInputStream((File) null);
+    }
+
+    @Test
+    public void testToInputStreamFromPath() throws IOException {
+        Path tempPath = Files.createTempFile("ioutils_test_", ".tmp");
+        Files.deleteIfExists(tempPath);
+        IOUtils.writeToFile(TEST_CONTENT, tempPath);
+
+        InputStream is = IOUtils.toInputStream(tempPath);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(is));
+        IOUtils.closeQuietly(is);
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testToInputStreamFromNullPath() {
+        IOUtils.toInputStream((Path) null);
+    }
+
+    @Test
+    public void testToInputStreamFromURL() throws IOException {
+        // 使用 file:// URL 协议测试本地文件
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+        IOUtils.writeToFile(TEST_CONTENT, tempFile);
+
+        URL url = tempFile.toURI().toURL();
+        InputStream is = IOUtils.toInputStream(url);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(is));
+        IOUtils.closeQuietly(is);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testToInputStreamFromNullURL() {
+        IOUtils.toInputStream((URL) null);
+    }
+
+    @Test
+    public void testToInputStreamFromURI() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+        IOUtils.writeToFile(TEST_CONTENT, tempFile);
+
+        URI uri = tempFile.toURI();
+        InputStream is = IOUtils.toInputStream(uri);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(is));
+        IOUtils.closeQuietly(is);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testToInputStreamFromNullURI() {
+        IOUtils.toInputStream((URI) null);
+    }
+
+    @Test
+    public void testToStringFromReader() {
+        Reader reader = new StringReader(TEST_CONTENT);
+        String result = IOUtils.toString(reader);
+        Assert.assertEquals(TEST_CONTENT, result);
+    }
+
+    @Test
+    public void testToStringFromNullReader() {
+        String result = IOUtils.toString((Reader) null);
+        Assert.assertNull(result);
+    }
+
+    @Test
+    public void testToByteArrayFromReader() {
+        Reader reader = new StringReader(TEST_CONTENT);
+        byte[] bytes = IOUtils.toByteArray(reader, StandardCharsets.UTF_8);
+        Assert.assertNotNull(bytes);
+        Assert.assertEquals(TEST_CONTENT, new String(bytes, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testToByteArrayFromNullReader() {
+        byte[] bytes = IOUtils.toByteArray(null, StandardCharsets.UTF_8);
+        Assert.assertNotNull(bytes);
+        Assert.assertEquals(0, bytes.length);
+    }
+
+    @Test
+    public void testReadLinesToList() {
+        InputStream is = IOUtils.toInputStream("line1\nline2\nline3");
+        List<String> lines = IOUtils.readLinesToList(is);
+        Assert.assertEquals(3, lines.size());
+        Assert.assertEquals("line1", lines.get(0));
+        Assert.assertEquals("line2", lines.get(1));
+        Assert.assertEquals("line3", lines.get(2));
+    }
+
+    @Test
+    public void testReadLinesToListWithCharset() {
+        InputStream is = IOUtils.toInputStream("line1\nline2\nline3");
+        List<String> lines = IOUtils.readLinesToList(is, StandardCharsets.UTF_8);
+        Assert.assertEquals(3, lines.size());
+    }
+
+    @Test
+    public void testReadLinesToListNullInput() {
+        List<String> lines = IOUtils.readLinesToList(null);
+        Assert.assertNotNull(lines);
+        Assert.assertTrue(lines.isEmpty());
+    }
+
+    @Test
+    public void testToInputStreamFromList() {
+        List<String> lines = new ArrayList<>();
+        lines.add("line1");
+        lines.add("line2");
+        lines.add("line3");
+
+        InputStream is = IOUtils.toInputStream(lines);
+        Assert.assertNotNull(is);
+        String content = IOUtils.toString(is);
+        Assert.assertTrue(content.contains("line1"));
+        Assert.assertTrue(content.contains("line2"));
+        Assert.assertTrue(content.contains("line3"));
+    }
+
+    @Test
+    public void testToInputStreamFromEmptyList() {
+        List<String> lines = new ArrayList<>();
+        InputStream is = IOUtils.toInputStream(lines);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(0, IOUtils.toByteArray(is).length);
+    }
+
+    @Test
+    public void testToInputStreamFromNullList() {
+        InputStream is = IOUtils.toInputStream((List<String>) null);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(0, IOUtils.toByteArray(is).length);
+    }
+
+    @Test
+    public void testWriteToFileFromInputStream() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+
+        InputStream is = IOUtils.toInputStream(TEST_CONTENT);
+        IOUtils.writeToFile(is, tempFile);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempFile)));
+    }
+
+    @Test
+    public void testWriteToFileFromInputStreamToPath() throws IOException {
+        Path tempPath = Files.createTempFile("ioutils_test_", ".tmp");
+        Files.deleteIfExists(tempPath);
+
+        InputStream is = IOUtils.toInputStream(TEST_CONTENT);
+        IOUtils.writeToFile(is, tempPath);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempPath)));
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    public void testWriteToFileFromByteArray() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+
+        byte[] data = TEST_CONTENT.getBytes(StandardCharsets.UTF_8);
+        IOUtils.writeToFile(data, tempFile);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempFile)));
+    }
+
+    @Test
+    public void testWriteToFileFromByteArrayToPath() throws IOException {
+        Path tempPath = Files.createTempFile("ioutils_test_", ".tmp");
+        Files.deleteIfExists(tempPath);
+
+        byte[] data = TEST_CONTENT.getBytes(StandardCharsets.UTF_8);
+        IOUtils.writeToFile(data, tempPath);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempPath)));
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    public void testWriteToFileFromString() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+
+        IOUtils.writeToFile(TEST_CONTENT, tempFile);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempFile)));
+    }
+
+    @Test
+    public void testWriteToFileFromStringToPath() throws IOException {
+        Path tempPath = Files.createTempFile("ioutils_test_", ".tmp");
+        Files.deleteIfExists(tempPath);
+
+        IOUtils.writeToFile(TEST_CONTENT, tempPath);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempPath)));
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    public void testWriteToFileFromStringWithCharset() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+
+        IOUtils.writeToFile(TEST_CONTENT, tempFile, StandardCharsets.UTF_8);
+
+        Assert.assertEquals(TEST_CONTENT, IOUtils.toString(IOUtils.toInputStream(tempFile)));
+    }
+
+    @Test
+    public void testWriteToFileFromList() throws IOException {
+        File tempFile = File.createTempFile("ioutils_test_", ".tmp");
+        tempFile.deleteOnExit();
+
+        List<String> lines = new ArrayList<>();
+        lines.add("line1");
+        lines.add("line2");
+        lines.add("line3");
+        IOUtils.writeToFile(lines, tempFile);
+
+        List<String> result = IOUtils.readLinesToList(IOUtils.toInputStream(tempFile));
+        Assert.assertEquals(3, result.size());
+        Assert.assertEquals("line1", result.get(0));
+        Assert.assertEquals("line2", result.get(1));
+        Assert.assertEquals("line3", result.get(2));
+    }
+
+    @Test
+    public void testWriteToFileFromListToPath() throws IOException {
+        Path tempPath = Files.createTempFile("ioutils_test_", ".tmp");
+        Files.deleteIfExists(tempPath);
+
+        List<String> lines = new ArrayList<>();
+        lines.add("line1");
+        lines.add("line2");
+        lines.add("line3");
+        IOUtils.writeToFile(lines, tempPath);
+
+        List<String> result = IOUtils.readLinesToList(IOUtils.toInputStream(tempPath));
+        Assert.assertEquals(3, result.size());
+        Files.deleteIfExists(tempPath);
     }
 }
