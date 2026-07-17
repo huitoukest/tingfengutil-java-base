@@ -1,37 +1,28 @@
 package com.tingfeng.util.java.base.crypto;
 
 import com.tingfeng.util.java.base.common.constant.EncryptionAlgorithmType;
+import com.tingfeng.util.java.base.crypto.digest.DigestPoolHolder;
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
 
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * 加密辅助类
+ * 加密辅助类。
  * <p>
- * 负责策略注册表管理和MessageDigest实例缓存
- * 提供加密和解密操作的统一入口
+ * 负责策略注册表管理和 MessageDigest 实例缓存，
+ * 提供加密和解密操作的统一入口。
+ * 默认注册 MD5、SHA-1、SHA-256、SHA-512 和 AES 策略，
+ * 可通过 {@link #registerStrategy(EncryptionStrategy)} 扩展。
  * </p>
  */
 public class EncryptionHelper {
 
     /**
-     * MessageDigest池最大容量
-     */
-    private static final int DEFAULT_MAX_MESSAGE_DIGEST_SIZE = 16;
-
-    /**
      * 策略注册表（线程安全）
      */
     private static final Map<EncryptionAlgorithmType, EncryptionStrategy> STRATEGY_REGISTRY = new ConcurrentHashMap<>();
-
-    /**
-     * MessageDigest实例池缓存（线程安全）
-     */
-    private static final Map<String, FixedPoolHelper<MessageDigest>> MESSAGE_DIGEST_POOL = new ConcurrentHashMap<>();
 
     static {
         // 注册默认策略
@@ -40,12 +31,17 @@ public class EncryptionHelper {
         registerStrategy(new SHAStrategy(EncryptionAlgorithmType.SHA256));
         registerStrategy(new SHAStrategy(EncryptionAlgorithmType.SHA512));
         registerStrategy(new AESStrategy());
+        registerStrategy(new HashStrategy(""));
     }
 
     /**
-     * 注册加密策略
+     * 注册加密策略。
+     * <p>
+     * 如果 strategy 为 null，则静默忽略。
+     * 如果已有同类型策略，将被覆盖。
+     * </p>
      *
-     * @param strategy 加密策略实例
+     * @param strategy 加密策略实例，为 null 时静默忽略
      */
     public static void registerStrategy(EncryptionStrategy strategy) {
         if (strategy != null) {
@@ -54,15 +50,16 @@ public class EncryptionHelper {
     }
 
     /**
-     * 加密数据
+     * 加密数据。
      * <p>
-     * 对于哈希算法（MD5、SHA系列），key参数会被忽略
+     * 对于哈希算法（MD5、SHA 系列），key 参数会被忽略。
      * </p>
      *
-     * @param data     待加密的字节数组
-     * @param algorithm 算法类型
-     * @param key      密钥（对于哈希算法会被忽略）
+     * @param data      待加密的字节数组
+     * @param algorithm 算法类型，不能为 null
+     * @param key       密钥字节数组（对于哈希算法会被忽略）
      * @return 加密后的字节数组
+     * @throws IllegalArgumentException 如果 algorithm 为 null 或未注册
      */
     public static byte[] encrypt(byte[] data, EncryptionAlgorithmType algorithm, byte[] key) {
         EncryptionStrategy strategy = getStrategy(algorithm);
@@ -70,16 +67,17 @@ public class EncryptionHelper {
     }
 
     /**
-     * 解密数据
+     * 解密数据。
      * <p>
-     * 对于哈希算法（MD5、SHA系列），此方法会抛出UnsupportedOperationException
+     * 对于哈希算法（MD5、SHA 系列），此方法会抛出 UnsupportedOperationException。
      * </p>
      *
-     * @param data     待解密的字节数组
-     * @param algorithm 算法类型
-     * @param key      密钥（对于哈希算法会被忽略）
+     * @param data      待解密的字节数组
+     * @param algorithm 算法类型，不能为 null
+     * @param key       密钥字节数组
      * @return 解密后的字节数组
-     * @throws UnsupportedOperationException 如果算法不支持解密（哈希算法）
+      * @throws IllegalArgumentException 如果 algorithm 为 null 或未注册
+     * @throws UnsupportedOperationException 如果算法不支持解密（如哈希算法）
      */
     public static byte[] decrypt(byte[] data, EncryptionAlgorithmType algorithm, byte[] key) {
         EncryptionStrategy strategy = getStrategy(algorithm);
@@ -87,10 +85,11 @@ public class EncryptionHelper {
     }
 
     /**
-     * 获取对应的加密策略
+     * 获取对应的加密策略。
      *
-     * @param algorithm 算法类型
+     * @param algorithm 算法类型，不能为 null
      * @return 加密策略实例
+     * @throws IllegalArgumentException 如果 algorithm 为 null 或未注册
      */
     private static EncryptionStrategy getStrategy(EncryptionAlgorithmType algorithm) {
         if (algorithm == null) {
@@ -104,42 +103,27 @@ public class EncryptionHelper {
     }
 
     /**
-     * 获取MessageDigest实例池（线程安全）
+     * 获取 MessageDigest 实例池。
+     * <p>
+     * 委托给 {@link com.tingfeng.util.java.base.crypto.digest.DigestPoolHolder#getMessageDigestPool(String)}。
+     * </p>
      *
-     * @param algorithm 算法名称，如"SHA-256"、"MD5"等
-     * @return MessageDigest实例池
+     * @param algorithm 算法名称，如 "SHA-256"、"MD5" 等，不能为 null
+     * @return MessageDigest 实例池
+     * @throws IllegalArgumentException 如果 algorithm 为 null
      */
     public static FixedPoolHelper<MessageDigest> getMessageDigestPool(String algorithm) {
         if (algorithm == null) {
             throw new IllegalArgumentException("Algorithm cannot be null");
         }
-        FixedPoolHelper<MessageDigest> pool = MESSAGE_DIGEST_POOL.get(algorithm);
-        if (pool != null) {
-            return pool;
-        }
-        synchronized (MESSAGE_DIGEST_POOL) {
-            pool = MESSAGE_DIGEST_POOL.get(algorithm);
-            if (pool != null) {
-                return pool;
-            }
-            // 预验证算法有效性
-            try {
-                MessageDigest.getInstance(algorithm);
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException("Algorithm " + algorithm + " not available", e);
-            }
-            // 创建池，Callable内部不抛出检查异常
-            pool = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE, () -> MessageDigest.getInstance(algorithm));
-            MESSAGE_DIGEST_POOL.put(algorithm, pool);
-            return pool;
-        }
+        return DigestPoolHolder.getMessageDigestPool(algorithm);
     }
 
     /**
-     * 检查算法是否支持解密
+     * 检查算法是否支持解密操作。
      *
      * @param algorithm 算法类型
-     * @return true 支持解密，false 不支持
+     * @return true 表示支持解密，false 表示不支持或 algorithm 为 null
      */
     public static boolean supportsDecrypt(EncryptionAlgorithmType algorithm) {
         if (algorithm == null) {

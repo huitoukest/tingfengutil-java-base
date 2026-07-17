@@ -1,12 +1,15 @@
 package com.tingfeng.util.java.base.crypto;
 
-import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * 消息摘要工具类测试
@@ -218,7 +221,6 @@ public class MessageDigestUtilsTest {
 
         byte[] result = MessageDigestUtils.digest(algorithm, digest -> {
             digest.update(content);
-            return null;
         });
 
         Assert.assertNotNull("digest结果不能为空", result);
@@ -414,5 +416,132 @@ public class MessageDigestUtilsTest {
         byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256, content, salt);
         Assert.assertNotNull("带盐值的SHA结果不能为空", result);
         Assert.assertEquals("SHA-256结果长度应该为32字节", 32, result.length);
+    }
+
+    /**
+     * 测试并发环境下池初始化的线程安全
+     * 多个线程同时调用同一算法，验证池被正确初始化且结果正确
+     */
+    @Test
+    public void testConcurrentPoolInitialization() throws InterruptedException {
+        int threadCount = 20;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            executor.submit(() -> {
+                try {
+                    // 所有线程同时调用同一算法，触发并发池初始化
+                    byte[] result = MessageDigestUtils.md5("concurrent test".getBytes(StandardCharsets.UTF_8));
+                    Assert.assertNotNull("并发访问时MD5结果不能为空", result);
+                    Assert.assertEquals("并发访问时MD5结果长度应为16字节", 16, result.length);
+                } catch (Throwable t) {
+                    exception.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executor.shutdown();
+        Assert.assertNull("并发池初始化不应发生异常: " +
+                (exception.get() != null ? exception.get().getMessage() : ""), exception.get());
+    }
+
+    /**
+     * 测试并发环境下多种算法的线程安全
+     * 多个线程同时调用不同算法，验证各池互不影响
+     */
+    @Test
+    public void testConcurrentDifferentAlgorithms() throws InterruptedException {
+        int threadCount = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount * 4);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            final String content = "test content " + i;
+            executor.submit(() -> {
+                try {
+                    byte[] md5Result = MessageDigestUtils.md5(content.getBytes(StandardCharsets.UTF_8));
+                    Assert.assertEquals("MD5长度应为16字节", 16, md5Result.length);
+                } catch (Throwable t) {
+                    exception.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+            executor.submit(() -> {
+                try {
+                    byte[] sha256Result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256,
+                            content.getBytes(StandardCharsets.UTF_8));
+                    Assert.assertEquals("SHA-256长度应为32字节", 32, sha256Result.length);
+                } catch (Throwable t) {
+                    exception.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+            executor.submit(() -> {
+                try {
+                    byte[] sha512Result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA512,
+                            content.getBytes(StandardCharsets.UTF_8));
+                    Assert.assertEquals("SHA-512长度应为64字节", 64, sha512Result.length);
+                } catch (Throwable t) {
+                    exception.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+            executor.submit(() -> {
+                try {
+                    byte[] macResult = MessageDigestUtils.macSha(MessageDigestUtils.DigestType.SHAMAC256,
+                            content.getBytes(StandardCharsets.UTF_8));
+                    Assert.assertEquals("HmacSHA256长度应为32字节", 32, macResult.length);
+                } catch (Throwable t) {
+                    exception.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executor.shutdown();
+        Assert.assertNull("并发多算法访问不应发生异常: " +
+                (exception.get() != null ? exception.get().getMessage() : ""), exception.get());
+    }
+
+    /**
+     * 测试并发环境下带盐值哈希的线程安全
+     */
+    @Test
+    public void testConcurrentHashWithSalt() throws InterruptedException {
+        int threadCount = 10;
+        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+        CountDownLatch latch = new CountDownLatch(threadCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        for (int i = 0; i < threadCount; i++) {
+            final String content = "test content " + i;
+            executor.submit(() -> {
+                try {
+                    byte[] result = MessageDigestUtils.sha(MessageDigestUtils.DigestType.SHA256,
+                            content.getBytes(StandardCharsets.UTF_8), "common-salt");
+                    Assert.assertEquals("带盐值SHA-256长度应为32字节", 32, result.length);
+                } catch (Throwable t) {
+                    exception.set(t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        latch.await();
+        executor.shutdown();
+        Assert.assertNull("并发带盐值哈希不应发生异常: " +
+                (exception.get() != null ? exception.get().getMessage() : ""), exception.get());
     }
 }

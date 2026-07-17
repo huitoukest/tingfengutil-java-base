@@ -6,9 +6,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * MD5加密策略实现
+ * MD5 加密策略实现。
  * <p>
- * MD5是消息摘要算法，不可逆，不支持解密操作
+ * MD5 是消息摘要算法，输出 128 位（16 字节）摘要，不可逆，不支持解密操作。
  * </p>
  */
 public class MD5Strategy implements EncryptionStrategy {
@@ -17,6 +17,9 @@ public class MD5Strategy implements EncryptionStrategy {
 
     @Override
     public byte[] encrypt(byte[] data, byte[] key) {
+        if (null == data) {
+            return null;
+        }
         return digest(data);
     }
 
@@ -36,15 +39,12 @@ public class MD5Strategy implements EncryptionStrategy {
     }
 
     /**
-     * 计算MD5摘要
+     * 计算 MD5 摘要。
      *
-     * @param data 待计算的字节数组
-     * @return 16字节的MD5摘要，如果输入为null则返回null
+     * @param data 待计算的字节数组，不能为 null（调用方保证）
+     * @return 16 字节的 MD5 摘要
      */
     private byte[] digest(byte[] data) {
-        if (null == data) {
-            return null;
-        }
         try {
             MessageDigest md = MessageDigest.getInstance(ALGORITHM);
             return md.digest(data);

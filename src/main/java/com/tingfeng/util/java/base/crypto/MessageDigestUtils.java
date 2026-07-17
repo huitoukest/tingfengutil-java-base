@@ -1,8 +1,7 @@
 package com.tingfeng.util.java.base.crypto;
 
-
+import com.tingfeng.util.java.base.crypto.digest.DigestPoolHolder;
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
-import com.tingfeng.util.java.base.lang.inter.returnfunction.FunctionROne;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
@@ -13,31 +12,21 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Consumer;
 
 /**
- * 消息摘要与MAC加密工具类
- * 支持MD5、SHA系列算法的字节数组和字符串摘要计算
- * 支持HMAC系列算法的消息认证码计算
+ * 消息摘要与 MAC 加密工具类。
+ * <p>
+ * 支持 MD5、SHA-1、SHA-256、SHA-512 等消息摘要算法的字节数组和字符串摘要计算，
+ * 支持 HmacSHA256、HmacSHA512 等 HMAC 系列算法的消息认证码计算。
+ * 所有公开方法均对 null 入参进行校验并抛出 {@link IllegalArgumentException}。
+ * </p>
  */
 public class MessageDigestUtils {
     /** 流式处理默认缓冲区大小（4KB） */
     private static final int DEFAULT_BUFFER_SIZE = 4096;
-    /** MessageDigest池最大容量 */
-    private static final int DEFAULT_MAX_MESSAGE_DIGEST_SIZE = 16;
-    /** Mac池最大容量 */
-    private static final int DEFAULT_MAX_MAC_SIZE = 16;
-    /** KeyGenerator池最大容量 */
-    private static final int DEFAULT_MAX_KEY_GENERATOR_SIZE = 8;
     /** 十六进制字符映射表 */
     private static final char[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-    /** MessageDigest实例池缓存 */
-    private static final Map<String, FixedPoolHelper<MessageDigest>> MESSAGE_DIGEST_POOL = new HashMap<>();
-    /** Mac实例池缓存 */
-    private static final Map<String, FixedPoolHelper<Mac>> MAC_POOL = new HashMap<>();
-    /** KeyGenerator实例池缓存 */
-    private static final Map<String, FixedPoolHelper<KeyGenerator>> KEY_GENERATOR_POOL = new HashMap<>();
 
     /**
      * 摘要算法类型枚举
@@ -61,82 +50,50 @@ public class MessageDigestUtils {
         }
     }
 
-    public static void main(String[] args) {
-        System.out.println("MD5: " + toHexString(md5("i m a sample".getBytes())));
-        System.out.println("SHA-256: " + toHexString(sha(DigestType.SHA256, "i m a sample".getBytes())));
-        System.out.println("HmacSHA256：" + toHexString(macSha(DigestType.SHAMAC256, "i m a sample".getBytes())));
-        System.out.println("HmacSHA256：" + toHexString(macSha(DigestType.SHAMAC256, "i m a sample".getBytes(), "123456".getBytes(StandardCharsets.UTF_8))));
-    }
-
     /**
-     * 获取MessageDigest实例池（线程不安全，需外部同步）
+     * 获取MessageDigest实例池（委托给DigestPoolHolder）
      * @param algorithm 算法名称，如"SHA-256"、"MD5"等
      * @return MessageDigest实例池
      */
     private static FixedPoolHelper<MessageDigest> getMessageDigestPool(String algorithm) {
-        FixedPoolHelper<MessageDigest> pool = MESSAGE_DIGEST_POOL.get(algorithm);
-        if (pool == null) {
-            synchronized (algorithm.intern()) {
-                pool = MESSAGE_DIGEST_POOL.get(algorithm);
-                if (null == pool) {
-                    pool = new FixedPoolHelper<>(DEFAULT_MAX_MESSAGE_DIGEST_SIZE,
-                            () -> MessageDigest.getInstance(algorithm));
-                    MESSAGE_DIGEST_POOL.put(algorithm, pool);
-                }
-            }
-        }
-        return pool;
+        return DigestPoolHolder.getMessageDigestPool(algorithm);
     }
 
     /**
-     * 获取Mac实例池（线程不安全，需外部同步）
+     * 获取Mac实例池（委托给DigestPoolHolder）
      * @param algorithm 算法名称，如"HmacSHA256"等
      * @return Mac实例池
      */
     private static FixedPoolHelper<Mac> getMacPool(String algorithm) {
-        FixedPoolHelper<Mac> pool = MAC_POOL.get(algorithm);
-        if (pool == null) {
-            synchronized (algorithm.intern()) {
-                pool = MAC_POOL.get(algorithm);
-                if (null == pool) {
-                    pool = new FixedPoolHelper<>(DEFAULT_MAX_MAC_SIZE,
-                            () -> Mac.getInstance(algorithm));
-                    MAC_POOL.put(algorithm, pool);
-                }
-            }
-        }
-        return pool;
+        return DigestPoolHolder.getMacPool(algorithm);
     }
 
     /**
-     * 获取KeyGenerator实例池（线程不安全，需外部同步）
+     * 获取KeyGenerator实例池（委托给DigestPoolHolder）
      * @param algorithm 算法名称，如"HmacSHA256"等
      * @return KeyGenerator实例池
      */
     private static FixedPoolHelper<KeyGenerator> getKeyGeneratorPool(String algorithm) {
-        FixedPoolHelper<KeyGenerator> pool = KEY_GENERATOR_POOL.get(algorithm);
-        if (pool == null) {
-            synchronized (algorithm.intern()) {
-                pool = KEY_GENERATOR_POOL.get(algorithm);
-                if (null == pool) {
-                    pool = new FixedPoolHelper<>(DEFAULT_MAX_KEY_GENERATOR_SIZE,
-                            () -> KeyGenerator.getInstance(algorithm));
-                    KEY_GENERATOR_POOL.put(algorithm, pool);
-                }
-            }
-        }
-        return pool;
+        return DigestPoolHolder.getKeyGeneratorPool(algorithm);
     }
 
     /**
-     * 多轮迭代哈希计算
-     * @param algorithmName 算法名称
-     * @param bytes 待哈希的字节数组
-     * @param salt 盐值（可选）
-     * @param hashIterations 迭代次数
+     * 多轮迭代哈希计算。
+     *
+     * @param algorithmName 算法名称（如 "MD5"、"SHA-256"），不能为 null
+     * @param bytes         待哈希的字节数组，不能为 null
+     * @param salt          盐值（可选，可以为 null）
+     * @param hashIterations 迭代次数，必须大于 0
      * @return 哈希后的字节数组
+     * @throws IllegalArgumentException 如果 algorithmName 或 bytes 为 null
      */
     public static byte[] hash(String algorithmName, byte[] bytes, byte[] salt, int hashIterations) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == bytes) {
+            throw new IllegalArgumentException("bytes must not be null");
+        }
         FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
         return pool.run(digest -> {
             digest.reset();
@@ -155,13 +112,21 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 默认单轮迭代哈希计算
-     * @param algorithmName 算法名称
-     * @param content 待哈希的字符串内容
-     * @param salt 盐值字符串（可选）
+     * 默认单轮迭代哈希计算。
+     *
+     * @param algorithmName 算法名称（如 "MD5"、"SHA-256"），不能为 null
+     * @param content       待哈希的字符串内容，不能为 null
+     * @param salt          盐值字符串（可选，可以为 null）
      * @return 哈希后的字节数组
+     * @throws IllegalArgumentException 如果 algorithmName 或 content 为 null
      */
     public static byte[] hash(String algorithmName, String content, String salt) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == content) {
+            throw new IllegalArgumentException("content must not be null");
+        }
         byte[] saltBytes = null;
         if (null != salt) {
             saltBytes = salt.getBytes(StandardCharsets.UTF_8);
@@ -170,57 +135,91 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 多轮迭代哈希计算并转换为十六进制字符串
-     * @param algorithmName 算法名称
-     * @param bytes 待哈希的字节数组
-     * @param salt 盐值（可选）
+     * 多轮迭代哈希计算并转换为十六进制字符串。
+     *
+     * @param algorithmName  算法名称，不能为 null
+     * @param bytes          待哈希的字节数组，不能为 null
+     * @param salt           盐值（可选，可以为 null）
      * @param hashIterations 迭代次数
-     * @return 十六进制字符串
+     * @return 十六进制字符串（小写）
+     * @throws IllegalArgumentException 如果 algorithmName 或 bytes 为 null
      */
     public static String toHashHexString(String algorithmName, byte[] bytes, byte[] salt, int hashIterations) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == bytes) {
+            throw new IllegalArgumentException("bytes must not be null");
+        }
         byte[] hashBytes = hash(algorithmName, bytes, salt, hashIterations);
         return toHexString(hashBytes);
     }
 
     /**
-     * 单轮迭代哈希计算并转换为十六进制字符串
-     * @param algorithmName 算法名称
-     * @param bytes 待哈希的字节数组
-     * @param salt 盐值（可选）
-     * @return 十六进制字符串
+     * 单轮迭代哈希计算并转换为十六进制字符串。
+     *
+     * @param algorithmName 算法名称，不能为 null
+     * @param bytes         待哈希的字节数组，不能为 null
+     * @param salt          盐值（可选，可以为 null）
+     * @return 十六进制字符串（小写）
+     * @throws IllegalArgumentException 如果 algorithmName 或 bytes 为 null
      */
     public static String toHashHexString(String algorithmName, byte[] bytes, byte[] salt) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == bytes) {
+            throw new IllegalArgumentException("bytes must not be null");
+        }
         return toHashHexString(algorithmName, bytes, salt, 1);
     }
 
     /**
-     * 单轮迭代哈希计算并转换为十六进制字符串
-     * @param algorithmName 算法名称
-     * @param content 待哈希的字符串内容
-     * @param salt 盐值字符串（可选）
-     * @return 十六进制字符串
+     * 单轮哈希计算并将结果转换为十六进制字符串。
+     *
+     * @param algorithmName 算法名称，不能为 null
+     * @param content       待哈希的字符串内容，不能为 null
+     * @param salt          盐值字符串（可选，可以为 null）
+     * @return 十六进制字符串（小写）
+     * @throws IllegalArgumentException 如果 algorithmName 或 content 为 null
      */
     public static String toHashHexString(String algorithmName, String content, String salt) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == content) {
+            throw new IllegalArgumentException("content must not be null");
+        }
         byte[] saltBytes = salt != null ? salt.getBytes(StandardCharsets.UTF_8) : null;
         return toHashHexString(algorithmName, content.getBytes(StandardCharsets.UTF_8), saltBytes);
     }
 
     /**
-     * 字节数组转换为十六进制字符串
-     * @param bytes 字节数组
-     * @return 十六进制字符串
+     * 将字节数组转换为十六进制字符串（小写）。
+     *
+     * @param bytes 字节数组，不能为 null
+     * @return 十六进制字符串（小写）
+     * @throws IllegalArgumentException 如果 bytes 为 null
      */
     public static String toHexString(byte[] bytes) {
+        if (null == bytes) {
+            throw new IllegalArgumentException("bytes must not be null");
+        }
         char[] encodedChars = toHex(bytes);
         return new String(encodedChars);
     }
 
     /**
-     * 字节数组转换为十六进制字符数组（摘录自Apache Shiro）
-     * @param data 字节数组
-     * @return 十六进制字符数组
+     * 将字节数组转换为十六进制字符数组（小写）。
+     *
+     * @param data 字节数组，不能为 null
+     * @return 十六进制字符数组（小写）
+     * @throws IllegalArgumentException 如果 data 为 null
      */
     public static char[] toHex(byte[] data) {
+        if (null == data) {
+            throw new IllegalArgumentException("data must not be null");
+        }
         int len = data.length;
         char[] out = new char[len << 1];
         int j = 0;
@@ -234,21 +233,34 @@ public class MessageDigestUtils {
     }
 
     /**
-     * MD5消息摘要计算（小文件）
-     * @param plainText 待计算的字节数组
-     * @return 摘要结果字节数组
+     * MD5 消息摘要计算。
+     *
+     * @param plainText 待计算的字节数组，不能为 null
+     * @return 16 字节的 MD5 摘要结果
+     * @throws IllegalArgumentException 如果 plainText 为 null
      */
     public static byte[] md5(byte[] plainText) {
+        if (null == plainText) {
+            throw new IllegalArgumentException("plainText must not be null");
+        }
         return digest(DigestType.MD5.getValue(), plainText);
     }
 
     /**
-     * SHA系列消息摘要计算（小文件）
-     * @param digestType 摘要算法类型
-     * @param plainText 待计算的字节数组
+     * SHA 系列消息摘要计算。
+     *
+     * @param digestType 摘要算法类型，不能为 null
+     * @param plainText  待计算的字节数组，不能为 null
      * @return 摘要结果字节数组
+     * @throws IllegalArgumentException 如果 digestType 或 plainText 为 null
      */
     public static byte[] sha(DigestType digestType, byte[] plainText) {
+        if (null == digestType) {
+            throw new IllegalArgumentException("digestType must not be null");
+        }
+        if (null == plainText) {
+            throw new IllegalArgumentException("plainText must not be null");
+        }
         return digest(digestType.getValue(), plainText);
     }
 
@@ -267,48 +279,92 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 带盐值的SHA摘要计算（小文件）
-     * @param digestType 摘要算法类型
-     * @param plainText 待计算的字节数组
-     * @param salt 盐值字符串
+     * 带盐值的 SHA 摘要计算（字节数组输入）。
+     *
+     * @param digestType 摘要算法类型，不能为 null
+     * @param plainText  待计算的字节数组，不能为 null
+     * @param salt       盐值字符串，不能为 null
      * @return 摘要结果字节数组
+     * @throws IllegalArgumentException 如果任一参数为 null
      */
     public static byte[] sha(DigestType digestType, byte[] plainText, String salt) {
+        if (null == digestType) {
+            throw new IllegalArgumentException("digestType must not be null");
+        }
+        if (null == plainText) {
+            throw new IllegalArgumentException("plainText must not be null");
+        }
+        if (null == salt) {
+            throw new IllegalArgumentException("salt must not be null");
+        }
         return hash(digestType.getValue(), plainText, salt.getBytes(StandardCharsets.UTF_8), 1);
     }
 
     /**
-     * 带盐值的SHA摘要计算（小文件）
-     * @param digestType 摘要算法类型
-     * @param plainText 明文字符串
-     * @param salt 盐值字符串
+     * 带盐值的 SHA 摘要计算（字符串输入）。
+     *
+     * @param digestType 摘要算法类型，不能为 null
+     * @param plainText  明文字符串，不能为 null
+     * @param salt       盐值字符串，不能为 null
      * @return 摘要结果字节数组
+     * @throws IllegalArgumentException 如果任一参数为 null
      */
     public static byte[] sha(DigestType digestType, String plainText, String salt) {
+        if (null == digestType) {
+            throw new IllegalArgumentException("digestType must not be null");
+        }
+        if (null == plainText) {
+            throw new IllegalArgumentException("plainText must not be null");
+        }
+        if (null == salt) {
+            throw new IllegalArgumentException("salt must not be null");
+        }
         return hash(digestType.getValue(), plainText.getBytes(StandardCharsets.UTF_8),
                      salt.getBytes(StandardCharsets.UTF_8), 1);
     }
 
     /**
-     * MAC消息认证码计算（自动生成密钥）
-     * MAC算法是含有密钥的散列函数算法，兼容MD和SHA的特性
-     * @param digestType MAC算法类型
-     * @param plainText 待计算的字节数组
+     * MAC 消息认证码计算（自动生成密钥）。
+     * <p>
+     * MAC 算法是含有密钥的散列函数算法，兼容 MD 和 SHA 的特性。
+     * 每次调用会生成一个新的随机密钥。
+     * </p>
+     *
+     * @param digestType MAC 算法类型，不能为 null
+     * @param plainText  待计算的字节数组，不能为 null
      * @return 认证码结果字节数组
+     * @throws IllegalArgumentException 如果 digestType 或 plainText 为 null
      */
     public static byte[] macSha(DigestType digestType, byte[] plainText) {
+        if (null == digestType) {
+            throw new IllegalArgumentException("digestType must not be null");
+        }
+        if (null == plainText) {
+            throw new IllegalArgumentException("plainText must not be null");
+        }
         byte[] secretBytes = generatorMacSecretKey(digestType.getValue());
         return macSha(digestType.getValue(), plainText, secretBytes);
     }
 
     /**
-     * MAC消息认证码计算（使用指定密钥）
-     * @param digestType MAC算法类型
-     * @param plainText 待计算的字节数组
-     * @param secretBytes 密钥字节数组
+     * MAC 消息认证码计算（使用指定密钥）。
+     *
+     * @param digestType  MAC 算法类型，不能为 null
+     * @param plainText   待计算的字节数组，不能为 null
+     * @param secretBytes 密钥字节数组，不能为 null
      * @return 认证码结果字节数组
+     * @throws IllegalArgumentException 如果任一参数为 null
      */
     public static byte[] macSha(DigestType digestType, byte[] plainText, byte[] secretBytes) {
+        if (null == digestType) {
+            throw new IllegalArgumentException("digestType must not be null");
+        }
+        if (null == plainText) {
+            throw new IllegalArgumentException("plainText must not be null");
+        }
+        if (null == secretBytes) {
+            throw new IllegalArgumentException("secretBytes must not be null");
+        }
         return macSha(digestType.getValue(), plainText, secretBytes);
     }
 
@@ -343,29 +399,51 @@ public class MessageDigestUtils {
     }
 
     /**
-     * 流式摘要计算（使用回调函数填充内容）
-     * 适用于大文件处理，流结束时不会关闭输入流
-     * @param algorithmName 算法名称
-     * @param contentFiller 内容填充回调函数，用于调用 digest.update 方法填充数据
+     * 流式摘要计算（使用回调函数填充内容）。
+     * <p>
+     * 适用于大文件处理，调用者通过回调函数向 MessageDigest 实例填充数据，
+     * 流结束时不会关闭输入流。调用者需自行管理输入流的关闭。
+     * </p>
+     *
+     * @param algorithmName 算法名称（如 "MD5"、"SHA-256"），不能为 null
+     * @param contentFiller 内容填充回调函数，用于调用 {@link MessageDigest#update(byte[])} 等方法填充数据，不能为 null
      * @return 摘要结果字节数组
+     * @throws IllegalArgumentException 如果 algorithmName 或 contentFiller 为 null
      */
-    public static byte[] digest(String algorithmName, FunctionROne<byte[], MessageDigest> contentFiller) {
+    public static byte[] digest(String algorithmName, Consumer<MessageDigest> contentFiller) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == contentFiller) {
+            throw new IllegalArgumentException("contentFiller must not be null");
+        }
         FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
         return pool.run(digest -> {
             digest.reset();
-            contentFiller.run(digest);
+            contentFiller.accept(digest);
             return digest.digest();
         });
     }
 
     /**
-     * 流式摘要计算（从输入流读取数据）
-     * 适用于大文件处理，流结束时不会关闭输入流
-     * @param algorithmName 算法名称
-     * @param inputStream 输入流
+     * 流式摘要计算（从输入流读取数据）。
+     * <p>
+     * 适用于大文件处理，流结束时不会关闭输入流。
+     * 调用者需自行管理输入流的关闭。
+     * </p>
+     *
+     * @param algorithmName 算法名称（如 "MD5"、"SHA-256"），不能为 null
+     * @param inputStream   输入流，不能为 null
      * @return 摘要结果字节数组
+     * @throws IllegalArgumentException 如果 algorithmName 或 inputStream 为 null
      */
     public static byte[] digest(String algorithmName, InputStream inputStream) {
+        if (null == algorithmName) {
+            throw new IllegalArgumentException("algorithmName must not be null");
+        }
+        if (null == inputStream) {
+            throw new IllegalArgumentException("inputStream must not be null");
+        }
         FixedPoolHelper<MessageDigest> pool = getMessageDigestPool(algorithmName);
         return pool.run(digest -> {
             digest.reset();
@@ -383,12 +461,20 @@ public class MessageDigestUtils {
     }
 
     /**
-     * MD5流式摘要计算（从输入流读取数据）
-     * 适用于大文件处理，流结束时不会关闭输入流
-     * @param inputStream 输入流
-     * @return 摘要结果字节数组
+     * MD5 流式摘要计算（从输入流读取数据）。
+     * <p>
+     * 适用于大文件处理，流结束时不会关闭输入流。
+     * 调用者需自行管理输入流的关闭。
+     * </p>
+     *
+     * @param inputStream 输入流，不能为 null
+     * @return 16 字节的 MD5 摘要结果
+     * @throws IllegalArgumentException 如果 inputStream 为 null
      */
     public static byte[] md5(InputStream inputStream) {
+        if (null == inputStream) {
+            throw new IllegalArgumentException("inputStream must not be null");
+        }
         return digest(DigestType.MD5.getValue(), inputStream);
     }
 }

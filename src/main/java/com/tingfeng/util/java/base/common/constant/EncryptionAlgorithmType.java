@@ -24,7 +24,11 @@ public enum EncryptionAlgorithmType {
     /**
      * AES对称加密算法（可逆）
      */
-    AES("AES", true);
+    AES("AES", true),
+    /**
+     * 字符替换编码（非安全加密，用于ID混淆）
+     */
+    SUBSTITUTION("SUBSTITUTION", true);
 
     private final String value;
     private final boolean supportsDecrypt;
