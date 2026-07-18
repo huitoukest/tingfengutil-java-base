@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.function.*;
+import java.io.FileFilter;
 
 import com.tingfeng.util.java.base.file.strategy.FileCopyStrategy;
 import com.tingfeng.util.java.base.file.strategy.ProgressCallback;
@@ -140,6 +141,42 @@ public class FileUtils {
 			type = addType;
 		}
 
+	}
+
+	/**
+	 * 文件重命名策略枚举。
+	 */
+	public enum RenameOption {
+		/** 目标存在时覆盖 */
+		OVERWRITE,
+		/** 目标存在时失败（抛异常） */
+		FAIL_IF_EXISTS,
+		/** 原子移动（跨文件系统时降级为 copy + delete） */
+		ATOMIC_MOVE
+	}
+
+	/**
+	 * 重命名操作结果。
+	 */
+	public static class RenameResult {
+		/** 源文件 */
+		public final File source;
+		/** 目标文件 */
+		public final File target;
+		/** 是否成功 */
+		public final boolean success;
+		/** 错误消息（成功时为 null） */
+		public final String errorMessage;
+
+		/**
+		 * 包级私有构造器，由 Ops 层创建。
+		 */
+		RenameResult(File source, File target, boolean success, String errorMessage) {
+			this.source = source;
+			this.target = target;
+			this.success = success;
+			this.errorMessage = errorMessage;
+		}
 	}
 
 	/**
@@ -710,5 +747,265 @@ public class FileUtils {
 	                                                       Object executor,
 	                                                       IOUtils.CancellationToken token) {
 		return FileAsyncOps.writeLineAsync(file, line, executor, token);
+	}
+
+	// ==================== 文件重命名 ====================
+
+	/**
+	 * 单文件重命名（默认策略 {@link RenameOption#FAIL_IF_EXISTS}）。
+	 *
+	 * @param source 源文件
+	 * @param target 目标文件
+	 * @return 重命名成功返回 true
+	 * @see FileRenameOps
+	 */
+	public static boolean renameFile(File source, File target) {
+		return FileRenameOps.rename(source, target);
+	}
+
+	/**
+	 * 单文件重命名（指定策略）。
+	 *
+	 * @param source  源文件
+	 * @param target  目标文件
+	 * @param options 重命名策略选项
+	 * @return 重命名成功返回 true
+	 * @see FileRenameOps
+	 */
+	public static boolean renameFile(File source, File target, RenameOption... options) {
+		return FileRenameOps.rename(source, target, options);
+	}
+
+	/**
+	 * 批量重命名文件（默认开启回滚）。
+	 *
+	 * @param files  文件数组
+	 * @param filter 过滤条件
+	 * @param namer  命名函数
+	 * @return 重命名结果列表
+	 * @see FileRenameOps
+	 */
+	public static List<RenameResult> batchRenameFiles(File[] files,
+			Predicate<File> filter, Function<File, String> namer) {
+		return FileRenameOps.batchRename(files, filter, namer);
+	}
+
+	/**
+	 * 批量重命名文件（使用指定策略，默认开启回滚）。
+	 *
+	 * @param files   文件数组
+	 * @param filter  过滤条件
+	 * @param namer   命名函数
+	 * @param options 重命名策略选项
+	 * @return 重命名结果列表
+	 * @see FileRenameOps
+	 */
+	public static List<RenameResult> batchRenameFiles(File[] files,
+			Predicate<File> filter, Function<File, String> namer,
+			RenameOption... options) {
+		return FileRenameOps.batchRename(files, filter, namer, options);
+	}
+
+	/**
+	 * 批量重命名文件（控制是否回滚）。
+	 *
+	 * @param files             文件数组
+	 * @param filter            过滤条件
+	 * @param namer             命名函数
+	 * @param rollbackOnFailure 失败时是否回滚已重命名的文件
+	 * @return 重命名结果列表
+	 * @see FileRenameOps
+	 */
+	public static List<RenameResult> batchRenameFiles(File[] files,
+			Predicate<File> filter, Function<File, String> namer,
+			boolean rollbackOnFailure) {
+		return FileRenameOps.batchRename(files, filter, namer, rollbackOnFailure);
+	}
+
+	// ==================== 临时文件管理 ====================
+
+	/**
+	 * 创建临时文件（快捷方法）。
+	 * <p>
+	 * 等效于 {@link TempFileManager#createTempFile(String, String)}。
+	 * 不绑定管理器，文件由 JVM 在退出时自动删除。
+	 * </p>
+	 *
+	 * @param prefix 文件前缀，null 时使用 "temp"
+	 * @param suffix 文件后缀，null 时使用 ".tmp"
+	 * @return 创建的临时文件
+	 * @throws com.tingfeng.util.java.base.lang.exception.BaseException 创建失败时抛出
+	 * @see TempFileManager
+	 */
+	public static File createTempFile(String prefix, String suffix) {
+		return TempFileManager.createTempFile(prefix, suffix);
+	}
+
+	/**
+	 * 创建临时目录（快捷方法）。
+	 * <p>
+	 * 等效于 {@link TempFileManager#createTempDirectory(String)}。
+	 * </p>
+	 *
+	 * @param prefix 目录前缀，null 时使用 "temp"
+	 * @return 创建的临时目录
+	 * @throws com.tingfeng.util.java.base.lang.exception.BaseException 创建失败时抛出
+	 * @see TempFileManager
+	 */
+	public static File createTempDirectory(String prefix) {
+		return TempFileManager.createTempDirectory(prefix);
+	}
+
+	/**
+	 * 创建空的临时文件管理器。
+	 * <p>
+	 * 等效于 {@code new TempFileManager()}。
+	 * 通过 {@link TempFileManager#createFile(String, String)} 和
+	 * {@link TempFileManager#createDirectory(String)} 添加资源。
+	 * </p>
+	 *
+	 * @return TempFileManager 实例
+	 * @see TempFileManager
+	 */
+	public static TempFileManager createTempManager() {
+		return new TempFileManager();
+	}
+
+	// ==================== 路径归一化 ====================
+
+	/**
+	 * 归一化路径字符串。
+	 * 统一分隔符为 '/'，解析并去除 '.' 和 '..' 冗余片段。
+	 *
+	 * @param path 原始路径，非 null
+	 * @return 归一化后的路径
+	 * @throws IllegalArgumentException path 为 null 时抛出
+	 * @see FilePathOps
+	 */
+	public static String normalizePath(String path) {
+		return FilePathOps.normalize(path);
+	}
+
+	/**
+	 * 归一化路径字符串，支持控制是否保留尾部分隔符。
+	 *
+	 * @param path                  原始路径，非 null
+	 * @param keepTrailingSeparator 是否保留尾部分隔符
+	 * @return 归一化后的路径
+	 * @throws IllegalArgumentException path 为 null 时抛出
+	 * @see FilePathOps
+	 */
+	public static String normalizePath(String path, boolean keepTrailingSeparator) {
+		return FilePathOps.normalize(path, keepTrailingSeparator);
+	}
+
+	/**
+	 * 判断路径是否为绝对路径（跨平台兼容）。
+	 *
+	 * @param path 路径字符串，非 null
+	 * @return true 表示为绝对路径；null 或空串返回 false
+	 * @throws IllegalArgumentException path 为 null 时抛出
+	 * @see FilePathOps
+	 */
+	public static boolean isAbsolutePath(String path) {
+		return FilePathOps.isAbsolute(path);
+	}
+
+	/**
+	 * 将路径中的分隔符统一转换为 Unix 风格（'/'）。
+	 *
+	 * @param path 路径字符串
+	 * @return 转换后的路径，null 时返回 null
+	 * @see FilePathOps
+	 */
+	public static String separatorsToUnix(String path) {
+		return FilePathOps.separatorsToUnix(path);
+	}
+
+	/**
+	 * 将路径中的分隔符统一转换为 Windows 风格（'\\'）。
+	 *
+	 * @param path 路径字符串
+	 * @return 转换后的路径，null 时返回 null
+	 * @see FilePathOps
+	 */
+	public static String separatorsToWindows(String path) {
+		return FilePathOps.separatorsToWindows(path);
+	}
+
+	// ==================== 目录列表（非递归） ====================
+
+	/**
+	 * 列出指定目录下的所有直接子项（非递归）。
+	 * <p>返回目录下所有文件/目录的列表，不递归遍历子目录。</p>
+	 *
+	 * @param dir 目标目录，非 null
+	 * @return 子项列表，不会为 null（空目录或不存在时返回空列表）
+	 * @throws IllegalArgumentException dir 为 null 时抛出
+	 * @see FileWalkOps
+	 */
+	public static List<File> listFiles(File dir) {
+		return FileWalkOps.listFiles(dir);
+	}
+
+	/**
+	 * 列出指定目录下的直接子项，使用过滤器筛选（非递归）。
+	 *
+	 * @param dir    目标目录，非 null
+	 * @param filter 文件过滤器，null 时返回全部子项
+	 * @return 子项列表，不会为 null
+	 * @throws IllegalArgumentException dir 为 null 时抛出
+	 * @see FileWalkOps
+	 */
+	public static List<File> listFiles(File dir, FileFilter filter) {
+		return FileWalkOps.listFiles(dir, filter);
+	}
+
+	// ==================== 目录遍历 ====================
+
+	/**
+	 * 遍历目录，返回所有匹配的文件列表（默认配置）。
+	 * <p>
+	 * 等效于 {@code walkFiles(root, WalkOption.builder().build())}，
+	 * 默认只返回文件（不包含目录），最大深度 50。
+	 * </p>
+	 *
+	 * @param root 遍历起始目录或文件，非 null
+	 * @return 匹配的文件列表，不会为 null
+	 * @throws IllegalArgumentException root 为 null 时抛出
+	 * @see FileWalkOps
+	 * @see WalkOption
+	 */
+	public static List<File> walkFiles(File root) {
+		return FileWalkOps.walkFiles(root, WalkOption.builder().build());
+	}
+
+	/**
+	 * 遍历目录，返回根据指定配置匹配的文件/目录列表。
+	 * <p>
+	 * 使用迭代 DFS 算法，防止递归导致的栈溢出。
+	 * 支持深度限制、包含/排除过滤、文件/目录筛选。
+	 * </p>
+	 *
+	 * <p>示例：</p>
+	 * <pre>{@code
+	 * WalkOption opt = WalkOption.builder()
+	 *     .maxDepth(10)
+	 *     .includeFiles(true)
+	 *     .includeDirs(true)
+	 *     .filter(f -> f.getName().endsWith(".java"))
+	 *     .build();
+	 * List<File> files = FileUtils.walkFiles(root, opt);
+	 * }</pre>
+	 *
+	 * @param root   遍历起始目录或文件，非 null
+	 * @param option 遍历配置选项，非 null
+	 * @return 匹配的文件/目录列表，不会为 null
+	 * @throws IllegalArgumentException root 或 option 为 null 时抛出
+	 * @see FileWalkOps
+	 * @see WalkOption
+	 */
+	public static List<File> walkFiles(File root, WalkOption option) {
+		return FileWalkOps.walkFiles(root, option);
 	}
 }
