@@ -50,7 +50,7 @@ public class AsyncCopyStrategy implements FileCopyStrategy {
      */
     private AsyncCopyStrategy(int bufferSize, int backPressureLimit) {
         this.bufferSize = bufferSize > 0 ? bufferSize : FileUtils.BUFFER_SIZE;
-        this.backPressureLimit = backPressureLimit > 0 ? backPressureLimit : FileUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE;
+        this.backPressureLimit = backPressureLimit > 0 ? backPressureLimit : IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE;
     }
 
     /**
@@ -58,7 +58,7 @@ public class AsyncCopyStrategy implements FileCopyStrategy {
      * @return 新的 AsyncCopyStrategy 实例（非单例）
      */
     public static AsyncCopyStrategy create() {
-        return new AsyncCopyStrategy(FileUtils.BUFFER_SIZE, FileUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE);
+        return new AsyncCopyStrategy(FileUtils.BUFFER_SIZE, IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE);
     }
 
     /**

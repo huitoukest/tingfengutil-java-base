@@ -1,20 +1,9 @@
 package com.tingfeng.util.java.base.io;
 
 /**
- * @author huitoukest
- * CSV文件读取
- * @param <T>
+ * 请使用 {@link com.tingfeng.util.java.base.file.csv.CSVReader}
+ * @deprecated 迁移到 {@code file.csv} 包，此接口保留仅用于兼容
  */
-public interface CSVReader<T> {
-	/**
-	 * 读取行,调用getObject方法,传入t
-	 * @param t 读取道的单行数据
-	 */
-	 void read(T t);
-	/**
-	 * 将一行的内容转为T
-	 * @param line 当前行的内容
-	 * @return 需要的 T 类型 对象
-	 */
-	 T getObject(String line);
+@Deprecated
+public interface CSVReader<T> extends com.tingfeng.util.java.base.file.csv.CSVReader<T> {
 }
