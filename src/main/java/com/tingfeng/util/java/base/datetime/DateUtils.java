@@ -3,9 +3,6 @@ package com.tingfeng.util.java.base.datetime;
 import com.tingfeng.util.java.base.pool.FixedPoolHelper;
 import com.tingfeng.util.java.base.text.RegExpUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -23,8 +20,6 @@ import java.util.stream.Collectors;
  * 
  */
 public class DateUtils implements DateFormat{
-	private static final Log logger = LogFactory.getLog(DateUtils.class);
-
 
 	private static final Map<String,FixedPoolHelper<SimpleDateFormat>> DATE_FORMAT_MAP = new ConcurrentHashMap<>(25);
 	/**
@@ -179,22 +174,8 @@ public class DateUtils implements DateFormat{
 	 * @param addTime 返回结果的时候增加的毫秒数;
 	 * @return
 	 */
-	public static Date getDayBegin(Date date, int addTime) {
+	public static Date getDayStart(Date date, int addTime) {
 		Calendar calendar = getInitCalendar(date, 0, 0, 0, 0);
-		calendar.add(Calendar.MILLISECOND, addTime);
-		return calendar.getTime();
-	}
-
-	/**
-	 * 得到下一日的首日凌晨
-	 * 
-	 * @param date 当前日期
-	 * @param addTime 返回结果的时候增加的毫秒数;
-	 * @return 下一日的开始时间（00:00:00.000）加上指定毫秒数后的Date对象
-	 */
-	public static Date getNextDayBegin(Date date, int addTime) {
-		Calendar calendar = getInitCalendar(date, 0, 0, 0, 0);
-		calendar.add(Calendar.DAY_OF_YEAR, 1);
 		calendar.add(Calendar.MILLISECOND, addTime);
 		return calendar.getTime();
 	}
@@ -202,8 +183,8 @@ public class DateUtils implements DateFormat{
 	/**
 	 * 得到一天的开始时间
 	 */
-	public static Date getDayBegin(Date date) {
-		return getDayBegin(date, 0);
+	public static Date getDayStart(Date date) {
+		return getDayStart(date, 0);
 	}
 
 	/**
@@ -220,14 +201,14 @@ public class DateUtils implements DateFormat{
 	 * 
 	 * @return
 	 */
-	public static Date getBeginDayOfWeek(Date date) {
+	public static Date getWeekStart(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		if (calendar.get(Calendar.DAY_OF_WEEK) == Calendar.SUNDAY) {
 			calendar.add(Calendar.DAY_OF_MONTH, -7);
 		}
 		calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-		Date monDayTime = getDayBegin(calendar.getTime());
+		Date monDayTime = getDayStart(calendar.getTime());
 		return monDayTime;
 
 	}
@@ -237,7 +218,7 @@ public class DateUtils implements DateFormat{
 	 * 
 	 * @return
 	 */
-	public static Date getEndDayOfWeek(Date date) {
+	public static Date getWeekEnd(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		if (calendar.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY) {
@@ -382,7 +363,7 @@ public class DateUtils implements DateFormat{
 	 * @return 返回一个长度为7的一维数组,索引0到索引6依次保存，当前周的周一到周日的时间;
 	 */
 	public static Date[] getRecentlyWeekDate(Date date, boolean setDateBeginTime) {
-		return getRecentlyWeekDate(date,it -> it = getDayBegin(it));
+		return getRecentlyWeekDate(date,it -> it = getDayStart(it));
 	}
 
 	/**
@@ -594,7 +575,7 @@ public class DateUtils implements DateFormat{
 	 * 字符串转为时间
 	 **************************************/
 
-	public static String formatDateToString(Date date){
+	public static String formatToDateString(Date date){
 		return format(date, FORMAT_YYYYMMDD_THROUGH_LINE);
 	}
 
@@ -603,7 +584,7 @@ public class DateUtils implements DateFormat{
 	 * formatString "yyyy-MM-dd HH:mm:ss"
 	 * @return
 	 */
-	public static String formatDateTimeToString(Date date){
+	public static String formatToDateTimeString(Date date){
 		return format(date, FORMAT_YYYYMMDDHHMMSS_THROUGH_LINE);
 	}
 
@@ -616,7 +597,7 @@ public class DateUtils implements DateFormat{
 	 * @param isContainsEndDate 是否包含结束时间
 	 * @return
 	 */
-	public static List<Date> getDatesBetweenTwoDate(Date beginDate, Date endDate,boolean isContainsBeginDate,boolean isContainsEndDate) {
+	public static List<Date> getRangeItems(Date beginDate, Date endDate,boolean isContainsBeginDate,boolean isContainsEndDate) {
 
 		List<Date> dates = new ArrayList<Date>();
 		Calendar cal = Calendar.getInstance();
@@ -663,8 +644,8 @@ public class DateUtils implements DateFormat{
 	 * @param endDate
 	 * @return
 	 */
-	public static List<Date> getDatesBetweenTwoDate(Date beginDate, Date endDate){
-		   return getDatesBetweenTwoDate(beginDate,endDate,true,true);
+	public static List<Date> getRangeItems(Date beginDate, Date endDate){
+		   return getRangeItems(beginDate,endDate,true,true);
 	}
 
 	/**
@@ -811,11 +792,11 @@ public class DateUtils implements DateFormat{
 	 * @param date 指定的日期
 	 * @return 月份第一天的Date对象
 	 */
-	public static Date getFirstDayOfMonth(Date date) {
+	public static Date getMonthStart(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		calendar.set(Calendar.DAY_OF_MONTH, 1);
-		return getDayBegin(calendar.getTime());
+		return getDayStart(calendar.getTime());
 	}
 
 	/**
@@ -823,7 +804,7 @@ public class DateUtils implements DateFormat{
 	 * @param date 指定的日期
 	 * @return 月份最后一天的Date对象
 	 */
-	public static Date getLastDayOfMonth(Date date) {
+	public static Date getMonthEnd(Date date) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(date);
 		int lastDay = calendar.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -862,9 +843,9 @@ public class DateUtils implements DateFormat{
 	 * @param date 输入的日期
 	 * @return 毫秒数，如果输入为null则返回null
 	 */
-	public static Long toMills(Date date) {
+	public static long getMills(Date date) {
 		if (date == null) {
-			return null;
+			return 0L;
 		}
 		return date.toInstant().toEpochMilli();
 	}

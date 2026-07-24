@@ -44,7 +44,7 @@ public class LocalDateUtils implements DateFormat{
      * @param containsSelf 是否包含起始和结束日期
      * @return 包含所有日期的列表
      */
-    public static List<LocalDate> getBetweenDate(LocalDate startDate, LocalDate endDate,boolean containsSelf) {
+    public static List<LocalDate> getRangeItems(LocalDate startDate, LocalDate endDate,boolean containsSelf) {
         assert !endDate.isBefore(startDate);
         long distance = ChronoUnit.DAYS.between(startDate, endDate);
         List<LocalDate> re =  Stream.iterate(startDate, d ->  d.plusDays(1))
@@ -126,7 +126,7 @@ public class LocalDateUtils implements DateFormat{
      * @param localDateTime 输入的日期时间
      * @return 该月第一天的开始时间（00:00:00.000）
      */
-    public static LocalDateTime getMonthBeginDateTime(LocalDateTime localDateTime) {
+    public static LocalDateTime getMonthStart(LocalDateTime localDateTime) {
         return getDayStart(localDateTime.withDayOfMonth(1));
     }
 
@@ -135,17 +135,8 @@ public class LocalDateUtils implements DateFormat{
      * @param localDateTime 输入的日期时间
      * @return 该月最后一天的结束时间（23:59:59.999）
      */
-    public static LocalDateTime getMonthEndDateTime(LocalDateTime localDateTime){
+    public static LocalDateTime getMonthEnd(LocalDateTime localDateTime){
         return getDayEnd(localDateTime.plusMonths(1).withDayOfMonth(1).plusDays(-1));
-    }
-
-    /**
-     * 获取指定日期时间的毫秒数
-     * @param localDateTime 输入的日期时间
-     * @return 从纪元开始的毫秒数
-     */
-    public static long getTime(LocalDateTime localDateTime){
-        return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
 
     /**
@@ -156,16 +147,6 @@ public class LocalDateUtils implements DateFormat{
     public static long getMills(LocalDateTime localDateTime){
         return localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
     }
-
-    /**
-     * 获取指定日期的毫秒数（当天开始时间）
-     * @param localDate 输入的日期
-     * @return 从纪元开始的毫秒数
-     */
-    public static long getTime(LocalDate localDate){
-        return localDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli();
-    }
-
 
     /**
      * 获取指定日期的毫秒数（当天开始时间）
@@ -321,24 +302,6 @@ public class LocalDateUtils implements DateFormat{
             return null;
         }
         return (int) localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().getEpochSecond();
-    }
-
-    /**
-     * 将LocalDateTime转换为毫秒数（从纪元开始）
-     * @param localDateTime 输入的日期时间
-     * @return 毫秒数，如果输入为null则返回null
-     */
-    public static Long toMills(LocalDateTime localDateTime) {
-        return getMills(localDateTime);
-    }
-
-    /**
-     * 将LocalDate转换为毫秒数（从纪元开始，当天0点）
-     * @param localDate 输入的日期
-     * @return 毫秒数，如果输入为null则返回null
-     */
-    public static Long toMills(LocalDate localDate) {
-        return getMills(localDate);
     }
 
     /**

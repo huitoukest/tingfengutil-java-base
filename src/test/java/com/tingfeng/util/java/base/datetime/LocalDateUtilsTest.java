@@ -18,13 +18,13 @@ public class LocalDateUtilsTest {
         LocalDate end = LocalDate.of(2023, 1, 5);
         
         // 测试包含自己的情况
-        List<LocalDate> resultWithSelf = LocalDateUtils.getBetweenDate(start, end, true);
+        List<LocalDate> resultWithSelf = LocalDateUtils.getRangeItems(start, end, true);
         assertEquals(5, resultWithSelf.size());
         assertEquals(LocalDate.of(2023, 1, 1), resultWithSelf.get(0));
         assertEquals(LocalDate.of(2023, 1, 5), resultWithSelf.get(4));
         
         // 测试不包含自己的情况
-        List<LocalDate> resultWithoutSelf = LocalDateUtils.getBetweenDate(start, end, false);
+        List<LocalDate> resultWithoutSelf = LocalDateUtils.getRangeItems(start, end, false);
         assertEquals(3, resultWithoutSelf.size());
         assertEquals(LocalDate.of(2023, 1, 2), resultWithoutSelf.get(0));
         assertEquals(LocalDate.of(2023, 1, 4), resultWithoutSelf.get(2));
@@ -63,22 +63,15 @@ public class LocalDateUtilsTest {
     @Test
     public void testGetMonthBeginDateTime() {
         LocalDateTime time = LocalDateTime.of(2023, 3, 15, 12, 30, 45);
-        LocalDateTime result = LocalDateUtils.getMonthBeginDateTime(time);
+        LocalDateTime result = LocalDateUtils.getMonthStart(time);
         assertEquals(LocalDateTime.of(2023, 3, 1, 0, 0, 0, 0), result);
     }
 
     @Test
     public void testGetMonthEndDateTime() {
         LocalDateTime time = LocalDateTime.of(2023, 2, 15, 12, 30, 45);
-        LocalDateTime result = LocalDateUtils.getMonthEndDateTime(time);
+        LocalDateTime result = LocalDateUtils.getMonthEnd(time);
         assertEquals(LocalDateTime.of(2023, 2, 28, 23, 59, 59, 999000000), result);
-    }
-
-    @Test
-    public void testGetTime_LocalDateTime() {
-        LocalDateTime time = LocalDateTime.of(2023, 1, 1, 0, 0, 0);
-        long result = LocalDateUtils.getTime(time);
-        assertEquals(time.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), result);
     }
 
     @Test
@@ -86,13 +79,6 @@ public class LocalDateUtilsTest {
         LocalDateTime time = LocalDateTime.of(2023, 1, 1, 0, 0, 0);
         long result = LocalDateUtils.getMills(time);
         assertEquals(time.atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), result);
-    }
-
-    @Test
-    public void testGetTime_LocalDate() {
-        LocalDate date = LocalDate.of(2023, 1, 1);
-        long result = LocalDateUtils.getTime(date);
-        assertEquals(date.atStartOfDay().atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), result);
     }
 
     @Test

@@ -95,15 +95,15 @@ public final class DateTimeConverters {
         // ==================== Date -> Long (毫秒) ====================
         registry.register(ConverterUtils.of(
                 Date.class, Long.class,
-                DateUtils::toMills
+                DateUtils::getMills
         ));
         registry.register(ConverterUtils.of(
                 LocalDateTime.class, Long.class,
-                LocalDateUtils::toMills
+                LocalDateUtils::getMills
         ));
         registry.register(ConverterUtils.of(
                 LocalDate.class, Long.class,
-                LocalDateUtils::toMills
+                LocalDateUtils::getMills
         ));
 
         // ==================== Duration -> X ====================

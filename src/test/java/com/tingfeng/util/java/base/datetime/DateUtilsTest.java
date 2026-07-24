@@ -57,7 +57,7 @@ public class DateUtilsTest extends TestCase {
     @Test
     public void testGetNextDayBegin() {
         Date date = new Date();
-        Date nextDayBegin = DateUtils.getNextDayBegin(date, 0);
+        Date nextDayBegin = DateUtils.getDayStart(DateUtils.getDateAdd(date, 1));
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(date);
         calendar.add(Calendar.DAY_OF_YEAR, 1);
@@ -102,15 +102,15 @@ public class DateUtilsTest extends TestCase {
         // 测试开始日期小于结束日期
         Date beginDate = DateUtils.parse("2023-01-01", DateUtils.FORMAT_YYYYMMDD_THROUGH_LINE);
         Date endDate = DateUtils.parse("2023-01-05", DateUtils.FORMAT_YYYYMMDD_THROUGH_LINE);
-        List<Date> dates = DateUtils.getDatesBetweenTwoDate(beginDate, endDate);
+        List<Date> dates = DateUtils.getRangeItems(beginDate, endDate);
         assertEquals(5, dates.size());
 
         // 测试开始日期大于结束日期
-        dates = DateUtils.getDatesBetweenTwoDate(endDate, beginDate);
+        dates = DateUtils.getRangeItems(endDate, beginDate);
         assertEquals(5, dates.size());
 
         // 测试开始日期等于结束日期
-        dates = DateUtils.getDatesBetweenTwoDate(beginDate, beginDate);
+        dates = DateUtils.getRangeItems(beginDate, beginDate);
         assertEquals(1, dates.size());
     }
 
@@ -174,20 +174,20 @@ public class DateUtilsTest extends TestCase {
     @Test
     public void testGetFirstDayOfMonth() {
         Date date = DateUtils.parse("2023-05-15", DateUtils.FORMAT_YYYYMMDD_THROUGH_LINE);
-        Date firstDay = DateUtils.getFirstDayOfMonth(date);
-        assertEquals("2023-05-01", DateUtils.formatDateToString(firstDay));
+        Date firstDay = DateUtils.getMonthStart(date);
+        assertEquals("2023-05-01", DateUtils.formatToDateString(firstDay));
     }
 
     @Test
     public void testGetLastDayOfMonth() {
         Date date = DateUtils.parse("2023-05-15", DateUtils.FORMAT_YYYYMMDD_THROUGH_LINE);
-        Date lastDay = DateUtils.getLastDayOfMonth(date);
-        assertEquals("2023-05-31", DateUtils.formatDateToString(lastDay));
+        Date lastDay = DateUtils.getMonthEnd(date);
+        assertEquals("2023-05-31", DateUtils.formatToDateString(lastDay));
 
         // 测试闰年2月
         date = DateUtils.parse("2024-02-15", DateUtils.FORMAT_YYYYMMDD_THROUGH_LINE);
-        lastDay = DateUtils.getLastDayOfMonth(date);
-        assertEquals("2024-02-29", DateUtils.formatDateToString(lastDay));
+        lastDay = DateUtils.getMonthEnd(date);
+        assertEquals("2024-02-29", DateUtils.formatToDateString(lastDay));
     }
 
     @Test
