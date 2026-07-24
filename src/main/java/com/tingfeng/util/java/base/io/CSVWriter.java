@@ -1,17 +1,9 @@
 package com.tingfeng.util.java.base.io;
 
-import java.io.BufferedWriter;
-
 /**
- * 写入CSV文件的工具类
+ * 请使用 {@link com.tingfeng.util.java.base.file.csv.CSVWriter}
+ * @deprecated 迁移到 {@code file.csv} 包，此接口保留仅用于兼容
  */
-@FunctionalInterface
-public interface CSVWriter {
-	
-	/**
-	 * 默认字段之间以英文逗号分隔,字符串内容需要转移
-	 * @param bufferedWriter bufferedWriter.append(line).append("\r");
-	 * @return
-	 */
-	 boolean write(BufferedWriter bufferedWriter);
+@Deprecated
+public interface CSVWriter extends com.tingfeng.util.java.base.file.csv.CSVWriter {
 }

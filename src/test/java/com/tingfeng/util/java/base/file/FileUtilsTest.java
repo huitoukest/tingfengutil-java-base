@@ -297,7 +297,7 @@ public class FileUtilsTest {
             AtomicLong progress = new AtomicLong(0);
 
             Long result = FileUtils.copyFileAsync(destFile, srcFile, executor,
-                progress::set, FileUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, null).get();
+                progress::set, IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, null).get();
 
             Assert.assertTrue(result > 0);
             String content = FileUtils.readFileToString(destFile);
@@ -321,7 +321,7 @@ public class FileUtilsTest {
             token.cancel(); // 立即取消
 
             Long result = FileUtils.copyFileAsync(destFile, srcFile, executor,
-                total -> {}, FileUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, token).get();
+                total -> {}, IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, token).get();
 
             // 取消后应该停止拷贝
             Assert.assertTrue(result < srcFile.length());
