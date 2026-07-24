@@ -1,4 +1,4 @@
-package com.tingfeng.util.java.base.gis.model;
+package com.tingfeng.util.java.base.gis;
 
 import java.util.Objects;
 

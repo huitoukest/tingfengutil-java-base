@@ -1,8 +1,7 @@
 package com.tingfeng.util.java.base.gis;
 
-import com.tingfeng.util.java.base.gis.model.Coordinate;
-import com.tingfeng.util.java.base.gis.model.EarthModel;
-import com.tingfeng.util.java.base.gis.model.Wgs84EarthModel;
+import com.tingfeng.util.java.base.gis.Coordinate;
+import com.tingfeng.util.java.base.gis.op.EarthOp;
 
 /**
  * 地理相关工具
@@ -12,9 +11,9 @@ import com.tingfeng.util.java.base.gis.model.Wgs84EarthModel;
  * - GCJ02：国测局坐标系（火星坐标系），中国国测局制定的加密坐标系，适用于高德地图、腾讯地图、Google地图（国内）
  * - BD09：百度坐标系，在GCJ02基础上进行二次加密，仅适用于百度地图
  *
- * 地球模型说明：
- * - WGS84EarthModel：使用 WGS84 椭球体参数，精度最高，适用于高精度需求
- * - SphericalEarthModel：使用固定半径 6371000 米的球体模型，计算更快但精度略低
+ * 地理算子说明：
+ * - 使用 {@link EarthOp} 接口实现不同的地球模型和算法策略
+ * - 默认使用球面公式（基于 WGS84 椭球体参数计算半径）
  */
 public class GisUtils {
     /**
@@ -103,32 +102,37 @@ public class GisUtils {
     }
 
     /**
-     * 使用 WGS84 地球模型计算两点之间的距离
+     * 计算两点之间的距离
      *
      * @param pointA 起点坐标
      * @param pointB 终点坐标
      * @return 两点之间的距离（米）
+     * @throws IllegalArgumentException 如果 pointA 或 pointB 为 null
      */
     public static double getDistance(Coordinate pointA, Coordinate pointB) {
-        return Wgs84EarthModel.getInstance().getDistance(pointA, pointB);
-    }
-
-    /**
-     * 使用指定地球模型计算两点之间的距离
-     *
-     * @param pointA    起点坐标
-     * @param pointB    终点坐标
-     * @param earthModel 地球模型
-     * @return 两点之间的距离（米）
-     */
-    public static double getDistance(Coordinate pointA, Coordinate pointB, EarthModel earthModel) {
         if (pointA == null || pointB == null) {
             throw new IllegalArgumentException("坐标不能为 null");
         }
-        if (earthModel == null) {
-            throw new IllegalArgumentException("地球模型不能为 null");
+        return getDistance(pointA.getLatitude(), pointA.getLongitude(), pointB.getLatitude(), pointB.getLongitude());
+    }
+
+    /**
+     * 使用指定地理算子计算两点之间的距离
+     *
+     * @param pointA 起点坐标
+     * @param pointB 终点坐标
+     * @param op     地理算子，用于定义地球模型和算法策略
+     * @return 两点之间的距离（米）
+     * @throws IllegalArgumentException 如果 pointA、pointB 或 op 为 null
+     */
+    public static double getDistance(Coordinate pointA, Coordinate pointB, EarthOp op) {
+        if (pointA == null || pointB == null) {
+            throw new IllegalArgumentException("坐标不能为 null");
         }
-        return earthModel.getDistance(pointA, pointB);
+        if (op == null) {
+            throw new IllegalArgumentException("地理算子不能为 null");
+        }
+        return op.distance(pointA, pointB);
     }
 
     /**
@@ -149,6 +153,28 @@ public class GisUtils {
         
         double bearing = Math.toDegrees(Math.atan2(y, x));
         return (bearing + 360) % 360;
+    }
+
+    /**
+     * 使用指定地理算子计算两点间的初始方位角
+     *
+     * 注意：本方法返回弧度值（与 {@link EarthOp#azimuth(Coordinate, Coordinate)} 一致），
+     * 与 {@link #getBearing(double, double, double, double)} 返回度不同。
+     *
+     * @param from 起点坐标
+     * @param to   终点坐标
+     * @param op   地理算子
+     * @return 初始方位角，单位：弧度，范围 [-π, π]
+     * @throws IllegalArgumentException 如果 from、to 或 op 为 null
+     */
+    public static double getBearing(Coordinate from, Coordinate to, EarthOp op) {
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("坐标不能为 null");
+        }
+        if (op == null) {
+            throw new IllegalArgumentException("地理算子不能为 null");
+        }
+        return op.azimuth(from, to);
     }
 
     /**
@@ -175,6 +201,25 @@ public class GisUtils {
     }
 
     /**
+     * 使用指定地理算子计算两点间的中点
+     *
+     * @param from 起点坐标
+     * @param to   终点坐标
+     * @param op   地理算子
+     * @return 中点坐标
+     * @throws IllegalArgumentException 如果 from、to 或 op 为 null
+     */
+    public static Coordinate getMidpoint(Coordinate from, Coordinate to, EarthOp op) {
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("坐标不能为 null");
+        }
+        if (op == null) {
+            throw new IllegalArgumentException("地理算子不能为 null");
+        }
+        return op.midpoint(from, to);
+    }
+
+    /**
      * 根据起点、方位角和距离计算目标点
      * @param lat 起点纬度，角度值
      * @param lng 起点经度，角度值
@@ -197,30 +242,87 @@ public class GisUtils {
     }
 
     /**
-     * 计算多边形面积（使用球面几何公式）
+     * 使用指定地理算子推算目标点
+     *
+     * 注意：本方法 azimuth 参数为弧度值（与 {@link EarthOp#direct(Coordinate, double, double)} 一致），
+     * 与 {@link #getDestinationPoint(double, double, double, double)} 的 bearing 参数（度）不同。
+     *
+     * @param point    起点坐标
+     * @param azimuth  方位角，单位：弧度（正北为 0，顺时针方向）
+     * @param distance 距离，单位：米
+     * @param op       地理算子
+     * @return 目标点坐标
+     * @throws IllegalArgumentException 如果 point 或 op 为 null
+     */
+    public static Coordinate getDestinationPoint(Coordinate point, double azimuth, double distance, EarthOp op) {
+        if (point == null) {
+            throw new IllegalArgumentException("起点坐标不能为 null");
+        }
+        if (op == null) {
+            throw new IllegalArgumentException("地理算子不能为 null");
+        }
+        return op.direct(point, azimuth, distance);
+    }
+
+    /**
+     * 计算多边形面积的核心实现
+     *
+     * 使用球面几何中的梯形公式（Spherical Polygon Area via Trapezoidal Rule）：
+     * - 遍历多边形每条边，累加经度差与纬度正弦值的组合
+     * - 公式：A = 0.5 * R² * |sum((λ₂ - λ₁) * (2 + sin(φ₁) + sin(φ₂)))|
+     * - 其中 λ 为经度（弧度），φ 为纬度（弧度），R 为地球半径
+     *
      * @param points 多边形顶点坐标数组，格式：[[lat1, lng1], [lat2, lng2], ...]
+     * @param radius 地球半径（米）
      * @return 面积，单位：平方米
      */
-    public static double getPolygonArea(double[][] points) {
+    private static double computePolygonArea(double[][] points, double radius) {
         if (points == null || points.length < 3) {
             return 0;
         }
-        
+
         double area = 0;
         int n = points.length;
-        double r = EQUATOR_RADIUS;
-        
+
         for (int i = 0; i < n; i++) {
             double lat1 = Math.toRadians(points[i][0]);
             double lng1 = Math.toRadians(points[i][1]);
             double lat2 = Math.toRadians(points[(i + 1) % n][0]);
             double lng2 = Math.toRadians(points[(i + 1) % n][1]);
-            
+
             area += (lng2 - lng1) * (2 + Math.sin(lat1) + Math.sin(lat2));
         }
-        
-        area = Math.abs(area * r * r / 2.0);
-        return area;
+
+        return Math.abs(area * radius * radius / 2.0);
+    }
+
+    /**
+     * 计算多边形面积（使用球面几何公式，固定赤道半径）
+     *
+     * 默认使用 WGS84 赤道半径（6378137 米）作为计算半径。
+     * 如需使用地理算子切换地球模型策略，请使用
+     * {@link #getPolygonArea(double[][], EarthOp)} 重载版本。
+     *
+     * @param points 多边形顶点坐标数组，格式：[[lat1, lng1], [lat2, lng2], ...]
+     * @return 面积，单位：平方米
+     */
+    public static double getPolygonArea(double[][] points) {
+        return computePolygonArea(points, EQUATOR_RADIUS);
+    }
+
+    /**
+     * 使用指定地理算子计算多边形面积
+     *
+     * @param points 多边形顶点坐标数组，格式：[[lat1, lng1], [lat2, lng2], ...]
+     * @param op     地理算子
+     * @return 面积，单位：平方米
+     * @throws IllegalArgumentException 如果 op 为 null
+     */
+    public static double getPolygonArea(double[][] points, EarthOp op) {
+        if (op == null) {
+            throw new IllegalArgumentException("地理算子不能为 null");
+        }
+        return op.area(points);
     }
 
     /**

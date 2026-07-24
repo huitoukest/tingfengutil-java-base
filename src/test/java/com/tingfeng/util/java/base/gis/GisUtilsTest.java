@@ -1,5 +1,8 @@
 package com.tingfeng.util.java.base.gis;
 
+import com.tingfeng.util.java.base.gis.Coordinate;
+import com.tingfeng.util.java.base.gis.op.EarthOp;
+import com.tingfeng.util.java.base.gis.op.WGS84Op;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -542,5 +545,151 @@ public class GisUtilsTest {
         
         Assert.assertEquals("完整转换链后纬度应该接近原值", originalLat, backToWgs84[0], 0.0001);
         Assert.assertEquals("完整转换链后经度应该接近原值", originalLng, backToWgs84[1], 0.0001);
+    }
+
+    // ========== EarthOp 重载方法测试 ==========
+
+    /**
+     * 测试 getDistance EarthOp 重载 - 正常使用
+     */
+    @Test
+    public void testGetDistanceWithEarthOp() {
+        Coordinate c1 = new Coordinate(39.9042, 116.4074);
+        Coordinate c2 = new Coordinate(31.2304, 121.4737);
+        EarthOp op = WGS84Op.getInstance();
+        double distance = GisUtils.getDistance(c1, c2, op);
+        Assert.assertTrue("距离应大于0", distance > 0);
+        // 与默认距离结果应在合理范围内一致
+        double defaultDistance = GisUtils.getDistance(c1, c2);
+        Assert.assertEquals("EarthOp 与默认结果应接近", defaultDistance, distance, 1000.0);
+    }
+
+    /**
+     * 测试 getDistance EarthOp 重载 - null EarthOp
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetDistanceWithEarthOpNullOp() {
+        GisUtils.getDistance(new Coordinate(0, 0), new Coordinate(1, 1), (EarthOp) null);
+    }
+
+    /**
+     * 测试 getDistance EarthOp 重载 - null 坐标
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetDistanceWithEarthOpNullCoordinate() {
+        GisUtils.getDistance(null, new Coordinate(1, 1), WGS84Op.getInstance());
+    }
+
+    /**
+     * 测试 getBearing EarthOp 重载 - 正常使用（返回弧度）
+     */
+    @Test
+    public void testGetBearingWithEarthOp() {
+        Coordinate from = new Coordinate(39.9042, 116.4074);
+        Coordinate to = new Coordinate(40.9042, 116.4074);
+        double bearing = GisUtils.getBearing(from, to, WGS84Op.getInstance());
+        Assert.assertTrue("正北方向方位角（弧度）应接近0", Math.abs(bearing) < 0.1);
+    }
+
+    /**
+     * 测试 getBearing EarthOp 重载 - null EarthOp
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetBearingWithEarthOpNullOp() {
+        GisUtils.getBearing(new Coordinate(0, 0), new Coordinate(1, 1), null);
+    }
+
+    /**
+     * 测试 getBearing EarthOp 重载 - null 坐标
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetBearingWithEarthOpNullCoordinate() {
+        GisUtils.getBearing(null, new Coordinate(1, 1), WGS84Op.getInstance());
+    }
+
+    /**
+     * 测试 getMidpoint EarthOp 重载 - 正常使用
+     */
+    @Test
+    public void testGetMidpointWithEarthOp() {
+        Coordinate from = new Coordinate(39.9042, 116.4074);
+        Coordinate to = new Coordinate(31.2304, 121.4737);
+        Coordinate midpoint = GisUtils.getMidpoint(from, to, WGS84Op.getInstance());
+        Assert.assertNotNull("中点不应为 null", midpoint);
+        Assert.assertTrue("中点纬度应在两点之间",
+                midpoint.getLatitude() > 31.2304 && midpoint.getLatitude() < 39.9042);
+    }
+
+    /**
+     * 测试 getMidpoint EarthOp 重载 - null EarthOp
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetMidpointWithEarthOpNullOp() {
+        GisUtils.getMidpoint(new Coordinate(0, 0), new Coordinate(1, 1), null);
+    }
+
+    /**
+     * 测试 getMidpoint EarthOp 重载 - null 坐标
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetMidpointWithEarthOpNullCoordinate() {
+        GisUtils.getMidpoint(null, new Coordinate(1, 1), WGS84Op.getInstance());
+    }
+
+    /**
+     * 测试 getDestinationPoint EarthOp 重载 - 正常使用
+     */
+    @Test
+    public void testGetDestinationPointWithEarthOp() {
+        Coordinate point = new Coordinate(39.9042, 116.4074);
+        double azimuth = 0; // 正北（弧度）
+        double distance = 1000;
+        Coordinate dest = GisUtils.getDestinationPoint(point, azimuth, distance, WGS84Op.getInstance());
+        Assert.assertNotNull("目标点不应为 null", dest);
+        Assert.assertTrue("向北移动后纬度应增加", dest.getLatitude() > 39.9042);
+        Assert.assertEquals("经度应基本不变", 116.4074, dest.getLongitude(), 0.01);
+    }
+
+    /**
+     * 测试 getDestinationPoint EarthOp 重载 - null EarthOp
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetDestinationPointWithEarthOpNullOp() {
+        GisUtils.getDestinationPoint(new Coordinate(0, 0), 0, 1000, null);
+    }
+
+    /**
+     * 测试 getDestinationPoint EarthOp 重载 - null 坐标
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetDestinationPointWithEarthOpNullPoint() {
+        GisUtils.getDestinationPoint(null, 0, 1000, WGS84Op.getInstance());
+    }
+
+    /**
+     * 测试 getPolygonArea EarthOp 重载 - 正常使用
+     */
+    @Test
+    public void testGetPolygonAreaWithEarthOp() {
+        double[][] triangle = {
+            {39.9042, 116.4074},
+            {39.9142, 116.4174},
+            {39.9042, 116.4174}
+        };
+        double area = GisUtils.getPolygonArea(triangle, WGS84Op.getInstance());
+        Assert.assertTrue("三角形面积应大于0", area > 0);
+    }
+
+    /**
+     * 测试 getPolygonArea EarthOp 重载 - null EarthOp
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetPolygonAreaWithEarthOpNullOp() {
+        double[][] triangle = {
+            {39.9042, 116.4074},
+            {39.9142, 116.4174},
+            {39.9042, 116.4174}
+        };
+        GisUtils.getPolygonArea(triangle, (EarthOp) null);
     }
 }
