@@ -137,11 +137,19 @@ public class EncryptionUtilsTest {
 
     @Test
     public void testAesConsistency() {
-        byte[] encrypted1 = EncryptionUtils.encrypt(TEST_DATA.getBytes(StandardCharsets.UTF_8),
+        byte[] original = TEST_DATA.getBytes(StandardCharsets.UTF_8);
+        // AES-GCM 每次使用随机 IV，两次加密结果应不同
+        byte[] encrypted1 = EncryptionUtils.encrypt(original,
                 EncryptionAlgorithmType.AES, TEST_KEY);
-        byte[] encrypted2 = EncryptionUtils.encrypt(TEST_DATA.getBytes(StandardCharsets.UTF_8),
+        byte[] encrypted2 = EncryptionUtils.encrypt(original,
                 EncryptionAlgorithmType.AES, TEST_KEY);
-        Assert.assertArrayEquals("相同输入相同密钥应产生相同加密结果", encrypted1, encrypted2);
+        Assert.assertFalse("AES-GCM 使用随机 IV，两次加密结果应不同",
+                java.util.Arrays.equals(encrypted1, encrypted2));
+        // 但解密后都应还原原内容
+        byte[] decrypted1 = EncryptionUtils.decrypt(encrypted1, EncryptionAlgorithmType.AES, TEST_KEY);
+        byte[] decrypted2 = EncryptionUtils.decrypt(encrypted2, EncryptionAlgorithmType.AES, TEST_KEY);
+        Assert.assertArrayEquals("往返解密1应还原原内容", original, decrypted1);
+        Assert.assertArrayEquals("往返解密2应还原原内容", original, decrypted2);
     }
 
     @Test

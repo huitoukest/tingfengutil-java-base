@@ -109,69 +109,89 @@ public class AESStrategyTest {
         Assert.assertEquals("空数据解密结果长度应为 0", 0, decrypted.length);
     }
 
-    // ==================== 非法密钥 ====================
+    // ==================== 密钥兼容测试 ====================
 
     /**
-     * 测试 null 密钥应抛出 IllegalArgumentException
+     * 测试 null 密钥：应通过 {@link AESStrategy#DEFAULT_KEY} 正常工作
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void testNullKeyThrowsException() {
-        byte[] data = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
-        strategy.encrypt(data, null);
+    @Test
+    public void testNullKeyUsesDefaultKey() {
+        byte[] plaintext = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
+        byte[] ciphertext = strategy.encrypt(plaintext, null);
+        Assert.assertNotNull("null 密钥加密结果不能为 null", ciphertext);
+
+        byte[] decrypted = strategy.decrypt(ciphertext, null);
+        Assert.assertArrayEquals("null 密钥解密结果应与原始明文一致", plaintext, decrypted);
     }
 
     /**
-     * 测试 null 密钥解密应抛出 IllegalArgumentException
+     * 测试过短密钥（1 字节）通过 SHA-256 派生到 16 字节后正常加解密
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void testNullKeyDecryptThrowsException() {
-        byte[] data = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
-        strategy.decrypt(data, null);
-    }
-
-    /**
-     * 测试过短密钥（1 字节）应抛出 IllegalArgumentException
-     */
-    @Test(expected = IllegalArgumentException.class)
-    public void testTooShortKeyThrowsException() {
+    @Test
+    public void testShortKeyDerivesTo128Bit() {
         byte[] invalidKey = {0x01};
-        strategy.encrypt(PLAINTEXT.getBytes(StandardCharsets.UTF_8), invalidKey);
+        byte[] plaintext = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
+        byte[] ciphertext = strategy.encrypt(plaintext, invalidKey);
+        Assert.assertNotNull("派生密钥加密结果不能为 null", ciphertext);
+
+        byte[] decrypted = strategy.decrypt(ciphertext, invalidKey);
+        Assert.assertArrayEquals("派生密钥解密结果应与原始明文一致", plaintext, decrypted);
     }
 
     /**
-     * 测试 15 字节密钥应抛出 IllegalArgumentException
+     * 测试 15 字节密钥派生到 16 字节后正常加解密
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test15ByteKeyThrowsException() {
+    @Test
+    public void test15ByteKeyDerivesTo128Bit() {
         byte[] invalidKey = "1234567890abcde".getBytes(StandardCharsets.UTF_8);
-        strategy.encrypt(PLAINTEXT.getBytes(StandardCharsets.UTF_8), invalidKey);
+        byte[] plaintext = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
+        byte[] ciphertext = strategy.encrypt(plaintext, invalidKey);
+        Assert.assertNotNull("派生密钥加密结果不能为 null", ciphertext);
+
+        byte[] decrypted = strategy.decrypt(ciphertext, invalidKey);
+        Assert.assertArrayEquals("派生密钥解密结果应与原始明文一致", plaintext, decrypted);
     }
 
     /**
-     * 测试 17 字节密钥应抛出 IllegalArgumentException
+     * 测试 17 字节密钥派生到 24 字节后正常加解密
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test17ByteKeyThrowsException() {
+    @Test
+    public void test17ByteKeyDerivesTo192Bit() {
         byte[] invalidKey = "1234567890abcdefg".getBytes(StandardCharsets.UTF_8);
-        strategy.encrypt(PLAINTEXT.getBytes(StandardCharsets.UTF_8), invalidKey);
+        byte[] plaintext = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
+        byte[] ciphertext = strategy.encrypt(plaintext, invalidKey);
+        Assert.assertNotNull("派生密钥加密结果不能为 null", ciphertext);
+
+        byte[] decrypted = strategy.decrypt(ciphertext, invalidKey);
+        Assert.assertArrayEquals("派生密钥解密结果应与原始明文一致", plaintext, decrypted);
     }
 
     /**
-     * 测试 31 字节密钥应抛出 IllegalArgumentException
+     * 测试 31 字节密钥派生到 32 字节后正常加解密
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test31ByteKeyThrowsException() {
+    @Test
+    public void test31ByteKeyDerivesTo256Bit() {
         byte[] invalidKey = "1234567890abcdef1234567890abcde".getBytes(StandardCharsets.UTF_8);
-        strategy.encrypt(PLAINTEXT.getBytes(StandardCharsets.UTF_8), invalidKey);
+        byte[] plaintext = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
+        byte[] ciphertext = strategy.encrypt(plaintext, invalidKey);
+        Assert.assertNotNull("派生密钥加密结果不能为 null", ciphertext);
+
+        byte[] decrypted = strategy.decrypt(ciphertext, invalidKey);
+        Assert.assertArrayEquals("派生密钥解密结果应与原始明文一致", plaintext, decrypted);
     }
 
     /**
-     * 测试 33 字节密钥应抛出 IllegalArgumentException
+     * 测试 33 字节密钥派生到 32 字节后正常加解密
      */
-    @Test(expected = IllegalArgumentException.class)
-    public void test33ByteKeyThrowsException() {
+    @Test
+    public void test33ByteKeyDerivesTo256Bit() {
         byte[] invalidKey = "1234567890abcdef1234567890abcdef!".getBytes(StandardCharsets.UTF_8);
-        strategy.encrypt(PLAINTEXT.getBytes(StandardCharsets.UTF_8), invalidKey);
+        byte[] plaintext = PLAINTEXT.getBytes(StandardCharsets.UTF_8);
+        byte[] ciphertext = strategy.encrypt(plaintext, invalidKey);
+        Assert.assertNotNull("派生密钥加密结果不能为 null", ciphertext);
+
+        byte[] decrypted = strategy.decrypt(ciphertext, invalidKey);
+        Assert.assertArrayEquals("派生密钥解密结果应与原始明文一致", plaintext, decrypted);
     }
 
     // ==================== 随机 IV 验证 ====================
