@@ -332,6 +332,24 @@ public class FileUtilsTest {
         }
     }
 
+    @Test
+    public void testReadFileAsyncWithThread() throws Exception {
+        // Thread 参数路径：任务完成后自建池自动 shutdown（IOUtils-async-pool-* 线程回收）
+        File tempFile = createTempFile(TEST_CONTENT);
+        try {
+            byte[] result = FileUtils.readFileAsync(tempFile, new Thread(() -> {})).get(5, TimeUnit.SECONDS);
+            Assert.assertEquals(TEST_CONTENT, new String(result, StandardCharsets.UTF_8));
+
+            long deadline = System.currentTimeMillis() + 2000;
+            while (countPoolThreads() > 0 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+            Assert.assertEquals("Thread 路径自建池线程应在任务完成后被回收", 0, countPoolThreads());
+        } finally {
+            deleteTempFile(tempFile);
+        }
+    }
+
     // ==================== 辅助方法 ====================
 
     private File createTempFile(String content) throws IOException {
@@ -349,5 +367,15 @@ public class FileUtilsTest {
                 parent.delete();
             }
         }
+    }
+
+    private static int countPoolThreads() {
+        int count = 0;
+        for (Thread t : Thread.getAllStackTraces().keySet()) {
+            if (t.isAlive() && t.getName().startsWith("IOUtils-async-pool-")) {
+                count++;
+            }
+        }
+        return count;
     }
 }

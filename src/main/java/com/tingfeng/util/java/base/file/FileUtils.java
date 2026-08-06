@@ -725,7 +725,7 @@ public class FileUtils {
 	 * @param file 文件
 	 * @param line 行内容
 	 * @param charset 字符编码
-	 * @param executor 线程池
+	 * @param executor ExecutorService或Thread/Runnable
 	 * @param token 取消令牌
 	 * @return CompletableFuture
 	 *

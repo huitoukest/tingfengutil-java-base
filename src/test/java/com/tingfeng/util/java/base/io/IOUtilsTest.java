@@ -264,6 +264,16 @@ public class IOUtilsTest {
         Assert.assertFalse(token.isCancelled());
     }
 
+    @Test
+    public void testCancellationTokenResetKeepTimeout() throws InterruptedException {
+        IOUtils.CancellationToken token = new IOUtils.CancellationToken(100); // 100ms超时
+        Assert.assertFalse(token.isTimeout());
+        token.reset(); // 重置后超时配置应保留
+        Assert.assertFalse(token.isTimeout()); // 重建截止时间点，重置瞬间未超时
+        Thread.sleep(150);
+        Assert.assertTrue(token.isTimeout()); // 原超时时长生效
+    }
+
     // ==================== 异步流处理测试 ====================
 
     @Test
@@ -277,7 +287,8 @@ public class IOUtilsTest {
             AtomicLong progress = new AtomicLong(0);
 
             Long result = IOUtils.copyAsync(os, is, executor,
-                total -> { progress.set(total); return true; }, IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, token).get();
+                total -> { progress.set(total); return true; }, IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, token)
+                .get();
 
             Assert.assertTrue(result > 0);
             Assert.assertEquals(TEST_CONTENT, os.toString("UTF-8"));
@@ -355,14 +366,140 @@ public class IOUtilsTest {
                     return true;
                 }, executor, 100, token);
 
-            // 等待异步任务完成
-            Thread.sleep(1000);
+            // 等待异步任务完成（5行，每批2行 → 3批：2+2+1）
+            long deadline = System.currentTimeMillis() + 5000;
+            while (callCount.get() < 3 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
 
-            // 5行，每批2行，应该有3批（最后一批可能不满）
-            Assert.assertEquals(2, batches.size());
+            Assert.assertEquals(3, batches.size());
             Assert.assertEquals(2, batches.get(0).size());
+            Assert.assertEquals(2, batches.get(1).size());
+            Assert.assertEquals(1, batches.get(2).size());
+
+            // 死循环根治验证：管道任务已退出，池线程可被复用
+            CountDownLatch latch = new CountDownLatch(1);
+            executor.execute(latch::countDown);
+            Assert.assertTrue("管道任务未退出（存在死循环）", latch.await(2, TimeUnit.SECONDS));
         } finally {
-            executor.shutdown();
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testCopyAsyncSingleThreadPoolNoDeadlock() throws Exception {
+        // 单线程池 + 小背压上限 + 大数据量：队列满时消费者仍可 take 腾空（生产者=内部 daemon，不占池线程）
+        byte[] largeData = new byte[1024 * 1024];
+        for (int i = 0; i < largeData.length; i++) {
+            largeData[i] = (byte) (i % 251);
+        }
+        InputStream is = IOUtils.toInputStream(largeData);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Long result = IOUtils.copyAsync(os, is, executor, total -> true, 4096,
+                new IOUtils.CancellationToken()).get(10, TimeUnit.SECONDS);
+            Assert.assertEquals(largeData.length, result.longValue());
+            Assert.assertArrayEquals(largeData, os.toByteArray());
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testCopyAsyncCancellationConvergesWithin2s() throws Exception {
+        byte[] largeData = new byte[1024 * 1024];
+        for (int i = 0; i < largeData.length; i++) {
+            largeData[i] = (byte) (i % 251);
+        }
+        InputStream is = IOUtils.toInputStream(largeData);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            IOUtils.CancellationToken token = new IOUtils.CancellationToken();
+            token.cancel();
+
+            long start = System.currentTimeMillis();
+            Long result = IOUtils.copyAsync(os, is, executor, total -> true, 4096, token)
+                .get(2, TimeUnit.SECONDS);
+            long elapsed = System.currentTimeMillis() - start;
+
+            Assert.assertTrue("取消收敛耗时超过 2s: " + elapsed + "ms", elapsed < 2000);
+            Assert.assertTrue(result < largeData.length);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testCopyAsyncBackpressurePause() throws Exception {
+        byte[] largeData = new byte[512 * 1024];
+        for (int i = 0; i < largeData.length; i++) {
+            largeData[i] = (byte) (i % 251);
+        }
+        InputStream is = IOUtils.toInputStream(largeData);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            IOUtils.CancellationToken token = new IOUtils.CancellationToken();
+            AtomicInteger callbackCount = new AtomicInteger(0);
+
+            CompletableFuture<Long> future = IOUtils.copyAsync(os, is, executor, total -> {
+                callbackCount.incrementAndGet();
+                return false;
+            }, 4096, token);
+
+            // 等待回调至少执行一次（确认管道已启动并进入暂停）
+            long deadline = System.currentTimeMillis() + 3000;
+            while (callbackCount.get() < 1 && System.currentTimeMillis() < deadline) {
+                Thread.sleep(50);
+            }
+            Assert.assertTrue("进度回调未执行", callbackCount.get() >= 1);
+
+            // 暂停中：future 不应完成（真背压，生产者阻塞在队列满）
+            Thread.sleep(300);
+            Assert.assertFalse("暂停未生效，future 提前完成", future.isDone());
+
+            // 取消 → 收敛退出
+            token.cancel();
+            Long result = future.get(2, TimeUnit.SECONDS);
+            Assert.assertTrue("取消后应只处理暂停前已写入的少量数据", result < largeData.length);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    @Test
+    public void testCopyAsyncProducerErrorPropagation() throws Exception {
+        InputStream failing = new InputStream() {
+            @Override
+            public int read() throws IOException {
+                throw new IOException("simulated read failure");
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                throw new IOException("simulated read failure");
+            }
+        };
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            CompletableFuture<Long> future = IOUtils.copyAsync(os, failing, executor, total -> true, 4096,
+                new IOUtils.CancellationToken());
+            try {
+                future.get(5, TimeUnit.SECONDS);
+                Assert.fail("预期生产者读异常应传播到 future");
+            } catch (ExecutionException e) {
+                Assert.assertTrue("异常类型不匹配: " + e.getCause(),
+                    e.getCause() instanceof com.tingfeng.util.java.base.lang.exception.IOException);
+            }
+        } finally {
+            executor.shutdownNow();
         }
     }
 
@@ -388,6 +525,14 @@ public class IOUtilsTest {
 
             Assert.assertEquals("Hello, World!".length(), result.intValue());
             Assert.assertEquals("Hello, World!", os.toString(StandardCharsets.UTF_8.name()));
+
+            // 非 ASCII 内容：total 统计真实写出字节数（UTF-8，"你好" = 6 字节）
+            ByteArrayOutputStream nonAsciiOs = new ByteArrayOutputStream();
+            AtomicLong nonAsciiIndex = new AtomicLong(0);
+            Supplier<String> nonAsciiSupplier = () -> nonAsciiIndex.getAndIncrement() == 0 ? "你好" : null;
+            Long nonAsciiResult = IOUtils.transmitStream(nonAsciiSupplier, nonAsciiOs, executor, null, token).get();
+            Assert.assertEquals(6, nonAsciiResult.intValue());
+            Assert.assertEquals("你好", nonAsciiOs.toString(StandardCharsets.UTF_8.name()));
         } finally {
             executor.shutdown();
         }
@@ -407,11 +552,91 @@ public class IOUtilsTest {
         Thread thread = new Thread(() -> executed.set(true));
 
         ExecutorService result = IOUtils.toExecutorService(thread);
-        Thread.sleep(100); // 等待线程执行
+        Thread.sleep(100); // 语义修正后 Thread 不再被启动执行
 
-        Assert.assertTrue(executed.get());
+        Assert.assertFalse("Thread 对象不应再被启动执行", executed.get());
         Assert.assertNotNull(result);
         result.shutdown();
+        Assert.assertTrue(result.isShutdown());
+        Assert.assertTrue("自建池 shutdown 后应能正常终止", result.awaitTermination(2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testToExecutorServiceWithRunnable() throws InterruptedException {
+        AtomicBoolean executed = new AtomicBoolean(false);
+
+        ExecutorService result = IOUtils.toExecutorService((Runnable) () -> executed.set(true));
+        Thread.sleep(100); // 语义修正后 Runnable 不再被启动执行
+
+        Assert.assertFalse("Runnable 对象不应再被启动执行", executed.get());
+        Assert.assertNotNull(result);
+        result.shutdown();
+    }
+
+    @Test
+    public void testToExecutorServiceSelfManagedDaemonAndShutdown() throws Exception {
+        // 自建池：任务可正常执行、线程为 daemon、shutdown 后可终止（无泄漏）
+        ExecutorService result = IOUtils.toExecutorService(new Thread(() -> {}));
+        Assert.assertNotNull(result);
+
+        AtomicBoolean daemon = new AtomicBoolean(false);
+        CountDownLatch latch = new CountDownLatch(1);
+        result.execute(() -> {
+            daemon.set(Thread.currentThread().isDaemon());
+            latch.countDown();
+        });
+        Assert.assertTrue("自建池任务应正常执行", latch.await(2, TimeUnit.SECONDS));
+        Assert.assertTrue("自建池线程应为 daemon", daemon.get());
+
+        result.shutdown();
+        Assert.assertTrue(result.isShutdown());
+        Assert.assertTrue("shutdown 后应能正常终止", result.awaitTermination(2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testAsyncMethodsShutdownSelfManagedPool() throws Exception {
+        // 异步方法传 Thread 时：任务完成后自建池自动 shutdown（线程名 IOUtils-async-pool-* 不再存活）
+        for (int i = 0; i < 3; i++) {
+            InputStream is = IOUtils.toInputStream(TEST_CONTENT);
+            ByteArrayOutputStream os = new ByteArrayOutputStream();
+            Long result = IOUtils.copyAsync(os, is, new Thread(() -> {}), total -> true,
+                IOUtils.DEFAULT_BACK_PRESSURE_BUFFER_SIZE, new IOUtils.CancellationToken())
+                .get(5, TimeUnit.SECONDS);
+            Assert.assertTrue(result > 0);
+        }
+        long deadline = System.currentTimeMillis() + 3000;
+        while (countPoolThreads() > 0 && System.currentTimeMillis() < deadline) {
+            Thread.sleep(50);
+        }
+        Assert.assertEquals("自建池线程应在任务完成后被 shutdown 回收", 0, countPoolThreads());
+    }
+
+    @Test
+    public void testShutdownIfSelfManaged() throws Exception {
+        // 外部传入的 ExecutorService：no-op，不应被关闭
+        ExecutorService external = Executors.newSingleThreadExecutor();
+        try {
+            IOUtils.shutdownIfSelfManaged(external);
+            Assert.assertFalse("外部传入的 ExecutorService 不应被关闭", external.isShutdown());
+        } finally {
+            external.shutdown();
+        }
+
+        // 自建池：shutdown 生效并正常终止
+        ExecutorService selfManaged = IOUtils.toExecutorService(new Thread(() -> {}));
+        IOUtils.shutdownIfSelfManaged(selfManaged);
+        Assert.assertTrue("自建池应被 shutdown", selfManaged.isShutdown());
+        Assert.assertTrue("自建池 shutdown 后应能正常终止", selfManaged.awaitTermination(2, TimeUnit.SECONDS));
+    }
+
+    private static int countPoolThreads() {
+        int count = 0;
+        for (Thread t : Thread.getAllStackTraces().keySet()) {
+            if (t.isAlive() && t.getName().startsWith("IOUtils-async-pool-")) {
+                count++;
+            }
+        }
+        return count;
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -441,6 +666,14 @@ public class IOUtilsTest {
     public void testToInputStreamFromCharSequenceNull() {
         StringBuilder sb = null;
         InputStream is = IOUtils.toInputStream(sb, StandardCharsets.UTF_8);
+        Assert.assertNotNull(is);
+        Assert.assertEquals(0, IOUtils.toByteArray(is).length);
+    }
+
+    @Test
+    public void testToInputStreamFromStringNull() {
+        String content = null;
+        InputStream is = IOUtils.toInputStream(content, StandardCharsets.UTF_8);
         Assert.assertNotNull(is);
         Assert.assertEquals(0, IOUtils.toByteArray(is).length);
     }

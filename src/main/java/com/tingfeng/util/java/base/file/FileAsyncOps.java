@@ -39,7 +39,8 @@ class FileAsyncOps {
 	                                                Object executor,
 	                                                BiFunction<Long, Long, Boolean> readCallback,
 	                                                IOUtils.CancellationToken token) {
-		return CompletableFuture.supplyAsync(() -> {
+        ExecutorService es = IOUtils.toExecutorService(executor);
+        return CompletableFuture.supplyAsync(() -> {
 			ByteArrayOutputStream bos = new ByteArrayOutputStream();
 			byte[] buffer = new byte[FileUtils.BUFFER_SIZE];
 			long total = 0;
@@ -74,7 +75,7 @@ class FileAsyncOps {
 				throw new com.tingfeng.util.java.base.lang.exception.IOException(e);
 			}
 			return bos.toByteArray();
-		}, IOUtils.toExecutorService(executor));
+        }, es).whenComplete((r, ex) -> IOUtils.shutdownIfSelfManaged(es));
 	}
 
 	/**
@@ -105,7 +106,8 @@ class FileAsyncOps {
 	                                                  Object executor,
 	                                                  BiConsumer<Long, Long> writeCallback,
 	                                                  IOUtils.CancellationToken token) {
-		return CompletableFuture.supplyAsync(() -> {
+        ExecutorService es = IOUtils.toExecutorService(executor);
+        return CompletableFuture.supplyAsync(() -> {
 			// 确保父目录存在
 			File parent = file.getParentFile();
 			if (parent != null && !parent.exists()) {
@@ -139,7 +141,7 @@ class FileAsyncOps {
 			} catch (IOException e) {
 				throw new com.tingfeng.util.java.base.lang.exception.IOException(e);
 			}
-		}, IOUtils.toExecutorService(executor));
+        }, es).whenComplete((r, ex) -> IOUtils.shutdownIfSelfManaged(es));
 	}
 
 	/**
@@ -155,7 +157,8 @@ class FileAsyncOps {
 		byte[] data = content.getBytes(charset);
 		// 写入时使用追加模式，但异步分块写入难以保证原子性，这里简化为覆盖
 		// 如果需要真正的追加，应该使用 writeLineAsync 或自定义同步写入
-		return CompletableFuture.supplyAsync(() -> {
+        ExecutorService es = IOUtils.toExecutorService(executor);
+        return CompletableFuture.supplyAsync(() -> {
 			FileOutputStream fos = null;
 			try {
 				// 确保父目录存在
@@ -177,7 +180,7 @@ class FileAsyncOps {
 					}
 				}
 			}
-		}, IOUtils.toExecutorService(executor));
+        }, es).whenComplete((r, ex) -> IOUtils.shutdownIfSelfManaged(es));
 	}
 
 	// ==================== 异步拷贝 ====================
@@ -204,7 +207,8 @@ class FileAsyncOps {
 	                                              Consumer<Long> progressCallback,
 	                                              int backPressureLimit,
 	                                              IOUtils.CancellationToken token) {
-		return CompletableFuture.supplyAsync(() -> {
+        ExecutorService es = IOUtils.toExecutorService(executor);
+        return CompletableFuture.supplyAsync(() -> {
 			long total = 0;
 			FileChannel in = null;
 			FileChannel out = null;
@@ -261,7 +265,7 @@ class FileAsyncOps {
 				IOUtils.closeQuietly(fos);
 			}
 			return total;
-		}, IOUtils.toExecutorService(executor));
+        }, es).whenComplete((r, ex) -> IOUtils.shutdownIfSelfManaged(es));
 	}
 
 	/**
@@ -282,7 +286,7 @@ class FileAsyncOps {
 	 * @param file 文件
 	 * @param line 行内容
 	 * @param charset 字符编码
-	 * @param executor 线程池
+	 * @param executor ExecutorService或Thread/Runnable
 	 * @param token 取消令牌
 	 * @return CompletableFuture
 	 *
@@ -294,14 +298,15 @@ class FileAsyncOps {
 	                                                 Charset charset, boolean append,
 	                                                 Object executor,
 	                                                 IOUtils.CancellationToken token) {
-		return CompletableFuture.supplyAsync(() -> {
+        ExecutorService es = IOUtils.toExecutorService(executor);
+        return CompletableFuture.supplyAsync(() -> {
 			// 检查取消令牌
 			if (token != null && token.shouldInterrupt()) {
 				return false;
 			}
 			FileRWOps.writeLine(file, line, charset, append);
 			return true;
-		}, IOUtils.toExecutorService(executor));
+        }, es).whenComplete((r, ex) -> IOUtils.shutdownIfSelfManaged(es));
 	}
 
 	/**
