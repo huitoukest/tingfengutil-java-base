@@ -71,6 +71,24 @@ public final class StreamTransferOps {
      */
     public static void copy(OutputStream output, InputStream input, int bufferSize,
                             boolean closeStream, Consumer<Long> readSizeCallBack) {
+        copyInternal(output, input, bufferSize, closeStream, readSizeCallBack);
+    }
+
+    /**
+     * 流拷贝核心实现
+     * 循环读取 input 写入 output 直至 EOF，累计已拷贝字节数并通过回调通知；
+     * closeStream=true 时关闭传入的 input 和 output；false 时由调用方负责关闭；
+     * output/input 为 null → IllegalArgumentException
+     * @param output 输出流
+     * @param input 输入流
+     * @param bufferSize 缓冲区大小
+     * @param closeStream 是否关闭流
+     * @param readSizeCallBack 读取进度回调，参数为已读取字节数（可为 null）
+     * @return 实际拷贝的字节数
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果读写失败
+     */
+    private static long copyInternal(OutputStream output, InputStream input, int bufferSize,
+                                     boolean closeStream, Consumer<Long> readSizeCallBack) {
         if (output == null || input == null) {
             throw new IllegalArgumentException("output and input must not be null");
         }
@@ -94,6 +112,37 @@ public final class StreamTransferOps {
                 StreamOps.closeQuietly(output);
             }
         }
+        return total;
+    }
+
+    /**
+     * 流拷贝并返回拷贝字节数（自动关闭流）
+     * 默认关闭传入的 input 和 output（closeStream=true）、缓冲区 BUFFER_SIZE、无进度回调；
+     * 输出结果与 copy(output, input) 完全一致，额外返回实际拷贝的字节数
+     * @param output 输出流
+     * @param input 输入流
+     * @return 实际拷贝的字节数
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果读写失败
+     */
+    public static long copyCount(OutputStream output, InputStream input) {
+        return copyInternal(output, input, StreamOps.BUFFER_SIZE, true, null);
+    }
+
+    /**
+     * 流拷贝并返回拷贝字节数（完整参数）
+     * 输出结果与 copy 完整参数版本完全一致，额外返回实际拷贝的字节数；
+     * closeStream=true 时关闭传入的 input 和 output；false 时由调用方负责关闭
+     * @param output 输出流
+     * @param input 输入流
+     * @param bufferSize 缓冲区大小
+     * @param closeStream 是否关闭流
+     * @param readSizeCallBack 读取进度回调，参数为已读取字节数（可为 null）
+     * @return 实际拷贝的字节数
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果读写失败
+     */
+    public static long copyCount(OutputStream output, InputStream input, int bufferSize,
+                                 boolean closeStream, Consumer<Long> readSizeCallBack) {
+        return copyInternal(output, input, bufferSize, closeStream, readSizeCallBack);
     }
 
     // ==================== 跨类型拷贝 ====================

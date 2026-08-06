@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.function.Consumer;
 
 /**
  * StreamOps 冒烟测试
@@ -128,7 +129,7 @@ public class StreamOpsTest {
     @Test
     public void testReadLinesNullInput() {
         List<String> lines = new ArrayList<>();
-        StreamOps.readLines(null, lines::add);
+        StreamOps.readLines((InputStream) null, lines::add);
         Assert.assertTrue(lines.isEmpty());
     }
 
@@ -412,6 +413,125 @@ public class StreamOpsTest {
         } catch (NoSuchElementException expected) {
         }
         it.close();
+    }
+
+    // ==================== readFully 测试（SubStory-1） ====================
+
+    @Test
+    public void testReadFully() {
+        byte[] data = new byte[100];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) i;
+        }
+        byte[] buffer = new byte[100];
+        StreamOps.readFully(new ByteArrayInputStream(data), buffer);
+        Assert.assertArrayEquals(data, buffer);
+    }
+
+    @Test
+    public void testReadFullyEofThrows() {
+        byte[] data = new byte[50];
+        for (int i = 0; i < data.length; i++) {
+            data[i] = (byte) i;
+        }
+        byte[] buffer = new byte[100];
+        try {
+            StreamOps.readFully(new ByteArrayInputStream(data), buffer);
+            Assert.fail("expected IOException");
+        } catch (com.tingfeng.util.java.base.lang.exception.IOException expected) {
+            Assert.assertTrue("message should contain actual read bytes",
+                expected.getMessage().contains("50"));
+        }
+    }
+
+    @Test
+    public void testReadFullyEmptyBuffer() {
+        byte[] buffer = new byte[0];
+        StreamOps.readFully(new ByteArrayInputStream(new byte[]{1, 2, 3}), buffer);
+        Assert.assertEquals(0, buffer.length);
+    }
+
+    @Test
+    public void testReadFullyNullInput() {
+        try {
+            StreamOps.readFully(null, new byte[10]);
+            Assert.fail("expected IllegalArgumentException");
+        } catch (IllegalArgumentException expected) {
+        }
+    }
+
+    // ==================== Reader 按行测试（SubStory-2） ====================
+
+    @Test
+    public void testReadLinesToListFromReader() {
+        List<String> lines = StreamOps.readLinesToList(new StringReader("line1\nline2\nline3"));
+        Assert.assertEquals(3, lines.size());
+        Assert.assertEquals("line1", lines.get(0));
+        Assert.assertEquals("line3", lines.get(2));
+    }
+
+    @Test
+    public void testReadLinesFromReaderConsumer() {
+        List<String> lines = new ArrayList<>();
+        StreamOps.readLines(new StringReader("a\nb\nc"), lines::add);
+        Assert.assertEquals(3, lines.size());
+        Assert.assertEquals("a", lines.get(0));
+        Assert.assertEquals("c", lines.get(2));
+    }
+
+    @Test
+    public void testReadLinesFromReaderAppend() {
+        List<String> lines = new ArrayList<>();
+        lines.add("prefix");
+        StreamOps.readLines(new StringReader("line1\nline2"), lines);
+        Assert.assertEquals(3, lines.size());
+        Assert.assertEquals("prefix", lines.get(0));
+        Assert.assertEquals("line2", lines.get(2));
+    }
+
+    @Test
+    public void testLineIteratorFromReader() {
+        TrackingReader reader = new TrackingReader("a\nb\nc");
+        List<String> result = new ArrayList<>();
+        try (StreamOps.LineIterator it = StreamOps.lineIterator(reader)) {
+            while (it.hasNext()) {
+                result.add(it.next());
+            }
+        }
+        Assert.assertEquals(3, result.size());
+        Assert.assertEquals("a", result.get(0));
+        Assert.assertEquals("c", result.get(2));
+        Assert.assertTrue(reader.closed);
+    }
+
+    @Test
+    public void testReadLinesFromReaderNull() {
+        List<String> lines = new ArrayList<>();
+        StreamOps.readLines((Reader) null, lines::add);
+        Assert.assertTrue(lines.isEmpty());
+        StreamOps.readLines((Reader) null, (Consumer<String>) null);
+        StreamOps.readLines((Reader) null, lines);
+        Assert.assertEquals(0, StreamOps.readLinesToList((Reader) null).size());
+        // lines 为 null 时内部新建，不抛异常（防御语义）
+        StreamOps.readLines(new StringReader("line1\nline2"), (List<String>) null);
+    }
+
+    /**
+     * 记录 close 调用痕迹的 Reader
+     */
+    private static class TrackingReader extends StringReader {
+
+        private boolean closed;
+
+        TrackingReader(String s) {
+            super(s);
+        }
+
+        @Override
+        public void close() {
+            closed = true;
+            super.close();
+        }
     }
 
     /**

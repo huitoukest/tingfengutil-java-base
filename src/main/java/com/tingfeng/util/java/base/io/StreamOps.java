@@ -532,6 +532,43 @@ public final class StreamOps {
         return total == 0 ? -1 : total;
     }
 
+    /**
+     * 从输入流严格读取并填满缓冲区（fully 语义）
+     * 循环读取直至读满 buffer；源流提前 EOF → 抛项目 IOException（RuntimeException 体系），
+     * 异常信息包含期望/实际字节数；其余读取异常包装为项目 IOException；
+     * 不关闭传入的 input，由调用方负责管理；
+     * 注意：与 readUpTo 的"尽力读满"不同，本方法严格读满，不足即抛异常；
+     * buffer 为 null → IllegalArgumentException；buffer 长度为 0 → 直接返回（无操作）
+     * @param input 输入流
+     * @param buffer 缓冲区
+     * @throws IllegalArgumentException input 或 buffer 为 null
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 源流 EOF 提前或读取失败
+     */
+    public static void readFully(InputStream input, byte[] buffer) {
+        if (input == null) {
+            throw new IllegalArgumentException("input must not be null");
+        }
+        if (buffer == null) {
+            throw new IllegalArgumentException("buffer must not be null");
+        }
+        if (buffer.length == 0) {
+            return;
+        }
+        int offset = 0;
+        try {
+            while (offset < buffer.length) {
+                int len = input.read(buffer, offset, buffer.length - offset);
+                if (len == -1) {
+                    throw new com.tingfeng.util.java.base.lang.exception.IOException(
+                        "Unable to read " + buffer.length + " bytes, EOF reached after reading " + offset + " bytes");
+                }
+                offset += len;
+            }
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException(e);
+        }
+    }
+
     // ==================== 多流拼接 ====================
 
     /**
@@ -619,6 +656,27 @@ public final class StreamOps {
     }
 
     /**
+     * 按行读取 Reader
+     * 方法内部自动关闭传入的 reader（与 InputStream 版本关闭语义一致）；
+     * reader 或 lineConsumer 为 null → 静默返回；Reader 已包含字符解码，无需指定编码
+     * @param reader Reader
+     * @param lineConsumer 行处理回调
+     */
+    public static void readLines(Reader reader, Consumer<String> lineConsumer) {
+        if (reader == null || lineConsumer == null) {
+            return;
+        }
+        try (BufferedReader buffered = new BufferedReader(reader, BUFFER_SIZE)) {
+            String line;
+            while ((line = buffered.readLine()) != null) {
+                lineConsumer.accept(line);
+            }
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException(e);
+        }
+    }
+
+    /**
      * 按行读取流并追加到指定列表（追加模式）
      * 方法内部自动关闭传入的 input（与 readLines 关闭语义一致）；
      * lines 为 null 时内部新建（追加结果不返回，属防御语义）
@@ -632,6 +690,21 @@ public final class StreamOps {
         }
         List<String> target = lines != null ? lines : new ArrayList<>();
         readLines(input, charset, target::add);
+    }
+
+    /**
+     * 按行读取 Reader 并追加到指定列表（追加模式）
+     * 方法内部自动关闭传入的 reader（与 readLines 关闭语义一致）；
+     * reader 为 null → 静默返回；lines 为 null 时内部新建（追加结果不返回，属防御语义）
+     * @param reader Reader
+     * @param lines 追加目标列表
+     */
+    public static void readLines(Reader reader, List<String> lines) {
+        if (reader == null) {
+            return;
+        }
+        List<String> target = lines != null ? lines : new ArrayList<>();
+        readLines(reader, target::add);
     }
 
     /**
@@ -678,6 +751,18 @@ public final class StreamOps {
     }
 
     /**
+     * 惰性按行迭代器（Reader 版）
+     * hasNext() 时才读取下一行；close() 关闭底层 Reader（经 BufferedReader 链传播）；
+     * 中途放弃迭代时请显式 close() 释放资源，未消费的行不丢失（底层 Reader 未读部分仍在）；
+     * Reader 已包含字符解码，无需指定编码
+     * @param reader Reader
+     * @return 行迭代器
+     */
+    public static LineIterator lineIterator(Reader reader) {
+        return new LineIterator(reader);
+    }
+
+    /**
      * 按行读取流并返回列表
      * 方法内部自动关闭传入的 input（经 readLines 委托）
      * @param input 输入流
@@ -700,6 +785,22 @@ public final class StreamOps {
         }
         List<String> lines = new ArrayList<>();
         readLines(input, charset, lines::add);
+        return lines;
+    }
+
+    /**
+     * 按行读取 Reader 并返回列表
+     * 方法内部自动关闭传入的 reader（经 readLines 委托）；reader 为 null → 空列表；
+     * Reader 已包含字符解码，无需指定编码
+     * @param reader Reader
+     * @return 行列表
+     */
+    public static List<String> readLinesToList(Reader reader) {
+        if (reader == null) {
+            return new ArrayList<>();
+        }
+        List<String> lines = new ArrayList<>();
+        readLines(reader, lines::add);
         return lines;
     }
 
@@ -746,6 +847,10 @@ public final class StreamOps {
 
         private LineIterator(InputStream input, Charset charset) {
             this.reader = new BufferedReader(new InputStreamReader(input, charset), BUFFER_SIZE);
+        }
+
+        private LineIterator(Reader reader) {
+            this.reader = new BufferedReader(reader, BUFFER_SIZE);
         }
 
         /**

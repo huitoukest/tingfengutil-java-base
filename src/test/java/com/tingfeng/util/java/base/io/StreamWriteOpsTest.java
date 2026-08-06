@@ -46,6 +46,47 @@ public class StreamWriteOpsTest {
         Files.deleteIfExists(tempPath);
     }
 
+    // ==================== InputStream 源 append 测试（SubStory-4） ====================
+
+    @Test
+    public void testWriteToFileAppendFile() throws Exception {
+        File tempFile = File.createTempFile("streamwrite_append_", ".tmp");
+        tempFile.deleteOnExit();
+
+        StreamWriteOps.writeToFile(TEST_CONTENT, tempFile);
+        StreamWriteOps.writeToFile(StreamOps.toInputStream(TEST_CONTENT), tempFile, true);
+
+        Assert.assertEquals(TEST_CONTENT + TEST_CONTENT, StreamOps.toString(StreamOps.toInputStream(tempFile)));
+    }
+
+    @Test
+    public void testWriteToFileAppendPath() throws Exception {
+        Path tempPath = Files.createTempFile("streamwrite_append_", ".tmp");
+        Files.deleteIfExists(tempPath);
+
+        StreamWriteOps.writeToFile(TEST_CONTENT, tempPath);
+        StreamWriteOps.writeToFile(StreamOps.toInputStream(TEST_CONTENT), tempPath, true);
+
+        Assert.assertEquals(TEST_CONTENT + TEST_CONTENT, StreamOps.toString(StreamOps.toInputStream(tempPath)));
+        Files.deleteIfExists(tempPath);
+    }
+
+    @Test
+    public void testWriteToFileAppendFalseOverwrites() throws Exception {
+        File tempFile = File.createTempFile("streamwrite_append_", ".tmp");
+        tempFile.deleteOnExit();
+        StreamWriteOps.writeToFile("old content", tempFile);
+        StreamWriteOps.writeToFile(StreamOps.toInputStream(TEST_CONTENT), tempFile, false);
+        Assert.assertEquals(TEST_CONTENT, StreamOps.toString(StreamOps.toInputStream(tempFile)));
+
+        Path tempPath = Files.createTempFile("streamwrite_append_", ".tmp");
+        Files.deleteIfExists(tempPath);
+        StreamWriteOps.writeToFile("old content", tempPath);
+        StreamWriteOps.writeToFile(StreamOps.toInputStream(TEST_CONTENT), tempPath, false);
+        Assert.assertEquals(TEST_CONTENT, StreamOps.toString(StreamOps.toInputStream(tempPath)));
+        Files.deleteIfExists(tempPath);
+    }
+
     @Test
     public void testWriteToFileFromByteArray() throws Exception {
         File tempFile = File.createTempFile("streamwrite_test_", ".tmp");

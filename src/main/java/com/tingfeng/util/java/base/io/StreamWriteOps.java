@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 /**
@@ -49,6 +50,28 @@ public final class StreamWriteOps {
     }
 
     /**
+     * 将输入流写入文件（可追加）
+     * append=true 时追加到文件末尾（文件不存在则自动创建）；false 时覆盖写入，
+     * 行为与 writeToFile(input, file) 完全一致；
+     * 方法内部创建的输出流自动关闭（try-with-resources）
+     * @param input 输入流
+     * @param file 目标文件
+     * @param append 是否追加
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(InputStream input, File file, boolean append) {
+        if (input == null || file == null) {
+            throw new IllegalArgumentException("input and file must not be null");
+        }
+        try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file, append))) {
+            StreamTransferOps.copy(output, input);
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException(
+                "Failed to write to file: " + file.getPath(), e);
+        }
+    }
+
+    /**
      * 将输入流写入文件
      * 方法内部创建的输出流自动关闭（try-with-resources）
      * @param input 输入流
@@ -60,6 +83,32 @@ public final class StreamWriteOps {
             throw new IllegalArgumentException("input and path must not be null");
         }
         try (OutputStream output = new BufferedOutputStream(Files.newOutputStream(path))) {
+            StreamTransferOps.copy(output, input);
+        } catch (IOException e) {
+            throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to path: " + path, e);
+        }
+    }
+
+    /**
+     * 将输入流写入文件（可追加）
+     * append=true 时追加到文件末尾（文件不存在则自动创建）；false 时委托
+     * writeToFile(input, path) 覆盖写入（行为与存量完全一致）；
+     * 方法内部创建的输出流自动关闭（try-with-resources）
+     * @param input 输入流
+     * @param path 目标路径
+     * @param append 是否追加
+     * @throws com.tingfeng.util.java.base.lang.exception.IOException 如果写入失败
+     */
+    public static void writeToFile(InputStream input, Path path, boolean append) {
+        if (input == null || path == null) {
+            throw new IllegalArgumentException("input and path must not be null");
+        }
+        if (!append) {
+            writeToFile(input, path);
+            return;
+        }
+        try (OutputStream output = new BufferedOutputStream(
+            Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.APPEND))) {
             StreamTransferOps.copy(output, input);
         } catch (IOException e) {
             throw new com.tingfeng.util.java.base.lang.exception.IOException("Failed to write to path: " + path, e);

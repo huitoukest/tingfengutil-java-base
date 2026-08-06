@@ -149,6 +149,61 @@ public class StreamTransferOpsTest {
         Assert.assertFalse(input.closed);
     }
 
+    // ==================== copyCount 测试（SubStory-3） ====================
+
+    @Test
+    public void testCopyCountReturnsLength() {
+        byte[] data = TEST_CONTENT.getBytes(StandardCharsets.UTF_8);
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        long count = StreamTransferOps.copyCount(os, new ByteArrayInputStream(data));
+        Assert.assertEquals(data.length, count);
+        Assert.assertArrayEquals(data, os.toByteArray());
+    }
+
+    @Test
+    public void testCopyCountCloseStreamFalse() {
+        byte[] data = TEST_CONTENT.getBytes(StandardCharsets.UTF_8);
+        TrackingInputStream input = new TrackingInputStream(data);
+        TrackingOutputStream output = new TrackingOutputStream();
+        long count = StreamTransferOps.copyCount(output, input, StreamOps.BUFFER_SIZE, false, null);
+        Assert.assertEquals(data.length, count);
+        Assert.assertFalse(input.closed);
+        Assert.assertFalse(output.closed);
+    }
+
+    @Test
+    public void testCopyCountConsistentWithCopy() {
+        byte[] data = TEST_CONTENT.getBytes(StandardCharsets.UTF_8);
+        ByteArrayOutputStream os1 = new ByteArrayOutputStream();
+        ByteArrayOutputStream os2 = new ByteArrayOutputStream();
+        StreamTransferOps.copy(os1, new ByteArrayInputStream(data));
+        long count = StreamTransferOps.copyCount(os2, new ByteArrayInputStream(data));
+        Assert.assertArrayEquals(os1.toByteArray(), os2.toByteArray());
+        Assert.assertEquals(data.length, count);
+    }
+
+    @Test
+    public void testCopyOverloadsAfterRefactor() {
+        byte[] data = TEST_CONTENT.getBytes(StandardCharsets.UTF_8);
+        ByteArrayOutputStream os1 = new ByteArrayOutputStream();
+        StreamTransferOps.copy(os1, new ByteArrayInputStream(data));
+        Assert.assertArrayEquals(data, os1.toByteArray());
+
+        ByteArrayOutputStream os2 = new ByteArrayOutputStream();
+        StreamTransferOps.copy(os2, new ByteArrayInputStream(data), false);
+        Assert.assertArrayEquals(data, os2.toByteArray());
+
+        ByteArrayOutputStream os3 = new ByteArrayOutputStream();
+        AtomicLong total = new AtomicLong(0);
+        StreamTransferOps.copy(os3, new ByteArrayInputStream(data), total::set);
+        Assert.assertArrayEquals(data, os3.toByteArray());
+        Assert.assertEquals(data.length, total.get());
+
+        ByteArrayOutputStream os4 = new ByteArrayOutputStream();
+        StreamTransferOps.copy(os4, new ByteArrayInputStream(data), 1024, true, null);
+        Assert.assertArrayEquals(data, os4.toByteArray());
+    }
+
     /**
      * 记录 close 调用痕迹的输出流
      */
