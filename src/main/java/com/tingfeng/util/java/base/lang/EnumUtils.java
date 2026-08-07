@@ -1,13 +1,10 @@
 package com.tingfeng.util.java.base.lang;
 
-import com.tingfeng.util.java.base.lang.base.UnionKey;
 import com.tingfeng.util.java.base.lang.base.IEnum;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,13 +28,6 @@ import java.util.stream.Collectors;
  */
 public class EnumUtils {
     
-    /**
-     * 枚举的值的缓存
-     * Map[UnionKey[枚举类,方法类],[value,枚举类的实例]]
-     * 使用ConcurrentHashMap保证线程安全
-     */
-    private static final Map<UnionKey, Map<?, ? extends Enum>> ENUM_VALUE_CACHE_MAP = new ConcurrentHashMap<>();
-
     /**
      * 等同于枚举的valueOf方法，使用缓存
      * <p>
@@ -74,19 +64,8 @@ public class EnumUtils {
                     .findAny()
                     .orElse(null);
         } else {
-            UnionKey key = new UnionKey(enumClass, supplyValue);
-            Map<?, E> cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(key);
-            if (cacheData == null) {
-                synchronized (ENUM_VALUE_CACHE_MAP) {
-                    cacheData = (Map<?, E>) ENUM_VALUE_CACHE_MAP.get(key);
-                    if (cacheData == null) {
-                        cacheData = Arrays.stream(enumClass.getEnumConstants())
-                                .collect(Collectors.toMap(supplyValue, Function.identity()));
-                        ENUM_VALUE_CACHE_MAP.put(key, cacheData);
-                    }
-                }
-            }
-            return cacheData.get(value);
+            List<E> list = EnumCacheOps.getCacheList(enumClass, value, supplyValue);
+            return (list == null || list.isEmpty()) ? null : list.get(0);
         }
     }
 
@@ -119,6 +98,39 @@ public class EnumUtils {
      */
     public static <V, E extends Enum<?> & IEnum<V>> E getEnumByValue(Class<E> enumClass, V value, boolean useCache) {
         return getEnum(enumClass, value, e -> e.getValue(), useCache);
+    }
+
+    /**
+     * 通过IEnum接口的getValue方法获取枚举实例列表，使用缓存
+     * 与 getEnumByValue 不同，value 重复时返回全部匹配的枚举实例
+     * @param enumClass 枚举类
+     * @param value 值
+     * @param <V> 值类型
+     * @param <E> 枚举类型
+     * @return 匹配的枚举实例列表，未命中返回空列表
+     */
+    public static <V, E extends Enum<?> & IEnum<V>> List<E> getEnumListByValue(Class<E> enumClass, V value) {
+        return getEnumListByValue(enumClass, value, true);
+    }
+
+    /**
+     * 通过IEnum接口的getValue方法获取枚举实例列表
+     * 与 getEnumByValue 不同，value 重复时返回全部匹配的枚举实例，可选择是否使用缓存
+     * @param enumClass 枚举类
+     * @param value 值
+     * @param useCache 是否使用缓存，使用缓存时（第一次仍会全量缓存，之后则一直使用缓存）
+     * @param <V> 值类型
+     * @param <E> 枚举类型
+     * @return 匹配的枚举实例列表，未命中返回空列表
+     */
+    public static <V, E extends Enum<?> & IEnum<V>> List<E> getEnumListByValue(Class<E> enumClass, V value, boolean useCache) {
+        if (!useCache) {
+            return Arrays.stream(enumClass.getEnumConstants())
+                    .filter(e -> value.equals(e.getValue()))
+                    .collect(Collectors.toList());
+        }
+        List<E> list = EnumCacheOps.getCacheList(enumClass, value, e -> e.getValue());
+        return list == null ? Collections.emptyList() : Collections.unmodifiableList(list);
     }
 
     /**
@@ -347,8 +359,7 @@ public class EnumUtils {
      * @param <E> 枚举类型
      */
     public static <V, E extends Enum<?>> void clearCache(Class<E> enumClass, Function<E, V> supplyValue) {
-        UnionKey key = new UnionKey(enumClass, supplyValue);
-        ENUM_VALUE_CACHE_MAP.remove(key);
+        EnumCacheOps.clearCache(enumClass, supplyValue);
     }
 
     /**
@@ -360,10 +371,7 @@ public class EnumUtils {
      * @param <E> 枚举类型
      */
     public static <E extends Enum<?>> void clearAllCache(Class<E> enumClass) {
-        ENUM_VALUE_CACHE_MAP.keySet().removeIf(key -> {
-            Object key1 = key.getKey(0);
-            return enumClass.equals(key1);
-        });
+        EnumCacheOps.clearAllCache(enumClass);
     }
 
     /**
@@ -373,7 +381,7 @@ public class EnumUtils {
      * </p>
      */
     public static void clearAllCache() {
-        ENUM_VALUE_CACHE_MAP.clear();
+        EnumCacheOps.clearAllCache();
     }
 
     /**
@@ -518,8 +526,8 @@ public class EnumUtils {
                     .filter(e -> value.equals(mapper.apply(e)))
                     .collect(Collectors.toList());
         } else {
-            E result = getEnum(enumClass, value, mapper, true);
-            return result != null ? Collections.singletonList(result) : Collections.emptyList();
+            List<E> result = EnumCacheOps.getCacheList(enumClass, value, mapper);
+            return result == null ? Collections.emptyList() : Collections.unmodifiableList(result);
         }
     }
 

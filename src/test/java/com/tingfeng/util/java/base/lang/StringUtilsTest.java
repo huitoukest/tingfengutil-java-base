@@ -829,4 +829,85 @@ public class StringUtilsTest {
         Assert.assertFalse(StringUtils.isHex(null));
         Assert.assertFalse(StringUtils.isHex(""));
     }
+
+    /**
+     * B1: appendValue(freeMemoryThen=true) 当 capacity > length（多次 append 扩容）时按 capacity() 截断
+     * 修复前: 1500 次单字符 append 后 capacity=2078 > length=1500, delete(0, 2078-512=1566)
+     *         的 endIndex 超 length 被 clamp 到末尾 → 内容被全部删除
+     * 修复后: 按 length() 截断 delete(0, 1500-512=988) → 保留尾部 512 字符
+     */
+    @Test
+    public void testAppendValueFreeMemoryExpanded() {
+        Object[] parts = new Object[1500];
+        Arrays.fill(parts, "a");
+        String result = StringUtils.appendValue(true, true, parts);
+        Assert.assertEquals(512, result.length());
+        for (int i = 0; i < result.length(); i++) {
+            Assert.assertEquals('a', result.charAt(i));
+        }
+        // freeMemoryThen=false 不截断
+        String full = StringUtils.appendValue(false, true, parts);
+        Assert.assertEquals(1500, full.length());
+    }
+
+    /**
+     * B2: toUpperFirstChar(null/空串) 不抛异常, 原样返回
+     */
+    @Test
+    public void testToUpperFirstCharNullAndEmpty() {
+        Assert.assertNull(StringUtils.toUpperFirstChar(null));
+        Assert.assertEquals("", StringUtils.toUpperFirstChar(""));
+        Assert.assertEquals("Hello", StringUtils.toUpperFirstChar("hello"));
+    }
+
+    /**
+     * B2: firstLetterToLower 委托 toLowerFirstChar, null/空串安全
+     */
+    @Test
+    public void testFirstLetterToLowerNullAndEmpty() {
+        Assert.assertNull(StringUtils.firstLetterToLower(null));
+        Assert.assertEquals("", StringUtils.firstLetterToLower(""));
+        Assert.assertEquals("hello", StringUtils.firstLetterToLower("Hello"));
+    }
+
+    /**
+     * B3: equals(str=null) 首行判空, 覆盖 content 非空(1927行)与 content 空数组(1935行)两条 NPE 路径
+     */
+    @Test
+    public void testEqualsNull() {
+        Assert.assertFalse(StringUtils.equals(null, (Object[]) null));
+        Assert.assertFalse(StringUtils.equals(null, new Object[]{}));
+        Assert.assertFalse(StringUtils.equals(null, "abc"));
+        // 非 null 行为不变
+        Assert.assertTrue(StringUtils.equals("", new Object[]{}));
+        Assert.assertFalse(StringUtils.equals("", (Object[]) null));
+    }
+
+    /**
+     * B4: unescape(null) 安全返回 null
+     */
+    @Test
+    public void testUnescapeNull() {
+        Assert.assertNull(StringUtils.unescape(null));
+    }
+
+    /**
+     * B4: replaceByTemplate(content, null) 原样返回模板, 不抛异常
+     */
+    @Test
+    public void testReplaceByTemplateNullParams() {
+        String content = "Hello ${name}";
+        Assert.assertEquals(content, StringUtils.replaceByTemplate(content, null));
+        String result = StringUtils.replaceByTemplate("Hello ${name}", Collections.singletonMap("name", "World"));
+        Assert.assertEquals("Hello World", result);
+    }
+
+    /**
+     * B4: build(null) 构建空 TrieNode, 不抛异常
+     */
+    @Test
+    public void testBuildNull() {
+        Assert.assertNotNull(StringUtils.build(null));
+        Assert.assertNotNull(StringUtils.build(Collections.emptyList()));
+    }
 }

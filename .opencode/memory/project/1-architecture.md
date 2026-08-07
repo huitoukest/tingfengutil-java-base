@@ -54,7 +54,6 @@ com.tingfeng.util.java.base/
 │   └── base/                         ← CSV 参数封装
 ├── lang/                             ← 核心语言工具（最大包）
 │   ├── base/                         ← 基础数据结构/接口（Tuple, Trie, IEnum 等）
-│   ├── ex/                           ← ⚠️ 遗留异常包（已废弃，使用 exception/）
 │   ├── exception/                    ← 业务异常体系
 │   ├── fun/                          ← CacheSupplier
 │   ├── inter/                        ← 回调/函数接口体系

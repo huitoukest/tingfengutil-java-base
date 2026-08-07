@@ -106,10 +106,8 @@ public interface Constants {
 | 日志 | 统一通过 `LogUtils`，SLF4J 可用时委托，否则 fallback 到 System.out |
 | 私有构造器 | 所有工具类必须有 `private XxxUtils() {}` |
 | 判空 | 优先用 `null == obj`（左侧常量）防御风格 |
-| 遗留包 `lang/ex/` | 已废弃，使用 `lang/exception/` 替代 |
 
 ## 已知待清理项
 
-- `lang/ex/` 包与 `lang/exception/` 重复，以 `exception` 为准
 - `Constants.java` 接口常量风格遗留，保持不动
 - 部分接口保留 `I` 前缀/后缀（IEnum, ConvertI），新接口不添加

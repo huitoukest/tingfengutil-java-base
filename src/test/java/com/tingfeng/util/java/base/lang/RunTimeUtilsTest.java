@@ -139,17 +139,41 @@ public class RunTimeUtilsTest {
 
     @Test
     public void testGetLocalIpV4AddressesWithPhysicalAddress() {
+        // false 参数：返回全部 IPv4（含回环地址），B8 修复后不得混入 IPv6
         List<String> ipAddrs = RuntimeUtils.getLocalIpV4Addresses(false);
         Assert.assertNotNull(ipAddrs);
+        for (String ip : ipAddrs) {
+            Assert.assertTrue("IPv4 地址列表混入非 IPv4 地址: " + ip,
+                    ip.matches("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+            Assert.assertFalse("IPv4 地址列表混入 IPv6 地址: " + ip, ip.contains(":"));
+        }
+        // false 参数下回环地址应保留（127.0.0.1 为本机默认回环地址）
+        Assert.assertTrue("回环地址 127.0.0.1 应保留", ipAddrs.contains("127.0.0.1"));
+        // 边界标注（IPv6-only 环境）：本机若仅有 IPv6 地址（无 IPv4），两态均返回空列表，
+        // 不会将 IPv6 混入 IPv4 结果（B8 修复保证）；该场景依赖本机网卡配置，无法在单测中稳定复现
     }
 
     @Test
     public void testGetLocalIpV4AddressesExcludePhysicalAddress() {
         List<String> ipAddrs = RuntimeUtils.getLocalIpV4Addresses(true);
         Assert.assertNotNull(ipAddrs);
-        // 过滤后的地址应该是有效的IPv4格式
+        // 过滤后的地址应该是有效的IPv4格式，且排除回环地址（127.0.0.0/8 段）
         for (String ip : ipAddrs) {
-            Assert.assertTrue(ip.matches("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+            Assert.assertTrue("IPv4 地址列表混入非 IPv4 地址: " + ip,
+                    ip.matches("\\d+\\.\\d+\\.\\d+\\.\\d+"));
+            Assert.assertFalse("回环地址未被排除: " + ip, ip.startsWith("127."));
+        }
+    }
+
+    @Test
+    public void testIpV4V6ListsDisjoint() {
+        // B8 修复验证：IPv4 列表与 IPv6 列表互斥，IPv6 永不出现在 IPv4 列表中
+        List<String> ipv4Addrs = RuntimeUtils.getLocalIpV4Addresses(false);
+        List<String> ipv6Addrs = RuntimeUtils.getLocalIPv6Addresses();
+        Assert.assertNotNull(ipv4Addrs);
+        Assert.assertNotNull(ipv6Addrs);
+        for (String ip : ipv4Addrs) {
+            Assert.assertFalse("IPv6 地址混入 IPv4 列表: " + ip, ipv6Addrs.contains(ip));
         }
     }
 

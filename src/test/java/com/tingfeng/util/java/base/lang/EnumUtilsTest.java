@@ -1210,4 +1210,108 @@ public class EnumUtilsTest {
         exists = EnumUtils.existsPredicate(EmptyEnum.class, e -> true);
         Assert.assertFalse(exists);
     }
+
+    /**
+     * 测试枚举类 - 包含重复value，用于验证重复value场景
+     */
+    enum DuplicateValueEnum implements IEnum<String> {
+        A("same", "甲"),
+        B("same", "乙"),
+        C("diff", "丙");
+
+        private final String value;
+        private final String desc;
+
+        DuplicateValueEnum(String value, String desc) {
+            this.value = value;
+            this.desc = desc;
+        }
+
+        @Override
+        public String getValue() {
+            return value;
+        }
+
+        public String getDesc() {
+            return desc;
+        }
+    }
+
+    /**
+     * 测试重复value场景 - getEnum使用缓存时不抛异常且返回首个匹配
+     */
+    @Test
+    public void getEnumWithDuplicateValueTest() {
+        DuplicateValueEnum cached = EnumUtils.getEnum(DuplicateValueEnum.class, "same", DuplicateValueEnum::getValue, true);
+        Assert.assertEquals(DuplicateValueEnum.A, cached);
+
+        DuplicateValueEnum uncached = EnumUtils.getEnum(DuplicateValueEnum.class, "same", DuplicateValueEnum::getValue, false);
+        Assert.assertEquals(cached, uncached);
+    }
+
+    /**
+     * 测试重复value场景 - getEnumListByValue返回全部匹配
+     */
+    @Test
+    public void getEnumListByValueWithDuplicateValueTest() {
+        List<DuplicateValueEnum> list = EnumUtils.getEnumListByValue(DuplicateValueEnum.class, "same");
+        Assert.assertEquals(2, list.size());
+        Assert.assertTrue(list.contains(DuplicateValueEnum.A));
+        Assert.assertTrue(list.contains(DuplicateValueEnum.B));
+
+        list = EnumUtils.getEnumListByValue(DuplicateValueEnum.class, "diff");
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals(DuplicateValueEnum.C, list.get(0));
+    }
+
+    /**
+     * 测试重复value场景 - getByList使用缓存时返回全部匹配，与不使用缓存一致
+     */
+    @Test
+    public void getByListWithDuplicateValueTest() {
+        List<DuplicateValueEnum> cached = EnumUtils.getByList(DuplicateValueEnum.class, DuplicateValueEnum::getValue, "same", true);
+        Assert.assertEquals(2, cached.size());
+        Assert.assertTrue(cached.contains(DuplicateValueEnum.A));
+        Assert.assertTrue(cached.contains(DuplicateValueEnum.B));
+
+        List<DuplicateValueEnum> uncached = EnumUtils.getByList(DuplicateValueEnum.class, DuplicateValueEnum::getValue, "same", false);
+        Assert.assertEquals(cached, uncached);
+    }
+
+    /**
+     * 测试重复value场景 - 缓存清除后重新构建不抛异常
+     */
+    @Test
+    public void duplicateValueCacheClearTest() {
+        List<DuplicateValueEnum> list = EnumUtils.getEnumListByValue(DuplicateValueEnum.class, "same");
+        Assert.assertEquals(2, list.size());
+
+        EnumUtils.clearCache(DuplicateValueEnum.class, DuplicateValueEnum::getValue);
+        list = EnumUtils.getEnumListByValue(DuplicateValueEnum.class, "same");
+        Assert.assertEquals(2, list.size());
+
+        EnumUtils.clearAllCache();
+        list = EnumUtils.getEnumListByValue(DuplicateValueEnum.class, "same");
+        Assert.assertEquals(2, list.size());
+    }
+
+    /**
+     * 测试getEnumListByValue方法 - 单值、未命中、不使用缓存场景
+     */
+    @Test
+    public void getEnumListByValueTest() {
+        List<TestEnum> list = EnumUtils.getEnumListByValue(TestEnum.class, "1");
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals(TestEnum.ONE, list.get(0));
+
+        list = EnumUtils.getEnumListByValue(TestEnum.class, "999");
+        Assert.assertTrue(list.isEmpty());
+
+        list = EnumUtils.getEnumListByValue(TestEnum.class, "2", false);
+        Assert.assertEquals(1, list.size());
+        Assert.assertEquals(TestEnum.TWO, list.get(0));
+
+        list = EnumUtils.getEnumListByValue(TestEnum.class, "999", false);
+        Assert.assertTrue(list.isEmpty());
+    }
 }

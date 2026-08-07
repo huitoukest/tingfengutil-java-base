@@ -12,8 +12,8 @@
 
 ## ⚠️ 注意事项 / 已知陷阱
 
-- 🔴 **`lang/ex/` 已废弃** — 使用 `lang/exception/` 替代。不要对 `lang/ex/` 做新增或修改
-- 🔴 **TestTimeoutException 只在 `lang/ex/` 中** — `lang/exception/` 中没有对应类。如需使用，先在 `exception` 包中创建
+- 🔴 **`lang/ex/` 目录已不存在（2026-08 确认）** — 勿再引用；`lang/exception/` 为现行异常包
+- 🔴 **TestTimeoutException 位于 `lang/exception/test/`** — 现行异常包的 test 子包中，可直接引用
 - 🔴 **Constants.java 接口常量** — 遗留代码，不要新增接口常量。新常量使用 `final class + private 构造器`
 - 🔴 **部分接口保留 I 前缀/后缀** — 如 IEnum, ConvertI。新接口统一不要 `I`
 - 🔴 **部分文件使用 Tab 缩进** — 新旧文件混用。修改时统一改为 4 空格
@@ -31,7 +31,6 @@
 | `pom.xml` | 不改版本号（Java 1.8、Lombok、SLF4J、JUnit 等） |
 | `pom.xml` | 不改 packaging=jar |
 | `src/main/java/com/tingfeng/util/java/base/common/constant/Constants.java` | 不新增接口常量，保持遗留不动 |
-| `src/main/java/com/tingfeng/util/java/base/lang/ex/` | 不新增/修改此包代码 |
 
 ## 关键文件索引
 

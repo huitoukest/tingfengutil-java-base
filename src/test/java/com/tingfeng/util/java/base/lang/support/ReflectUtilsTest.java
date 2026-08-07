@@ -465,4 +465,46 @@ public class ReflectUtilsTest {
         Assert.assertTrue("short是基础数据类型", ReflectUtils.isJavaBaseDataClass(Short.class));
         Assert.assertTrue("byte是基础数据类型", ReflectUtils.isJavaBaseDataClass(Byte.class));
     }
+
+    /**
+     * B7 修复：useCache=false 时绕过缓存直接反射，字段存在时应返回字段
+     * 使用本测试类独有的内部类字段，保证目标 key 从未进入缓存，可严格区分新旧行为
+     */
+    @Test
+    public void testGetFieldWithoutCacheFound() {
+        Field field = ReflectUtils.getField(B7TestBean.class, "uniqueField", false, false);
+        Assert.assertNotNull("useCache=false 应直接反射找到字段", field);
+        Assert.assertEquals("字段名应该是uniqueField", "uniqueField", field.getName());
+    }
+
+    /**
+     * B7 修复：useCache=false 时字段不存在应抛出反射异常
+     */
+    @Test
+    public void testGetFieldWithoutCacheNotFound() {
+        try {
+            ReflectUtils.getField(B7TestBean.class, "nonExistentField", false, false);
+            Assert.fail("useCache=false 查询不存在的字段应抛出异常");
+        } catch (RuntimeException e) {
+            Assert.assertTrue("异常应包含字段名", e.getMessage().contains("nonExistentField"));
+        }
+    }
+
+    /**
+     * B7 修复：useCache=true 缓存路径行为保持不变，二次查询命中缓存返回同一实例
+     */
+    @Test
+    public void testGetFieldWithCacheReturnsSameInstance() {
+        Field field1 = ReflectUtils.getField(B7TestBean.class, "uniqueField", false, true);
+        Field field2 = ReflectUtils.getField(B7TestBean.class, "uniqueField", false, true);
+        Assert.assertNotNull("useCache=true 应能找到字段", field1);
+        Assert.assertSame("useCache=true 应命中缓存返回同一实例", field1, field2);
+    }
+
+    /**
+     * B7 修复专用测试内部类：保证字段 key 从未被其他代码写入缓存
+     */
+    public static class B7TestBean {
+        public String uniqueField;
+    }
 }
