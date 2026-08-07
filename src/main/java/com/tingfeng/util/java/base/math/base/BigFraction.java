@@ -135,7 +135,8 @@ public class BigFraction extends AbstractFraction implements IFractionOperation<
      */
     @Override
     public double toDouble() {
-        return toBigDecimal(15, RoundingMode.HALF_UP).doubleValue();
+        // 与 Int/LongFraction 的直接除法行为对齐，避免先经 15 位舍入的额外精度损失
+        return numerator.doubleValue() / denominator.doubleValue();
     }
 
     /**
@@ -156,7 +157,7 @@ public class BigFraction extends AbstractFraction implements IFractionOperation<
      * @return 字符串表示
      */
     @Override
-    String toString(int newScale) {
+    public String toString(int newScale) {
         return toBigDecimal(newScale, RoundingMode.HALF_UP).toString();
     }
 
@@ -165,7 +166,7 @@ public class BigFraction extends AbstractFraction implements IFractionOperation<
      * @return 如 "3/4"
      */
     @Override
-    String getValue() {
+    public String getValue() {
         return StringUtils.append(this.numerator.toString(), "/", this.denominator.toString());
     }
 

@@ -44,10 +44,17 @@ public class BinaryOperationUtils {
      * 比如输入:
      *  bitwiseValue = 8;  containsValue = 3 ；则结果返回 [3,7];
      *  bitwiseValue = 7;  containsValue = 1 ；则结果返回 [1,3,5,7];
-     * @param maxValue 最大值； null时 返回空List
-     * @return containsValue 需要包含的值
+     * @param maxValue 最大值
+     * @param containsValue 需要包含的值；null 时返回空 List；负数时抛出 IllegalArgumentException
+     * @return 满足按位与等于 containsValue 的结果列表
      */
     public static List<Integer> getContainBinaryNumbers(int maxValue, Integer containsValue){
+        if(null == containsValue){
+            return Collections.emptyList();
+        }
+        if(containsValue < 0){
+            throw new IllegalArgumentException("containsValue must be >= 0");
+        }
         List<Integer> numbers = new ArrayList<>();
         for(int i = containsValue; i <= maxValue ; i ++){
             if((i & containsValue) == containsValue){
@@ -67,15 +74,19 @@ public class BinaryOperationUtils {
             throw new RuntimeException("indexOfPower must <= " + MAX_POW_VALUE);
         }
         if(pow < 0) {
+            if (pow == Integer.MIN_VALUE) {
+                return 0.0;
+            }
             return 1.0 / binaryPowValues.get(Math.abs(pow));
         }
         return binaryPowValues.get(pow);
     }
 
     /**
-     * 获取第一个比currentValue大的2的n次幂的值，否则返回-1;
-     * @param currentValue
-     * @return
+     * 获取第一个大于等于 currentValue 的 2 的 n 次幂的值；
+     * currentValue 小于等于 0 时返回 1，大于 2 的 62 次方时返回 -1
+     * @param currentValue 当前值
+     * @return 第一个大于等于 currentValue 的 2 的 n 次幂；超出可表示范围时返回 -1
      */
     public static long getFirstThanBinaryValue(long currentValue){
         if (currentValue <= 0) {

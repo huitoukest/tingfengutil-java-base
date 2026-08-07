@@ -33,13 +33,13 @@ public abstract class AbstractFraction {
      * @param newScale 缩放的位数，默认四舍五入
      * @return 分数对应的字符串结果
      */
-    abstract String toString(int newScale);
+    public abstract String toString(int newScale);
 
     /**
      * 标准的 A/B 的分数形式，以英文斜杠隔开
      * @return 分数字符串表示，如 "3/4"
      */
-    abstract String getValue();
+    public abstract String getValue();
 
     /**
      * 获取分子值

@@ -210,4 +210,25 @@ public class FractionTest {
         assertEquals("带分数分子测试失败", BigInteger.ONE, bigMixed.getNumerator());
         assertEquals("带分数分母测试失败", BigInteger.valueOf(3), bigMixed.getDenominator());
     }
+
+    /**
+     * 测试 LongFraction.equals 的 instanceof 语义（B19 对称性断言）
+     */
+    @Test
+    public void testEqualsSymmetryWithFraction() {
+        LongFraction longHalf = new LongFraction(1L, 2L);
+        Fraction fractionHalf = new Fraction(1L, 2L);
+        
+        // LongFraction.equals 接受 Fraction 子类（instanceof 语义）
+        assertTrue("LongFraction(1,2) 应等于 Fraction(1,2)", longHalf.equals(fractionHalf));
+        // 反向对称
+        assertTrue("Fraction(1,2) 应等于 LongFraction(1,2)", fractionHalf.equals(longHalf));
+        // hashCode 一致（数学相等分数简化后分子分母相同）
+        assertEquals("数学相等的分数 hashCode 应一致", longHalf.hashCode(), fractionHalf.hashCode());
+        
+        // IntFraction vs LongFraction：getClass 严格语义，双向均 false
+        IntFraction intHalf = new IntFraction(1, 2);
+        assertFalse("IntFraction(1,2) 不应等于 LongFraction(1,2)", intHalf.equals(longHalf));
+        assertFalse("LongFraction(1,2) 不应等于 IntFraction(1,2)", longHalf.equals(intHalf));
+    }
 }

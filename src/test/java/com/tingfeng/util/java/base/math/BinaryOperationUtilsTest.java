@@ -140,6 +140,24 @@ public class BinaryOperationUtilsTest {
     }
 
     /**
+     * 测试获取包含二进制数 - 包含值为null
+     */
+    @Test
+    public void testGetContainBinaryNumbersNull() {
+        List<Integer> result = BinaryOperationUtils.getContainBinaryNumbers(10, null);
+        Assert.assertNotNull("结果不能为空", result);
+        Assert.assertTrue("null包含值应该返回空列表", result.isEmpty());
+    }
+
+    /**
+     * 测试获取包含二进制数 - 包含值为负数
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetContainBinaryNumbersNegative() {
+        BinaryOperationUtils.getContainBinaryNumbers(10, -1);
+    }
+
+    /**
      * 测试获取包含二进制数 - 包含值为1
      */
     @Test
@@ -255,6 +273,15 @@ public class BinaryOperationUtilsTest {
     public void testGetBinaryValueByPowNegativeTwo() {
         double result = BinaryOperationUtils.getBinaryValueByPow(-2);
         Assert.assertEquals("2的-2次幂应该为0.25", 0.25, result, 0.0001);
+    }
+
+    /**
+     * 测试获取二进制值 - 指数为 Integer.MIN_VALUE
+     */
+    @Test
+    public void testGetBinaryValueByPowMinValue() {
+        double result = BinaryOperationUtils.getBinaryValueByPow(Integer.MIN_VALUE);
+        Assert.assertEquals("2的-2147483648次幂在double精度下应下溢为0", 0.0, result, 0.0001);
     }
 
     /**

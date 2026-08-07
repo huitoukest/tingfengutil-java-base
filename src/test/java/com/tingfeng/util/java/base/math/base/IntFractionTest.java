@@ -207,4 +207,60 @@ public class IntFractionTest {
         fraction = fraction.simpleFraction();
         Assert.assertTrue(fraction.isSimpleFraction());
     }
+
+    @Test
+    public void constructorMinValueDenominator() {
+        // 分母为 MIN_VALUE 时标准化取反溢出，非零分子应显式抛异常而非静默破坏不变量
+        try {
+            new IntFraction(1, Integer.MIN_VALUE);
+            Assert.fail("应该抛出 ArithmeticException");
+        } catch (ArithmeticException e) {
+            Assert.assertTrue("异常信息应说明无法标准化", e.getMessage().contains("MIN_VALUE"));
+        }
+        // 分子为 0 特判：0/MIN_VALUE 数学上等于 0/1，可安全表示
+        IntFraction zero = new IntFraction(0, Integer.MIN_VALUE);
+        Assert.assertEquals("0/1", zero.getValue());
+        // String 构造器同样处理
+        try {
+            new IntFraction("1/" + Integer.MIN_VALUE);
+            Assert.fail("应该抛出 ArithmeticException");
+        } catch (ArithmeticException e) {
+            Assert.assertTrue("异常信息应说明无法标准化", e.getMessage().contains("MIN_VALUE"));
+        }
+        IntFraction zeroStr = new IntFraction("0/" + Integer.MIN_VALUE);
+        Assert.assertEquals("0/1", zeroStr.getValue());
+    }
+
+    @Test
+    public void absMinValueNumerator() {
+        // 分子为 MIN_VALUE 时 |MIN_VALUE| 超出 int 范围，应抛异常而非返回负数
+        try {
+            new IntFraction(Integer.MIN_VALUE, 1).abs();
+            Assert.fail("应该抛出 ArithmeticException");
+        } catch (ArithmeticException e) {
+            Assert.assertTrue("异常信息应说明绝对值不可表示", e.getMessage().contains("绝对值"));
+        }
+        // 普通负数绝对值不受影响
+        Assert.assertEquals("3/4", new IntFraction(-3, 4).abs().getValue());
+    }
+
+    @Test
+    public void subMinValueNumerator() {
+        // 1 - MIN_VALUE = 2147483649 超出 int 范围：应抛溢出异常而非静默返回错误负数
+        try {
+            new IntFraction(1, 1).sub(new IntFraction(Integer.MIN_VALUE, 1));
+            Assert.fail("应该抛出 ArithmeticException");
+        } catch (ArithmeticException e) {
+            Assert.assertTrue("异常信息应包含溢出", e.getMessage().contains("溢出"));
+        }
+    }
+
+    @Test
+    public void toMixedNumberMinValueNumerator() {
+        // MIN_VALUE/3：绝对值经 long 升级后正确转换
+        MixedNumber mixed = new IntFraction(Integer.MIN_VALUE, 3).toMixedNumber();
+        Assert.assertEquals(Integer.valueOf(-715827882), ((IntMixedNumber) mixed).getWholePart());
+        Assert.assertEquals(Integer.valueOf(2), ((IntMixedNumber) mixed).getNumerator());
+        Assert.assertEquals(Integer.valueOf(3), ((IntMixedNumber) mixed).getDenominator());
+    }
 }

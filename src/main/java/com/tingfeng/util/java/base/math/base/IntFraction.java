@@ -5,7 +5,6 @@ import com.tingfeng.util.java.base.math.MathUtils;
 import com.tingfeng.util.java.base.lang.StringUtils;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.util.Objects;
 
@@ -44,6 +43,17 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
         if (denominator == 0) {
             throw new ArithmeticException("分母不能为 0");
         }
+        // 分母为 MIN_VALUE 时标准化取反会溢出，无法保证分母恒正的不变量
+        if (denominator == Integer.MIN_VALUE) {
+            // 分子为 0 时数学上等于 0/1，可安全表示
+            if (numerator == 0) {
+                this.numerator = 0;
+                this.denominator = 1;
+            } else {
+                throw new ArithmeticException("分母为 Integer.MIN_VALUE 时无法标准化（取反后超出 int 范围）");
+            }
+            return;
+        }
         // 标准化：分母始终为正，符号由分子决定
         if (denominator < 0) {
             this.numerator = -numerator;
@@ -75,6 +85,18 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             
             if (den == 0) {
                 throw new ArithmeticException("分母不能为 0");
+            }
+            
+            // 分母为 MIN_VALUE 时标准化取反会溢出，无法保证分母恒正的不变量
+            if (den == Integer.MIN_VALUE) {
+                // 分子为 0 时数学上等于 0/1，可安全表示
+                if (num == 0) {
+                    this.numerator = 0;
+                    this.denominator = 1;
+                } else {
+                    throw new ArithmeticException("分母为 Integer.MIN_VALUE 时无法标准化（取反后超出 int 范围）");
+                }
+                return;
             }
             
             // 标准化：分母始终为正，符号由分子决定
@@ -117,7 +139,7 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
      * @return 字符串表示
      */
     @Override
-    String toString(int newScale) {
+    public String toString(int newScale) {
         return toBigDecimal(newScale, RoundingMode.HALF_UP).toString();
     }
 
@@ -126,7 +148,7 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
      * @return 如 "3/4"
      */
     @Override
-    String getValue() {
+    public String getValue() {
         return StringUtils.append(this.numerator, "/", this.denominator);
     }
 
@@ -214,9 +236,9 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             throw new NullPointerException("减数不能为 null");
         }
         
-        // 转换为加法：a - b = a + (-b)
-        IntFraction negativeOther = new IntFraction(-other.numerator, other.denominator);
-        return this.add(negativeOther);
+        // 委托 LongFraction 减法，保持旧语义（SS4 减法溢出修复自动传导）
+        LongFraction result = toLongFraction().sub(other.toLongFraction());
+        return toIntFraction(result, "加法运算结果分子溢出", "加法运算结果分母溢出");
     }
 
     /**
@@ -232,33 +254,9 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             throw new NullPointerException("乘数不能为 null");
         }
         
-        if (this.isZero() || other.isZero()) {
-            return new IntFraction(0, 1);
-        }
-        
-        IntFraction a = this.simpleFraction();
-        IntFraction b = other.simpleFraction();
-        
-        // 根据防溢出策略：强制升级为 long 计算，天然避免溢出
-        // 使用 long 计算分子和分母的乘积
-        long newNumerator = (long) a.numerator * b.numerator;
-        long newDenominator = (long) a.denominator * b.denominator;
-        
-        // 先创建 LongFraction 进行化简，然后再转换回 IntFraction
-        LongFraction longFraction = new LongFraction(newNumerator, newDenominator).simpleFraction();
-        
-        // 检查结果是否在 int 范围内
-        long simplifiedNumerator = longFraction.getNumerator().longValue();
-        long simplifiedDenominator = longFraction.getDenominator().longValue();
-        
-        if (simplifiedNumerator > Integer.MAX_VALUE || simplifiedNumerator < Integer.MIN_VALUE) {
-            throw new ArithmeticException("乘法运算结果分子溢出: " + simplifiedNumerator);
-        }
-        if (simplifiedDenominator > Integer.MAX_VALUE || simplifiedDenominator < Integer.MIN_VALUE) {
-            throw new ArithmeticException("乘法运算结果分母溢出: " + simplifiedDenominator);
-        }
-        
-        return new IntFraction((int) simplifiedNumerator, (int) simplifiedDenominator);
+        // 委托 LongFraction 乘法，BigInteger 中间量天然避免中间溢出
+        LongFraction result = toLongFraction().multiply(other.toLongFraction());
+        return toIntFraction(result, "乘法运算结果分子溢出", "乘法运算结果分母溢出");
     }
 
     /**
@@ -274,13 +272,9 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             throw new NullPointerException("除数不能为 null");
         }
         
-        if (other.isZero()) {
-            throw new ArithmeticException("除零错误：不能除以 0");
-        }
-        
-        // 转换为乘法：a / b = a * (1/b)
-        IntFraction reciprocal = new IntFraction(other.denominator, other.numerator);
-        return this.multiply(reciprocal);
+        // 委托 LongFraction 除法，倒数构造与除零检查由 LongFraction 完成并透传
+        LongFraction result = toLongFraction().div(other.toLongFraction());
+        return toIntFraction(result, "乘法运算结果分子溢出", "乘法运算结果分母溢出");
     }
 
     /**
@@ -293,20 +287,13 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             return new IntFraction(0, 1);
         }
         
-        // 避免 Math.abs(INT_MIN) 的陷阱，使用 long 类型处理
-        long absNumeratorLong = Math.abs((long) numerator);
-        long absDenominatorLong = Math.abs((long) denominator);
-        long gcdLong = MathUtils.gcd(absNumeratorLong, absDenominatorLong);
-        
-        if (gcdLong == 1) {
-            return this;
-        }
-        
-        // 符号处理：分母为正，符号由分子决定
-        long newNumeratorLong = numerator / gcdLong;
-        long newDenominatorLong = absDenominatorLong / gcdLong;
+        // 委托 LongFraction 化简，BigInteger 计算避免 Math.abs(INT_MIN) 的陷阱
+        LongFraction simplified = toLongFraction().simpleFraction();
         
         // 检查结果是否在 int 范围内
+        long newNumeratorLong = simplified.getNumerator().longValue();
+        long newDenominatorLong = simplified.getDenominator().longValue();
+        
         if (newNumeratorLong > Integer.MAX_VALUE || newNumeratorLong < Integer.MIN_VALUE ||
             newDenominatorLong > Integer.MAX_VALUE || newDenominatorLong < 1) {
             throw new ArithmeticException("分数化简结果溢出");
@@ -331,33 +318,8 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             return 0;
         }
         
-        // 快速路径：符号不同
-        boolean thisPositive = this.isPositive();
-        boolean otherPositive = other.isPositive();
-        
-        if (thisPositive && !otherPositive) {
-            return 1;
-        }
-        if (!thisPositive && otherPositive) {
-            return -1;
-        }
-        
-        // 处理零的情况
-        if (this.isZero()) {
-            return other.isZero() ? 0 : (otherPositive ? -1 : 1);
-        }
-        if (other.isZero()) {
-            return thisPositive ? 1 : -1;
-        }
-        
-        // 根据防溢出策略：使用 BigInteger 比较，避免溢出
-        IntFraction a = this.simpleFraction();
-        IntFraction b = other.simpleFraction();
-        
-        long left = ((long) a.numerator) * b.denominator;
-        long right = ((long) b.numerator) * a.denominator;
-
-        return Long.compare(left, right);
+        // 委托 LongFraction 比较，BigInteger 交叉相乘语义等价且避免溢出
+        return toLongFraction().compareTo(other.toLongFraction());
     }
 
     /**
@@ -445,6 +407,10 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
         if (isPositive() || isZero()) {
             return this;
         }
+        // 分子为 MIN_VALUE 时绝对值超出 int 表示范围，拒绝静默返回负数
+        if (numerator == Integer.MIN_VALUE) {
+            throw new ArithmeticException("分子为 Integer.MIN_VALUE，绝对值无法用 int 表示");
+        }
         return new IntFraction(-numerator, denominator);
     }
     
@@ -496,5 +462,34 @@ public class IntFraction extends AbstractFraction implements IFractionOperation<
             throw new IllegalArgumentException("只能与 IntFraction 类型比较");
         }
         return compareTo((IntFraction) other);
+    }
+    
+    /**
+     * 转换为同值的 LongFraction
+     * @return LongFraction 表示
+     */
+    private LongFraction toLongFraction() {
+        return new LongFraction(numerator, denominator);
+    }
+    
+    /**
+     * 将 LongFraction 运算结果检查后转换为 IntFraction
+     * @param fraction 运算结果
+     * @param numeratorMessage 分子溢出异常消息
+     * @param denominatorMessage 分母溢出异常消息
+     * @return int 范围内的结果
+     * @throws ArithmeticException 当结果超出 int 范围时抛出
+     */
+    private IntFraction toIntFraction(LongFraction fraction, String numeratorMessage, String denominatorMessage) {
+        long simplifiedNumerator = fraction.getNumerator().longValue();
+        long simplifiedDenominator = fraction.getDenominator().longValue();
+        
+        if (simplifiedNumerator > Integer.MAX_VALUE || simplifiedNumerator < Integer.MIN_VALUE) {
+            throw new ArithmeticException(numeratorMessage + ": " + simplifiedNumerator);
+        }
+        if (simplifiedDenominator > Integer.MAX_VALUE || simplifiedDenominator < Integer.MIN_VALUE) {
+            throw new ArithmeticException(denominatorMessage + ": " + simplifiedDenominator);
+        }
+        return new IntFraction((int) simplifiedNumerator, (int) simplifiedDenominator);
     }
 }
